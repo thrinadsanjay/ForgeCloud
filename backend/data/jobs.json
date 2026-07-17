@@ -1,0 +1,4462 @@
+{
+  "jobs": [
+    {
+      "id": "e4yNgAle_a",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-200",
+        "hostname": "test12",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 35,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": true,
+        "environment": "vmbr0",
+        "requestedBy": "admin",
+        "requestId": "KGIa37gs85li"
+      },
+      "status": "failed",
+      "message": "Interrupted",
+      "resources": [
+        {
+          "vmid": "116",
+          "hostname": "test12",
+          "type": "vm",
+          "ip": "10.161.230.116",
+          "environment": "vmbr0",
+          "sshReady": false
+        }
+      ],
+      "error": "Interrupted by a server restart before completion",
+      "logs": [
+        {
+          "ts": "2026-07-03T16:52:19.782Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-03T16:52:19.786Z",
+          "status": "provisioning",
+          "message": "Cloning template RHEL9 (VMID 200)…"
+        },
+        {
+          "ts": "2026-07-03T16:52:20.261Z",
+          "status": "provisioning",
+          "message": "Waiting for clone lock to release…"
+        },
+        {
+          "ts": "2026-07-03T16:53:57.977Z",
+          "status": "provisioning",
+          "message": "Resizing to 1 vCPU / 1 GB RAM / 35 GB disk…"
+        },
+        {
+          "ts": "2026-07-03T16:53:58.092Z",
+          "status": "provisioning",
+          "message": "Attaching network \"vmbr0\" and cloud-init…"
+        },
+        {
+          "ts": "2026-07-03T16:53:58.725Z",
+          "status": "booting",
+          "message": "Booting VM with cloud-init…"
+        },
+        {
+          "ts": "2026-07-03T16:53:58.801Z",
+          "status": "booting",
+          "message": "Waiting for 10.161.230.116 to come online (checking every 10s)…"
+        },
+        {
+          "ts": "2026-07-03T16:59:15.620Z",
+          "status": "failed",
+          "message": "Interrupted by a server restart before completion",
+          "error": "Interrupted by a server restart before completion"
+        }
+      ],
+      "createdAt": "2026-07-03T16:52:19.782Z",
+      "updatedAt": "2026-07-03T16:59:15.620Z"
+    },
+    {
+      "id": "foo6tOWZh3",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-200",
+        "hostname": "test32",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 35,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr0",
+        "requestedBy": "admin",
+        "requestId": "eSDYD31aF5CF"
+      },
+      "status": "ready",
+      "message": "Deployment succeeded.\nHost test32 (VMID 117) at 10.161.230.51 on \"vmbr0\" (DHCP).\nUser \"test\" created. Generated password: htR!z^JX!R!v#-R7@$\nNo packages requested.",
+      "resources": [
+        {
+          "vmid": "117",
+          "hostname": "test32",
+          "type": "vm",
+          "ip": "10.161.230.51",
+          "environment": "vmbr0",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-03T17:06:54.551Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-03T17:06:54.554Z",
+          "status": "provisioning",
+          "message": "Cloning template RHEL9 (VMID 200)…"
+        },
+        {
+          "ts": "2026-07-03T17:06:54.684Z",
+          "status": "provisioning",
+          "message": "Waiting for clone lock to release…"
+        },
+        {
+          "ts": "2026-07-03T17:08:33.273Z",
+          "status": "provisioning",
+          "message": "Resizing to 1 vCPU / 1 GB RAM / 35 GB disk…"
+        },
+        {
+          "ts": "2026-07-03T17:08:33.484Z",
+          "status": "provisioning",
+          "message": "Attaching network \"vmbr0\" (DHCP) and cloud-init…"
+        },
+        {
+          "ts": "2026-07-03T17:08:34.190Z",
+          "status": "booting",
+          "message": "Booting VM with cloud-init…"
+        },
+        {
+          "ts": "2026-07-03T17:08:34.288Z",
+          "status": "booting",
+          "message": "Waiting for the guest agent to report a DHCP address (every 10s)…"
+        },
+        {
+          "ts": "2026-07-03T17:09:10.625Z",
+          "status": "booting",
+          "message": "Got DHCP address 10.161.230.51. Waiting for SSH…"
+        },
+        {
+          "ts": "2026-07-03T17:09:12.713Z",
+          "status": "provisioning",
+          "message": "create user test…"
+        },
+        {
+          "ts": "2026-07-03T17:09:15.304Z",
+          "status": "provisioning",
+          "message": "set user password…"
+        },
+        {
+          "ts": "2026-07-03T17:09:16.062Z",
+          "status": "provisioning",
+          "message": "Validating deployment…"
+        },
+        {
+          "ts": "2026-07-03T17:09:16.069Z",
+          "status": "ready",
+          "message": "Deployment succeeded.\nHost test32 (VMID 117) at 10.161.230.51 on \"vmbr0\" (DHCP).\nUser \"test\" created. Generated password: htR!z^JX!R!v#-R7@$\nNo packages requested."
+        }
+      ],
+      "createdAt": "2026-07-03T17:06:54.551Z",
+      "updatedAt": "2026-07-03T17:09:16.069Z",
+      "result": {
+        "username": "test",
+        "generatedPassword": "htR!z^JX!R!v#-R7@$",
+        "sudo": false,
+        "validations": [],
+        "steps": [
+          {
+            "name": "create user test",
+            "ok": true,
+            "stderr": ""
+          },
+          {
+            "name": "set user password",
+            "ok": true,
+            "stderr": ""
+          }
+        ],
+        "allOk": true
+      }
+    },
+    {
+      "id": "MJKTiEeyhf",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-200",
+        "hostname": "docker01",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "docker"
+        ],
+        "packageSelection": {
+          "required": [
+            "docker"
+          ],
+          "selected": [
+            "docker"
+          ],
+          "effective": [
+            "docker"
+          ]
+        },
+        "username": "user",
+        "sudoAccess": false,
+        "environment": "vmbr0",
+        "requestedBy": "admin",
+        "requestId": "tShme9f5t4TQ"
+      },
+      "status": "ready",
+      "message": "Deployment succeeded.\nHost docker01 (VMID 118) at 10.161.230.53 on \"vmbr0\" (DHCP).\nUser \"user\" created. Generated password: ChQpv9WLTC=EHiRcF^\nPackages: docker✓",
+      "resources": [
+        {
+          "vmid": "118",
+          "hostname": "docker01",
+          "type": "vm",
+          "ip": "10.161.230.53",
+          "environment": "vmbr0",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-03T17:13:17.284Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-03T17:13:17.287Z",
+          "status": "provisioning",
+          "message": "Cloning template RHEL9 (VMID 200)…"
+        },
+        {
+          "ts": "2026-07-03T17:13:17.411Z",
+          "status": "provisioning",
+          "message": "Waiting for clone lock to release…"
+        },
+        {
+          "ts": "2026-07-03T17:16:02.762Z",
+          "status": "provisioning",
+          "message": "Resizing to 2 vCPU / 2 GB RAM / 50 GB disk…"
+        },
+        {
+          "ts": "2026-07-03T17:16:02.963Z",
+          "status": "provisioning",
+          "message": "Attaching network \"vmbr0\" (DHCP) and cloud-init…"
+        },
+        {
+          "ts": "2026-07-03T17:16:03.646Z",
+          "status": "booting",
+          "message": "Booting VM with cloud-init…"
+        },
+        {
+          "ts": "2026-07-03T17:16:03.851Z",
+          "status": "booting",
+          "message": "Waiting for the guest agent to report a DHCP address (every 10s)…"
+        },
+        {
+          "ts": "2026-07-03T17:16:40.165Z",
+          "status": "booting",
+          "message": "Got DHCP address 10.161.230.53. Waiting for SSH…"
+        },
+        {
+          "ts": "2026-07-03T17:16:40.190Z",
+          "status": "provisioning",
+          "message": "create user user…"
+        },
+        {
+          "ts": "2026-07-03T17:16:42.032Z",
+          "status": "provisioning",
+          "message": "set user password…"
+        },
+        {
+          "ts": "2026-07-03T17:16:42.593Z",
+          "status": "provisioning",
+          "message": "refresh package index…"
+        },
+        {
+          "ts": "2026-07-03T17:18:23.203Z",
+          "status": "provisioning",
+          "message": "install packages (docker)…"
+        },
+        {
+          "ts": "2026-07-03T17:19:53.702Z",
+          "status": "provisioning",
+          "message": "enable services…"
+        },
+        {
+          "ts": "2026-07-03T17:19:54.170Z",
+          "status": "provisioning",
+          "message": "Validating deployment…"
+        },
+        {
+          "ts": "2026-07-03T17:19:54.611Z",
+          "status": "ready",
+          "message": "Deployment succeeded.\nHost docker01 (VMID 118) at 10.161.230.53 on \"vmbr0\" (DHCP).\nUser \"user\" created. Generated password: ChQpv9WLTC=EHiRcF^\nPackages: docker✓"
+        }
+      ],
+      "createdAt": "2026-07-03T17:13:17.284Z",
+      "updatedAt": "2026-07-03T17:19:54.611Z",
+      "result": {
+        "username": "user",
+        "generatedPassword": "ChQpv9WLTC=EHiRcF^",
+        "sudo": false,
+        "validations": [
+          {
+            "package": "docker",
+            "present": true
+          }
+        ],
+        "steps": [
+          {
+            "name": "create user user",
+            "ok": true,
+            "stderr": ""
+          },
+          {
+            "name": "set user password",
+            "ok": true,
+            "stderr": ""
+          },
+          {
+            "name": "refresh package index",
+            "ok": true,
+            "stderr": ""
+          },
+          {
+            "name": "install packages (docker)",
+            "ok": true,
+            "stderr": ""
+          },
+          {
+            "name": "enable services",
+            "ok": true,
+            "stderr": ""
+          }
+        ],
+        "allOk": true
+      }
+    },
+    {
+      "id": "gEvITmZkkB",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "alpine-test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr0",
+        "requestedBy": "admin",
+        "requestId": "Kneu5nHPJHRC"
+      },
+      "status": "failed",
+      "message": "Interrupted",
+      "resources": [
+        {
+          "vmid": "113",
+          "hostname": "alpine-test",
+          "type": "vm",
+          "ip": null,
+          "environment": "vmbr0",
+          "sshReady": false
+        }
+      ],
+      "error": "Interrupted by a server restart before completion",
+      "logs": [
+        {
+          "ts": "2026-07-03T17:45:59.628Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-03T17:45:59.632Z",
+          "status": "provisioning",
+          "message": "Creating your virtual machine…"
+        },
+        {
+          "ts": "2026-07-03T17:46:00.169Z",
+          "status": "provisioning",
+          "message": "Preparing the virtual machine…"
+        },
+        {
+          "ts": "2026-07-03T17:46:45.769Z",
+          "status": "provisioning",
+          "message": "Applying your selected size: 2 vCPU, 2 GB RAM, 50 GB disk…"
+        },
+        {
+          "ts": "2026-07-03T17:46:45.943Z",
+          "status": "provisioning",
+          "message": "Connecting it to the \"vmbr0\" network…"
+        },
+        {
+          "ts": "2026-07-03T17:46:46.614Z",
+          "status": "booting",
+          "message": "Starting up your virtual machine…"
+        },
+        {
+          "ts": "2026-07-03T17:46:46.706Z",
+          "status": "booting",
+          "message": "Waiting for it to get a network address…"
+        },
+        {
+          "ts": "2026-07-03T17:49:58.795Z",
+          "status": "failed",
+          "message": "Interrupted by a server restart before completion",
+          "error": "Interrupted by a server restart before completion"
+        }
+      ],
+      "createdAt": "2026-07-03T17:45:59.628Z",
+      "updatedAt": "2026-07-03T17:49:58.795Z"
+    },
+    {
+      "id": "RTG3Gr3dea",
+      "type": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "BPdA2JFMr5vg"
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow.",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "test",
+          "type": "vm",
+          "ip": "10.115.23.22",
+          "environment": "VLAN195",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T03:39:23.373Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T03:39:23.378Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test\"…"
+        },
+        {
+          "ts": "2026-07-04T03:39:23.421Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow)…"
+        },
+        {
+          "ts": "2026-07-04T03:39:25.677Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow) — done · REQ4506864"
+        },
+        {
+          "ts": "2026-07-04T03:39:25.679Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM…"
+        },
+        {
+          "ts": "2026-07-04T03:39:28.316Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM — done · 10.115.23.22"
+        },
+        {
+          "ts": "2026-07-04T03:39:28.318Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter…"
+        },
+        {
+          "ts": "2026-07-04T03:39:30.753Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter — done · esx-31.dc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:39:30.755Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN…"
+        },
+        {
+          "ts": "2026-07-04T03:39:33.591Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN — done · vol-73418449"
+        },
+        {
+          "ts": "2026-07-04T03:39:33.594Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules…"
+        },
+        {
+          "ts": "2026-07-04T03:39:36.644Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules — done · CHG1980057"
+        },
+        {
+          "ts": "2026-07-04T03:39:36.646Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record…"
+        },
+        {
+          "ts": "2026-07-04T03:39:38.979Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record — done · test.cpc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:39:38.982Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB…"
+        },
+        {
+          "ts": "2026-07-04T03:39:41.515Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB — done · CI11612987"
+        },
+        {
+          "ts": "2026-07-04T03:39:41.518Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace…"
+        },
+        {
+          "ts": "2026-07-04T03:39:43.550Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace — done · TASK0035196"
+        },
+        {
+          "ts": "2026-07-04T03:39:43.553Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow."
+        }
+      ],
+      "createdAt": "2026-07-04T03:39:23.373Z",
+      "updatedAt": "2026-07-04T03:39:43.553Z",
+      "result": {
+        "hostname": "test",
+        "provider": "internal",
+        "simulated": true,
+        "ip": "10.115.23.22",
+        "fqdn": "test.cpc.internal",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "workflow": [
+          {
+            "step": "Registering the service request in ITSM (ServiceNow)",
+            "system": "ServiceNow ITSM",
+            "reference": "REQ4506864",
+            "detail": "Service request REQ4506864 opened for test"
+          },
+          {
+            "step": "Requesting an IP address from IPAM",
+            "system": "Infoblox IPAM",
+            "reference": "10.115.23.22",
+            "detail": "Allocated 10.115.23.22/24 on VLAN 195 (gw 10.115.23.1)"
+          },
+          {
+            "step": "Reserving compute capacity in the datacenter",
+            "system": "Datacenter Capacity Broker",
+            "reference": "esx-31.dc.internal",
+            "detail": "Reserved 2 vCPU / 2 GB RAM on esx-31.dc.internal (PROD-CL1)"
+          },
+          {
+            "step": "Reserving a storage volume on the SAN",
+            "system": "SAN Storage Orchestrator",
+            "reference": "vol-73418449",
+            "detail": "Reserved 50 GB volume vol-73418449 on ds-san-prod-02 (tier: gold)"
+          },
+          {
+            "step": "Requesting firewall access rules",
+            "system": "Firewall Change System",
+            "reference": "CHG1980057",
+            "detail": "CHG1980057 approved — 3 rules opened for 10.115.23.22"
+          },
+          {
+            "step": "Creating the DNS record",
+            "system": "Internal DNS",
+            "reference": "test.cpc.internal",
+            "detail": "Created A record test.cpc.internal -> 10.115.23.22"
+          },
+          {
+            "step": "Registering the configuration item in the CMDB",
+            "system": "CMDB",
+            "reference": "CI11612987",
+            "detail": "Registered CI CI11612987 (test) — owner admin"
+          },
+          {
+            "step": "Finalizing and handing over the workspace",
+            "system": "ServiceNow ITSM",
+            "reference": "TASK0035196",
+            "detail": "Handover task TASK0035196 completed — workspace ready"
+          }
+        ]
+      }
+    },
+    {
+      "id": "u4IvLMKp9E",
+      "type": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "demo-app-01",
+        "cpu": 4,
+        "memoryGB": 8,
+        "diskGB": 100,
+        "requestedBy": "admin",
+        "requestId": "QEpk4gPDMvlL"
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"demo-app-01\" completed. Open the summary for the full workflow.",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "demo-app-01",
+          "type": "vm",
+          "ip": "10.24.75.137",
+          "environment": "VLAN104",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T03:39:46.648Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T03:39:46.651Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"demo-app-01\"…"
+        },
+        {
+          "ts": "2026-07-04T03:39:46.680Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow)…"
+        },
+        {
+          "ts": "2026-07-04T03:39:48.919Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow) — done · REQ4506865"
+        },
+        {
+          "ts": "2026-07-04T03:39:48.921Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM…"
+        },
+        {
+          "ts": "2026-07-04T03:39:51.559Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM — done · 10.24.75.137"
+        },
+        {
+          "ts": "2026-07-04T03:39:51.562Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter…"
+        },
+        {
+          "ts": "2026-07-04T03:39:54.001Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter — done · esx-23.dc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:39:54.004Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN…"
+        },
+        {
+          "ts": "2026-07-04T03:39:56.855Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN — done · vol-77142997"
+        },
+        {
+          "ts": "2026-07-04T03:39:56.857Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules…"
+        },
+        {
+          "ts": "2026-07-04T03:39:59.887Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules — done · CHG6011363"
+        },
+        {
+          "ts": "2026-07-04T03:39:59.889Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record…"
+        },
+        {
+          "ts": "2026-07-04T03:40:02.235Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record — done · demo-app-01.cpc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:40:02.263Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB…"
+        },
+        {
+          "ts": "2026-07-04T03:40:04.812Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB — done · CI52185505"
+        },
+        {
+          "ts": "2026-07-04T03:40:04.815Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace…"
+        },
+        {
+          "ts": "2026-07-04T03:40:06.866Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace — done · TASK6545767"
+        },
+        {
+          "ts": "2026-07-04T03:40:06.870Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"demo-app-01\" completed. Open the summary for the full workflow."
+        }
+      ],
+      "createdAt": "2026-07-04T03:39:46.648Z",
+      "updatedAt": "2026-07-04T03:40:06.869Z",
+      "result": {
+        "hostname": "demo-app-01",
+        "provider": "internal",
+        "simulated": true,
+        "ip": "10.24.75.137",
+        "fqdn": "demo-app-01.cpc.internal",
+        "cpu": 4,
+        "memoryGB": 8,
+        "diskGB": 100,
+        "workflow": [
+          {
+            "step": "Registering the service request in ITSM (ServiceNow)",
+            "system": "ServiceNow ITSM",
+            "reference": "REQ4506865",
+            "detail": "Service request REQ4506865 opened for demo-app-01"
+          },
+          {
+            "step": "Requesting an IP address from IPAM",
+            "system": "Infoblox IPAM",
+            "reference": "10.24.75.137",
+            "detail": "Allocated 10.24.75.137/24 on VLAN 104 (gw 10.24.75.1)"
+          },
+          {
+            "step": "Reserving compute capacity in the datacenter",
+            "system": "Datacenter Capacity Broker",
+            "reference": "esx-23.dc.internal",
+            "detail": "Reserved 4 vCPU / 8 GB RAM on esx-23.dc.internal (PROD-CL4)"
+          },
+          {
+            "step": "Reserving a storage volume on the SAN",
+            "system": "SAN Storage Orchestrator",
+            "reference": "vol-77142997",
+            "detail": "Reserved 100 GB volume vol-77142997 on ds-san-prod-08 (tier: gold)"
+          },
+          {
+            "step": "Requesting firewall access rules",
+            "system": "Firewall Change System",
+            "reference": "CHG6011363",
+            "detail": "CHG6011363 approved — 3 rules opened for 10.24.75.137"
+          },
+          {
+            "step": "Creating the DNS record",
+            "system": "Internal DNS",
+            "reference": "demo-app-01.cpc.internal",
+            "detail": "Created A record demo-app-01.cpc.internal -> 10.24.75.137"
+          },
+          {
+            "step": "Registering the configuration item in the CMDB",
+            "system": "CMDB",
+            "reference": "CI52185505",
+            "detail": "Registered CI CI52185505 (demo-app-01) — owner admin"
+          },
+          {
+            "step": "Finalizing and handing over the workspace",
+            "system": "ServiceNow ITSM",
+            "reference": "TASK6545767",
+            "detail": "Handover task TASK6545767 completed — workspace ready"
+          }
+        ]
+      }
+    },
+    {
+      "id": "TniNHxikrD",
+      "type": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "steps-demo",
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 40,
+        "requestedBy": "admin",
+        "requestId": "Fr-akhzGmZhZ"
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"steps-demo\" completed. Open the summary for the full workflow.",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "steps-demo",
+          "type": "vm",
+          "ip": "10.61.172.169",
+          "environment": "VLAN141",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T03:50:06.456Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T03:50:06.459Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"steps-demo\"…"
+        },
+        {
+          "ts": "2026-07-04T03:50:06.491Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow)…"
+        },
+        {
+          "ts": "2026-07-04T03:50:08.723Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow) — done · REQ4507543"
+        },
+        {
+          "ts": "2026-07-04T03:50:08.726Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM…"
+        },
+        {
+          "ts": "2026-07-04T03:50:11.371Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM — done · 10.61.172.169"
+        },
+        {
+          "ts": "2026-07-04T03:50:11.373Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter…"
+        },
+        {
+          "ts": "2026-07-04T03:50:13.814Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter — done · esx-32.dc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:50:13.817Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN…"
+        },
+        {
+          "ts": "2026-07-04T03:50:16.665Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN — done · vol-25011044"
+        },
+        {
+          "ts": "2026-07-04T03:50:16.668Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules…"
+        },
+        {
+          "ts": "2026-07-04T03:50:19.722Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules — done · CHG8829822"
+        },
+        {
+          "ts": "2026-07-04T03:50:19.724Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record…"
+        },
+        {
+          "ts": "2026-07-04T03:50:22.064Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record — done · steps-demo.cpc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:50:22.066Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB…"
+        },
+        {
+          "ts": "2026-07-04T03:50:24.617Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB — done · CI15505037"
+        },
+        {
+          "ts": "2026-07-04T03:50:24.620Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace…"
+        },
+        {
+          "ts": "2026-07-04T03:50:26.674Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace — done · TASK1973607"
+        },
+        {
+          "ts": "2026-07-04T03:50:26.676Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"steps-demo\" completed. Open the summary for the full workflow."
+        }
+      ],
+      "createdAt": "2026-07-04T03:50:06.456Z",
+      "updatedAt": "2026-07-04T03:50:26.676Z",
+      "steps": [
+        {
+          "key": "itsm",
+          "label": "Registering the service request in ITSM (ServiceNow)",
+          "state": "done",
+          "system": "ServiceNow ITSM",
+          "reference": "REQ4507543",
+          "detail": "Service request REQ4507543 opened for steps-demo"
+        },
+        {
+          "key": "ipam",
+          "label": "Requesting an IP address from IPAM",
+          "state": "done",
+          "system": "Infoblox IPAM",
+          "reference": "10.61.172.169",
+          "detail": "Allocated 10.61.172.169/24 on VLAN 141 (gw 10.61.172.1)"
+        },
+        {
+          "key": "compute",
+          "label": "Reserving compute capacity in the datacenter",
+          "state": "done",
+          "system": "Datacenter Capacity Broker",
+          "reference": "esx-32.dc.internal",
+          "detail": "Reserved 2 vCPU / 4 GB RAM on esx-32.dc.internal (PROD-CL2)"
+        },
+        {
+          "key": "storage",
+          "label": "Reserving a storage volume on the SAN",
+          "state": "done",
+          "system": "SAN Storage Orchestrator",
+          "reference": "vol-25011044",
+          "detail": "Reserved 40 GB volume vol-25011044 on ds-san-prod-04 (tier: gold)"
+        },
+        {
+          "key": "firewall",
+          "label": "Requesting firewall access rules",
+          "state": "done",
+          "system": "Firewall Change System",
+          "reference": "CHG8829822",
+          "detail": "CHG8829822 approved — 3 rules opened for 10.61.172.169"
+        },
+        {
+          "key": "dns",
+          "label": "Creating the DNS record",
+          "state": "done",
+          "system": "Internal DNS",
+          "reference": "steps-demo.cpc.internal",
+          "detail": "Created A record steps-demo.cpc.internal -> 10.61.172.169"
+        },
+        {
+          "key": "cmdb",
+          "label": "Registering the configuration item in the CMDB",
+          "state": "done",
+          "system": "CMDB",
+          "reference": "CI15505037",
+          "detail": "Registered CI CI15505037 (steps-demo) — owner admin"
+        },
+        {
+          "key": "handover",
+          "label": "Finalizing and handing over the workspace",
+          "state": "done",
+          "system": "ServiceNow ITSM",
+          "reference": "TASK1973607",
+          "detail": "Handover task TASK1973607 completed — workspace ready"
+        }
+      ],
+      "result": {
+        "hostname": "steps-demo",
+        "provider": "internal",
+        "simulated": true,
+        "ip": "10.61.172.169",
+        "fqdn": "steps-demo.cpc.internal",
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 40,
+        "workflow": [
+          {
+            "step": "Registering the service request in ITSM (ServiceNow)",
+            "system": "ServiceNow ITSM",
+            "reference": "REQ4507543",
+            "detail": "Service request REQ4507543 opened for steps-demo"
+          },
+          {
+            "step": "Requesting an IP address from IPAM",
+            "system": "Infoblox IPAM",
+            "reference": "10.61.172.169",
+            "detail": "Allocated 10.61.172.169/24 on VLAN 141 (gw 10.61.172.1)"
+          },
+          {
+            "step": "Reserving compute capacity in the datacenter",
+            "system": "Datacenter Capacity Broker",
+            "reference": "esx-32.dc.internal",
+            "detail": "Reserved 2 vCPU / 4 GB RAM on esx-32.dc.internal (PROD-CL2)"
+          },
+          {
+            "step": "Reserving a storage volume on the SAN",
+            "system": "SAN Storage Orchestrator",
+            "reference": "vol-25011044",
+            "detail": "Reserved 40 GB volume vol-25011044 on ds-san-prod-04 (tier: gold)"
+          },
+          {
+            "step": "Requesting firewall access rules",
+            "system": "Firewall Change System",
+            "reference": "CHG8829822",
+            "detail": "CHG8829822 approved — 3 rules opened for 10.61.172.169"
+          },
+          {
+            "step": "Creating the DNS record",
+            "system": "Internal DNS",
+            "reference": "steps-demo.cpc.internal",
+            "detail": "Created A record steps-demo.cpc.internal -> 10.61.172.169"
+          },
+          {
+            "step": "Registering the configuration item in the CMDB",
+            "system": "CMDB",
+            "reference": "CI15505037",
+            "detail": "Registered CI CI15505037 (steps-demo) — owner admin"
+          },
+          {
+            "step": "Finalizing and handing over the workspace",
+            "system": "ServiceNow ITSM",
+            "reference": "TASK1973607",
+            "detail": "Handover task TASK1973607 completed — workspace ready"
+          }
+        ]
+      }
+    },
+    {
+      "id": "8x6m3pZKpu",
+      "type": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "4ld6NsGaS31u"
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow.",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "test",
+          "type": "vm",
+          "ip": "10.116.231.196",
+          "environment": "VLAN196",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T03:51:50.154Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T03:51:50.160Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test\"…"
+        },
+        {
+          "ts": "2026-07-04T03:51:50.217Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow)…"
+        },
+        {
+          "ts": "2026-07-04T03:51:52.486Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM (ServiceNow) — done · REQ4507544"
+        },
+        {
+          "ts": "2026-07-04T03:51:52.488Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM…"
+        },
+        {
+          "ts": "2026-07-04T03:51:55.136Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM — done · 10.116.231.196"
+        },
+        {
+          "ts": "2026-07-04T03:51:55.140Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter…"
+        },
+        {
+          "ts": "2026-07-04T03:51:57.594Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter — done · esx-05.dc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:51:57.596Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN…"
+        },
+        {
+          "ts": "2026-07-04T03:52:00.437Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN — done · vol-32057503"
+        },
+        {
+          "ts": "2026-07-04T03:52:00.441Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules…"
+        },
+        {
+          "ts": "2026-07-04T03:52:03.482Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules — done · CHG8725931"
+        },
+        {
+          "ts": "2026-07-04T03:52:03.486Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record…"
+        },
+        {
+          "ts": "2026-07-04T03:52:05.828Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record — done · test.cpc.internal"
+        },
+        {
+          "ts": "2026-07-04T03:52:05.830Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB…"
+        },
+        {
+          "ts": "2026-07-04T03:52:08.367Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB — done · CI62858350"
+        },
+        {
+          "ts": "2026-07-04T03:52:08.370Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace…"
+        },
+        {
+          "ts": "2026-07-04T03:52:10.406Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace — done · TASK5133557"
+        },
+        {
+          "ts": "2026-07-04T03:52:10.409Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow."
+        }
+      ],
+      "createdAt": "2026-07-04T03:51:50.154Z",
+      "updatedAt": "2026-07-04T03:52:10.409Z",
+      "steps": [
+        {
+          "key": "itsm",
+          "label": "Registering the service request in ITSM (ServiceNow)",
+          "state": "done",
+          "system": "ServiceNow ITSM",
+          "reference": "REQ4507544",
+          "detail": "Service request REQ4507544 opened for test"
+        },
+        {
+          "key": "ipam",
+          "label": "Requesting an IP address from IPAM",
+          "state": "done",
+          "system": "Infoblox IPAM",
+          "reference": "10.116.231.196",
+          "detail": "Allocated 10.116.231.196/24 on VLAN 196 (gw 10.116.231.1)"
+        },
+        {
+          "key": "compute",
+          "label": "Reserving compute capacity in the datacenter",
+          "state": "done",
+          "system": "Datacenter Capacity Broker",
+          "reference": "esx-05.dc.internal",
+          "detail": "Reserved 2 vCPU / 2 GB RAM on esx-05.dc.internal (PROD-CL4)"
+        },
+        {
+          "key": "storage",
+          "label": "Reserving a storage volume on the SAN",
+          "state": "done",
+          "system": "SAN Storage Orchestrator",
+          "reference": "vol-32057503",
+          "detail": "Reserved 50 GB volume vol-32057503 on ds-san-prod-02 (tier: gold)"
+        },
+        {
+          "key": "firewall",
+          "label": "Requesting firewall access rules",
+          "state": "done",
+          "system": "Firewall Change System",
+          "reference": "CHG8725931",
+          "detail": "CHG8725931 approved — 3 rules opened for 10.116.231.196"
+        },
+        {
+          "key": "dns",
+          "label": "Creating the DNS record",
+          "state": "done",
+          "system": "Internal DNS",
+          "reference": "test.cpc.internal",
+          "detail": "Created A record test.cpc.internal -> 10.116.231.196"
+        },
+        {
+          "key": "cmdb",
+          "label": "Registering the configuration item in the CMDB",
+          "state": "done",
+          "system": "CMDB",
+          "reference": "CI62858350",
+          "detail": "Registered CI CI62858350 (test) — owner admin"
+        },
+        {
+          "key": "handover",
+          "label": "Finalizing and handing over the workspace",
+          "state": "done",
+          "system": "ServiceNow ITSM",
+          "reference": "TASK5133557",
+          "detail": "Handover task TASK5133557 completed — workspace ready"
+        }
+      ],
+      "result": {
+        "hostname": "test",
+        "provider": "internal",
+        "simulated": true,
+        "ip": "10.116.231.196",
+        "fqdn": "test.cpc.internal",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "workflow": [
+          {
+            "step": "Registering the service request in ITSM (ServiceNow)",
+            "system": "ServiceNow ITSM",
+            "reference": "REQ4507544",
+            "detail": "Service request REQ4507544 opened for test"
+          },
+          {
+            "step": "Requesting an IP address from IPAM",
+            "system": "Infoblox IPAM",
+            "reference": "10.116.231.196",
+            "detail": "Allocated 10.116.231.196/24 on VLAN 196 (gw 10.116.231.1)"
+          },
+          {
+            "step": "Reserving compute capacity in the datacenter",
+            "system": "Datacenter Capacity Broker",
+            "reference": "esx-05.dc.internal",
+            "detail": "Reserved 2 vCPU / 2 GB RAM on esx-05.dc.internal (PROD-CL4)"
+          },
+          {
+            "step": "Reserving a storage volume on the SAN",
+            "system": "SAN Storage Orchestrator",
+            "reference": "vol-32057503",
+            "detail": "Reserved 50 GB volume vol-32057503 on ds-san-prod-02 (tier: gold)"
+          },
+          {
+            "step": "Requesting firewall access rules",
+            "system": "Firewall Change System",
+            "reference": "CHG8725931",
+            "detail": "CHG8725931 approved — 3 rules opened for 10.116.231.196"
+          },
+          {
+            "step": "Creating the DNS record",
+            "system": "Internal DNS",
+            "reference": "test.cpc.internal",
+            "detail": "Created A record test.cpc.internal -> 10.116.231.196"
+          },
+          {
+            "step": "Registering the configuration item in the CMDB",
+            "system": "CMDB",
+            "reference": "CI62858350",
+            "detail": "Registered CI CI62858350 (test) — owner admin"
+          },
+          {
+            "step": "Finalizing and handing over the workspace",
+            "system": "ServiceNow ITSM",
+            "reference": "TASK5133557",
+            "detail": "Handover task TASK5133557 completed — workspace ready"
+          }
+        ]
+      }
+    },
+    {
+      "id": "8sTXCmGxxw",
+      "type": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "GUUIrF2NGhHc"
+      },
+      "status": "failed",
+      "message": "The internal provisioning workflow hit an error. Open the summary for details.",
+      "resources": [],
+      "error": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings.",
+      "logs": [
+        {
+          "ts": "2026-07-04T04:28:33.677Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T04:28:33.682Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test\"…"
+        },
+        {
+          "ts": "2026-07-04T04:28:33.715Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM…"
+        },
+        {
+          "ts": "2026-07-04T04:28:33.796Z",
+          "status": "failed",
+          "message": "The internal provisioning workflow hit an error. Open the summary for details.",
+          "error": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings."
+        },
+        {
+          "ts": "2026-07-04T04:28:33.811Z",
+          "status": "failed",
+          "message": "ServiceNow incident INC1003899 raised for this failure."
+        }
+      ],
+      "createdAt": "2026-07-04T04:28:33.677Z",
+      "updatedAt": "2026-07-04T04:28:33.796Z",
+      "steps": [
+        {
+          "key": "itsm",
+          "label": "Registering the service request in ITSM",
+          "state": "error",
+          "system": null,
+          "reference": null,
+          "detail": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings."
+        },
+        {
+          "key": "ipam",
+          "label": "Requesting an IP address from IPAM",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "compute",
+          "label": "Reserving compute capacity in the datacenter",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "storage",
+          "label": "Reserving a storage volume on the SAN",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "firewall",
+          "label": "Requesting firewall access rules",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "dns",
+          "label": "Creating the DNS record",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "cmdb",
+          "label": "Registering the configuration item in the CMDB",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "handover",
+          "label": "Finalizing and handing over the workspace",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        }
+      ],
+      "incident": {
+        "number": "INC1003899",
+        "sysId": "d625edf365d2d7570d000bfbd1dd08ce",
+        "state": "New",
+        "priority": "3 - Moderate",
+        "shortDescription": "CPC provisioning failed: test",
+        "description": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings.",
+        "callerId": "admin",
+        "jobId": "8sTXCmGxxw",
+        "url": "https://dev-cpc.service-now.com/nav_to.do?uri=incident.do?sys_id=d625edf365d2d7570d000bfbd1dd08ce",
+        "createdAt": "2026-07-04T04:28:33.796Z",
+        "mock": true
+      }
+    },
+    {
+      "id": "LL5HVulgC-",
+      "type": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test123",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "WVksR1BtKNMC"
+      },
+      "status": "failed",
+      "message": "The internal provisioning workflow hit an error. Open the summary for details.",
+      "resources": [],
+      "error": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings.",
+      "logs": [
+        {
+          "ts": "2026-07-04T04:29:07.426Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T04:29:07.429Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test123\"…"
+        },
+        {
+          "ts": "2026-07-04T04:29:07.460Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM…"
+        },
+        {
+          "ts": "2026-07-04T04:29:07.521Z",
+          "status": "failed",
+          "message": "The internal provisioning workflow hit an error. Open the summary for details.",
+          "error": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings."
+        },
+        {
+          "ts": "2026-07-04T04:29:07.529Z",
+          "status": "failed",
+          "message": "ServiceNow incident INC1003900 raised for this failure."
+        }
+      ],
+      "createdAt": "2026-07-04T04:29:07.426Z",
+      "updatedAt": "2026-07-04T04:29:07.521Z",
+      "steps": [
+        {
+          "key": "itsm",
+          "label": "Registering the service request in ITSM",
+          "state": "error",
+          "system": null,
+          "reference": null,
+          "detail": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings."
+        },
+        {
+          "key": "ipam",
+          "label": "Requesting an IP address from IPAM",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "compute",
+          "label": "Reserving compute capacity in the datacenter",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "storage",
+          "label": "Reserving a storage volume on the SAN",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "firewall",
+          "label": "Requesting firewall access rules",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "dns",
+          "label": "Creating the DNS record",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "cmdb",
+          "label": "Registering the configuration item in the CMDB",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        },
+        {
+          "key": "handover",
+          "label": "Finalizing and handing over the workspace",
+          "state": "pending",
+          "system": null,
+          "reference": null,
+          "detail": null
+        }
+      ],
+      "incident": {
+        "number": "INC1003900",
+        "sysId": "6d089c96fb63ee89de0079a3d5d7df3b",
+        "state": "New",
+        "priority": "3 - Moderate",
+        "shortDescription": "CPC provisioning failed: test123",
+        "description": "itsm endpoint is not configured — set INTERNAL_ITSM_URL in Settings.",
+        "callerId": "admin",
+        "jobId": "LL5HVulgC-",
+        "url": "https://dev-cpc.service-now.com/nav_to.do?uri=incident.do?sys_id=6d089c96fb63ee89de0079a3d5d7df3b",
+        "createdAt": "2026-07-04T04:29:07.521Z",
+        "mock": true
+      }
+    },
+    {
+      "id": "MBVNtEbia-",
+      "type": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "5MXnF7h3Py4b"
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"test\" completed, but every step was skipped — no internal systems are configured yet (Settings → Internal provisioning systems).",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "test",
+          "type": "vm",
+          "ip": null,
+          "environment": null,
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T04:40:01.759Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.764Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test\"…"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.803Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM — skipped (ITSM not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.833Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM — skipped (IPAM not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.863Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter — skipped (COMPUTE not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.887Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN — skipped (STORAGE not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.915Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules — skipped (FIREWALL not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.946Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record — skipped (DNS not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:01.974Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB — skipped (CMDB not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:02.004Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace — skipped (ITSM not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:40:02.029Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"test\" completed, but every step was skipped — no internal systems are configured yet (Settings → Internal provisioning systems)."
+        }
+      ],
+      "createdAt": "2026-07-04T04:40:01.759Z",
+      "updatedAt": "2026-07-04T04:40:02.029Z",
+      "steps": [
+        {
+          "key": "itsm",
+          "label": "Registering the service request in ITSM",
+          "state": "skipped",
+          "system": "ITSM",
+          "reference": "skipped",
+          "detail": "ITSM endpoint not configured — step skipped"
+        },
+        {
+          "key": "ipam",
+          "label": "Requesting an IP address from IPAM",
+          "state": "skipped",
+          "system": "IPAM",
+          "reference": "skipped",
+          "detail": "IPAM endpoint not configured — step skipped"
+        },
+        {
+          "key": "compute",
+          "label": "Reserving compute capacity in the datacenter",
+          "state": "skipped",
+          "system": "COMPUTE",
+          "reference": "skipped",
+          "detail": "COMPUTE endpoint not configured — step skipped"
+        },
+        {
+          "key": "storage",
+          "label": "Reserving a storage volume on the SAN",
+          "state": "skipped",
+          "system": "STORAGE",
+          "reference": "skipped",
+          "detail": "STORAGE endpoint not configured — step skipped"
+        },
+        {
+          "key": "firewall",
+          "label": "Requesting firewall access rules",
+          "state": "skipped",
+          "system": "FIREWALL",
+          "reference": "skipped",
+          "detail": "FIREWALL endpoint not configured — step skipped"
+        },
+        {
+          "key": "dns",
+          "label": "Creating the DNS record",
+          "state": "skipped",
+          "system": "DNS",
+          "reference": "skipped",
+          "detail": "DNS endpoint not configured — step skipped"
+        },
+        {
+          "key": "cmdb",
+          "label": "Registering the configuration item in the CMDB",
+          "state": "skipped",
+          "system": "CMDB",
+          "reference": "skipped",
+          "detail": "CMDB endpoint not configured — step skipped"
+        },
+        {
+          "key": "handover",
+          "label": "Finalizing and handing over the workspace",
+          "state": "skipped",
+          "system": "ITSM",
+          "reference": "skipped",
+          "detail": "ITSM endpoint not configured — step skipped"
+        }
+      ],
+      "result": {
+        "hostname": "test",
+        "provider": "internal",
+        "ip": null,
+        "fqdn": null,
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "skipped": 8,
+        "workflow": [
+          {
+            "step": "Registering the service request in ITSM",
+            "system": "ITSM",
+            "reference": "skipped",
+            "detail": "ITSM endpoint not configured — step skipped"
+          },
+          {
+            "step": "Requesting an IP address from IPAM",
+            "system": "IPAM",
+            "reference": "skipped",
+            "detail": "IPAM endpoint not configured — step skipped"
+          },
+          {
+            "step": "Reserving compute capacity in the datacenter",
+            "system": "COMPUTE",
+            "reference": "skipped",
+            "detail": "COMPUTE endpoint not configured — step skipped"
+          },
+          {
+            "step": "Reserving a storage volume on the SAN",
+            "system": "STORAGE",
+            "reference": "skipped",
+            "detail": "STORAGE endpoint not configured — step skipped"
+          },
+          {
+            "step": "Requesting firewall access rules",
+            "system": "FIREWALL",
+            "reference": "skipped",
+            "detail": "FIREWALL endpoint not configured — step skipped"
+          },
+          {
+            "step": "Creating the DNS record",
+            "system": "DNS",
+            "reference": "skipped",
+            "detail": "DNS endpoint not configured — step skipped"
+          },
+          {
+            "step": "Registering the configuration item in the CMDB",
+            "system": "CMDB",
+            "reference": "skipped",
+            "detail": "CMDB endpoint not configured — step skipped"
+          },
+          {
+            "step": "Finalizing and handing over the workspace",
+            "system": "ITSM",
+            "reference": "skipped",
+            "detail": "ITSM endpoint not configured — step skipped"
+          }
+        ]
+      }
+    },
+    {
+      "id": "ZVl_eYTC7F",
+      "type": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "7-P_hFlvRPp7"
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"test\" completed, but every step was skipped — no internal systems are configured yet (Settings → Internal provisioning systems).",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "test",
+          "type": "vm",
+          "ip": null,
+          "environment": null,
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T04:43:09.722Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T04:43:09.734Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test\"…"
+        },
+        {
+          "ts": "2026-07-04T04:43:09.822Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM — skipped (ITSM not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:09.881Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM — skipped (IPAM not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:09.936Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter — skipped (COMPUTE not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:09.995Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN — skipped (STORAGE not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:10.053Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules — skipped (FIREWALL not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:10.118Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record — skipped (DNS not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:10.181Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB — skipped (CMDB not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:10.253Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace — skipped (ITSM not configured)"
+        },
+        {
+          "ts": "2026-07-04T04:43:10.315Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"test\" completed, but every step was skipped — no internal systems are configured yet (Settings → Internal provisioning systems)."
+        }
+      ],
+      "createdAt": "2026-07-04T04:43:09.722Z",
+      "updatedAt": "2026-07-04T04:43:10.314Z",
+      "steps": [
+        {
+          "key": "itsm",
+          "label": "Registering the service request in ITSM",
+          "state": "skipped",
+          "system": "ITSM",
+          "reference": "skipped",
+          "detail": "ITSM endpoint not configured — step skipped"
+        },
+        {
+          "key": "ipam",
+          "label": "Requesting an IP address from IPAM",
+          "state": "skipped",
+          "system": "IPAM",
+          "reference": "skipped",
+          "detail": "IPAM endpoint not configured — step skipped"
+        },
+        {
+          "key": "compute",
+          "label": "Reserving compute capacity in the datacenter",
+          "state": "skipped",
+          "system": "COMPUTE",
+          "reference": "skipped",
+          "detail": "COMPUTE endpoint not configured — step skipped"
+        },
+        {
+          "key": "storage",
+          "label": "Reserving a storage volume on the SAN",
+          "state": "skipped",
+          "system": "STORAGE",
+          "reference": "skipped",
+          "detail": "STORAGE endpoint not configured — step skipped"
+        },
+        {
+          "key": "firewall",
+          "label": "Requesting firewall access rules",
+          "state": "skipped",
+          "system": "FIREWALL",
+          "reference": "skipped",
+          "detail": "FIREWALL endpoint not configured — step skipped"
+        },
+        {
+          "key": "dns",
+          "label": "Creating the DNS record",
+          "state": "skipped",
+          "system": "DNS",
+          "reference": "skipped",
+          "detail": "DNS endpoint not configured — step skipped"
+        },
+        {
+          "key": "cmdb",
+          "label": "Registering the configuration item in the CMDB",
+          "state": "skipped",
+          "system": "CMDB",
+          "reference": "skipped",
+          "detail": "CMDB endpoint not configured — step skipped"
+        },
+        {
+          "key": "handover",
+          "label": "Finalizing and handing over the workspace",
+          "state": "skipped",
+          "system": "ITSM",
+          "reference": "skipped",
+          "detail": "ITSM endpoint not configured — step skipped"
+        }
+      ],
+      "result": {
+        "hostname": "test",
+        "provider": "internal",
+        "ip": null,
+        "fqdn": null,
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "skipped": 8,
+        "workflow": [
+          {
+            "step": "Registering the service request in ITSM",
+            "system": "ITSM",
+            "reference": "skipped",
+            "detail": "ITSM endpoint not configured — step skipped"
+          },
+          {
+            "step": "Requesting an IP address from IPAM",
+            "system": "IPAM",
+            "reference": "skipped",
+            "detail": "IPAM endpoint not configured — step skipped"
+          },
+          {
+            "step": "Reserving compute capacity in the datacenter",
+            "system": "COMPUTE",
+            "reference": "skipped",
+            "detail": "COMPUTE endpoint not configured — step skipped"
+          },
+          {
+            "step": "Reserving a storage volume on the SAN",
+            "system": "STORAGE",
+            "reference": "skipped",
+            "detail": "STORAGE endpoint not configured — step skipped"
+          },
+          {
+            "step": "Requesting firewall access rules",
+            "system": "FIREWALL",
+            "reference": "skipped",
+            "detail": "FIREWALL endpoint not configured — step skipped"
+          },
+          {
+            "step": "Creating the DNS record",
+            "system": "DNS",
+            "reference": "skipped",
+            "detail": "DNS endpoint not configured — step skipped"
+          },
+          {
+            "step": "Registering the configuration item in the CMDB",
+            "system": "CMDB",
+            "reference": "skipped",
+            "detail": "CMDB endpoint not configured — step skipped"
+          },
+          {
+            "step": "Finalizing and handing over the workspace",
+            "system": "ITSM",
+            "reference": "skipped",
+            "detail": "ITSM endpoint not configured — step skipped"
+          }
+        ]
+      }
+    },
+    {
+      "id": "IYPhly_Cmm",
+      "type": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "mou20As1LTwY"
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow.",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "test",
+          "type": "vm",
+          "ip": "10.92.201.224",
+          "environment": "VLAN172",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T04:43:48.253Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T04:43:48.257Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test\"…"
+        },
+        {
+          "ts": "2026-07-04T04:43:48.296Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM…"
+        },
+        {
+          "ts": "2026-07-04T04:43:49.846Z",
+          "status": "provisioning",
+          "message": "Registering the service request in ITSM — done · REQ4508423"
+        },
+        {
+          "ts": "2026-07-04T04:43:49.848Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM…"
+        },
+        {
+          "ts": "2026-07-04T04:43:51.386Z",
+          "status": "provisioning",
+          "message": "Requesting an IP address from IPAM — done · 10.92.201.224"
+        },
+        {
+          "ts": "2026-07-04T04:43:51.389Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter…"
+        },
+        {
+          "ts": "2026-07-04T04:43:52.928Z",
+          "status": "provisioning",
+          "message": "Reserving compute capacity in the datacenter — done · esx-14.dc.internal"
+        },
+        {
+          "ts": "2026-07-04T04:43:52.930Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN…"
+        },
+        {
+          "ts": "2026-07-04T04:43:54.477Z",
+          "status": "provisioning",
+          "message": "Reserving a storage volume on the SAN — done · vol-82145898"
+        },
+        {
+          "ts": "2026-07-04T04:43:54.480Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules…"
+        },
+        {
+          "ts": "2026-07-04T04:43:56.044Z",
+          "status": "provisioning",
+          "message": "Requesting firewall access rules — done · CHG8678889"
+        },
+        {
+          "ts": "2026-07-04T04:43:56.047Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record…"
+        },
+        {
+          "ts": "2026-07-04T04:43:57.591Z",
+          "status": "provisioning",
+          "message": "Creating the DNS record — done · test.cpc.internal"
+        },
+        {
+          "ts": "2026-07-04T04:43:57.594Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB…"
+        },
+        {
+          "ts": "2026-07-04T04:43:59.136Z",
+          "status": "provisioning",
+          "message": "Registering the configuration item in the CMDB — done · CI67384576"
+        },
+        {
+          "ts": "2026-07-04T04:43:59.140Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace…"
+        },
+        {
+          "ts": "2026-07-04T04:44:00.683Z",
+          "status": "provisioning",
+          "message": "Finalizing and handing over the workspace — done · TASK5359915"
+        },
+        {
+          "ts": "2026-07-04T04:44:00.687Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow."
+        }
+      ],
+      "createdAt": "2026-07-04T04:43:48.253Z",
+      "updatedAt": "2026-07-04T04:44:00.686Z",
+      "steps": [
+        {
+          "key": "itsm",
+          "label": "Registering the service request in ITSM",
+          "state": "done",
+          "system": "ServiceNow ITSM",
+          "reference": "REQ4508423",
+          "detail": "Service request REQ4508423 opened for test"
+        },
+        {
+          "key": "ipam",
+          "label": "Requesting an IP address from IPAM",
+          "state": "done",
+          "system": "Infoblox IPAM",
+          "reference": "10.92.201.224",
+          "detail": "Allocated 10.92.201.224/24 on VLAN 172 (gw 10.92.201.1)"
+        },
+        {
+          "key": "compute",
+          "label": "Reserving compute capacity in the datacenter",
+          "state": "done",
+          "system": "Datacenter Capacity Broker",
+          "reference": "esx-14.dc.internal",
+          "detail": "Reserved 2 vCPU / 2 GB RAM on esx-14.dc.internal (PROD-CL1)"
+        },
+        {
+          "key": "storage",
+          "label": "Reserving a storage volume on the SAN",
+          "state": "done",
+          "system": "SAN Storage Orchestrator",
+          "reference": "vol-82145898",
+          "detail": "Reserved 50 GB volume vol-82145898 on ds-san-prod-08 (tier: gold)"
+        },
+        {
+          "key": "firewall",
+          "label": "Requesting firewall access rules",
+          "state": "done",
+          "system": "Firewall Change System",
+          "reference": "CHG8678889",
+          "detail": "CHG8678889 approved — 3 rules opened for 10.92.201.224"
+        },
+        {
+          "key": "dns",
+          "label": "Creating the DNS record",
+          "state": "done",
+          "system": "Internal DNS",
+          "reference": "test.cpc.internal",
+          "detail": "Created A record test.cpc.internal -> 10.92.201.224"
+        },
+        {
+          "key": "cmdb",
+          "label": "Registering the configuration item in the CMDB",
+          "state": "done",
+          "system": "CMDB",
+          "reference": "CI67384576",
+          "detail": "Registered CI CI67384576 (test) — owner admin"
+        },
+        {
+          "key": "handover",
+          "label": "Finalizing and handing over the workspace",
+          "state": "done",
+          "system": "ServiceNow ITSM",
+          "reference": "TASK5359915",
+          "detail": "Handover task TASK5359915 completed — workspace ready"
+        }
+      ],
+      "result": {
+        "hostname": "test",
+        "provider": "internal",
+        "ip": "10.92.201.224",
+        "fqdn": "test.cpc.internal",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "workflow": [
+          {
+            "step": "Registering the service request in ITSM",
+            "system": "ServiceNow ITSM",
+            "reference": "REQ4508423",
+            "detail": "Service request REQ4508423 opened for test"
+          },
+          {
+            "step": "Requesting an IP address from IPAM",
+            "system": "Infoblox IPAM",
+            "reference": "10.92.201.224",
+            "detail": "Allocated 10.92.201.224/24 on VLAN 172 (gw 10.92.201.1)"
+          },
+          {
+            "step": "Reserving compute capacity in the datacenter",
+            "system": "Datacenter Capacity Broker",
+            "reference": "esx-14.dc.internal",
+            "detail": "Reserved 2 vCPU / 2 GB RAM on esx-14.dc.internal (PROD-CL1)"
+          },
+          {
+            "step": "Reserving a storage volume on the SAN",
+            "system": "SAN Storage Orchestrator",
+            "reference": "vol-82145898",
+            "detail": "Reserved 50 GB volume vol-82145898 on ds-san-prod-08 (tier: gold)"
+          },
+          {
+            "step": "Requesting firewall access rules",
+            "system": "Firewall Change System",
+            "reference": "CHG8678889",
+            "detail": "CHG8678889 approved — 3 rules opened for 10.92.201.224"
+          },
+          {
+            "step": "Creating the DNS record",
+            "system": "Internal DNS",
+            "reference": "test.cpc.internal",
+            "detail": "Created A record test.cpc.internal -> 10.92.201.224"
+          },
+          {
+            "step": "Registering the configuration item in the CMDB",
+            "system": "CMDB",
+            "reference": "CI67384576",
+            "detail": "Registered CI CI67384576 (test) — owner admin"
+          },
+          {
+            "step": "Finalizing and handing over the workspace",
+            "system": "ServiceNow ITSM",
+            "reference": "TASK5359915",
+            "detail": "Handover task TASK5359915 completed — workspace ready"
+          }
+        ]
+      }
+    },
+    {
+      "id": "d5YE-9aIHW",
+      "type": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "J7LWM2Tqv_Bg",
+        "autoApproved": true,
+        "approvedBy": null
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow.",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "test",
+          "type": "vm",
+          "ip": "10.27.230.160",
+          "environment": "VLAN105",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T06:00:18.962Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T06:00:18.969Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"test\"…"
+        },
+        {
+          "ts": "2026-07-04T06:00:19.002Z",
+          "status": "provisioning",
+          "message": "Determine datacenter — calling Linux team API…"
+        },
+        {
+          "ts": "2026-07-04T06:00:20.549Z",
+          "status": "provisioning",
+          "message": "Determine datacenter — called Linux team API · DC Ghislenghien"
+        },
+        {
+          "ts": "2026-07-04T06:00:20.553Z",
+          "status": "provisioning",
+          "message": "Reserve server street — calling Linux team API…"
+        },
+        {
+          "ts": "2026-07-04T06:00:22.090Z",
+          "status": "provisioning",
+          "message": "Reserve server street — called Linux team API · STR-07"
+        },
+        {
+          "ts": "2026-07-04T06:00:22.096Z",
+          "status": "provisioning",
+          "message": "Create / identify ISO / template — calling Linux team API…"
+        },
+        {
+          "ts": "2026-07-04T06:00:23.644Z",
+          "status": "provisioning",
+          "message": "Create / identify ISO / template — called Linux team API · rhel9-std-2024.03"
+        },
+        {
+          "ts": "2026-07-04T06:00:23.650Z",
+          "status": "provisioning",
+          "message": "Reserve IP — calling Network team API…"
+        },
+        {
+          "ts": "2026-07-04T06:00:25.203Z",
+          "status": "provisioning",
+          "message": "Reserve IP — called Network team API · 10.27.230.160"
+        },
+        {
+          "ts": "2026-07-04T06:00:25.208Z",
+          "status": "provisioning",
+          "message": "VM creation — calling Compute & Storage team API…"
+        },
+        {
+          "ts": "2026-07-04T06:00:26.763Z",
+          "status": "provisioning",
+          "message": "VM creation — called Compute & Storage team API · 27327"
+        },
+        {
+          "ts": "2026-07-04T06:00:26.768Z",
+          "status": "provisioning",
+          "message": "OMI agent — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:00:28.313Z",
+          "status": "provisioning",
+          "message": "OMI agent — called Linux team Ansible playbook · AAP-1839949"
+        },
+        {
+          "ts": "2026-07-04T06:00:28.319Z",
+          "status": "provisioning",
+          "message": "Setting PPDM tag — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:00:29.870Z",
+          "status": "provisioning",
+          "message": "Setting PPDM tag — called Linux team Ansible playbook · AAP-7917825"
+        },
+        {
+          "ts": "2026-07-04T06:00:29.875Z",
+          "status": "provisioning",
+          "message": "ServiceNow CMDB update — calling ServiceNow Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:00:31.421Z",
+          "status": "provisioning",
+          "message": "ServiceNow CMDB update — called ServiceNow Ansible playbook · CI00178246"
+        },
+        {
+          "ts": "2026-07-04T06:00:31.426Z",
+          "status": "provisioning",
+          "message": "Guardicore agent — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:00:32.979Z",
+          "status": "provisioning",
+          "message": "Guardicore agent — called Linux team Ansible playbook · AAP-5178001"
+        },
+        {
+          "ts": "2026-07-04T06:00:32.984Z",
+          "status": "provisioning",
+          "message": "Defender agent — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:00:34.534Z",
+          "status": "provisioning",
+          "message": "Defender agent — called Linux team Ansible playbook · AAP-2910329"
+        },
+        {
+          "ts": "2026-07-04T06:00:34.539Z",
+          "status": "provisioning",
+          "message": "Grant VM permissions — calling Compute & Storage team API…"
+        },
+        {
+          "ts": "2026-07-04T06:00:36.083Z",
+          "status": "provisioning",
+          "message": "Grant VM permissions — called Compute & Storage team API · PERM-989567"
+        },
+        {
+          "ts": "2026-07-04T06:00:36.088Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"test\" completed. Open the summary for the full workflow."
+        }
+      ],
+      "createdAt": "2026-07-04T06:00:18.962Z",
+      "updatedAt": "2026-07-04T06:00:36.088Z",
+      "steps": [
+        {
+          "key": "datacenter",
+          "stage": "Preparation",
+          "label": "Determine datacenter",
+          "via": "Linux team API",
+          "state": "done",
+          "system": "Linux team API",
+          "reference": "DC Ghislenghien",
+          "detail": "Target datacenter determined: DC Ghislenghien"
+        },
+        {
+          "key": "server-street",
+          "stage": "Preparation",
+          "label": "Reserve server street",
+          "via": "Linux team API",
+          "state": "done",
+          "system": "Linux team API",
+          "reference": "STR-07",
+          "detail": "Reserved server street STR-07 in DC Ghislenghien"
+        },
+        {
+          "key": "iso-template",
+          "stage": "Preparation",
+          "label": "Create / identify ISO / template",
+          "via": "Linux team API",
+          "state": "done",
+          "system": "Linux team API",
+          "reference": "rhel9-std-2024.03",
+          "detail": "Using build template rhel9-std-2024.03"
+        },
+        {
+          "key": "ip",
+          "stage": "Preparation",
+          "label": "Reserve IP",
+          "via": "Network team API",
+          "state": "done",
+          "system": "Network team API",
+          "reference": "10.27.230.160",
+          "detail": "Reserved 10.27.230.160/24 (gw 10.27.230.1, VLAN105)"
+        },
+        {
+          "key": "vm-create",
+          "stage": "Provisioning",
+          "label": "VM creation",
+          "via": "Compute & Storage team API",
+          "state": "done",
+          "system": "Compute & Storage team API",
+          "reference": "27327",
+          "detail": "Created VM test (id 27327) on esx-31.dc.internal"
+        },
+        {
+          "key": "omi",
+          "stage": "Post actions",
+          "label": "OMI agent",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-1839949",
+          "detail": "OMI monitoring agent installed and enrolled"
+        },
+        {
+          "key": "ppdm",
+          "stage": "Post actions",
+          "label": "Setting PPDM tag",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-7917825",
+          "detail": "PPDM backup tag applied"
+        },
+        {
+          "key": "cmdb",
+          "stage": "Post actions",
+          "label": "ServiceNow CMDB update",
+          "via": "ServiceNow Ansible playbook",
+          "state": "done",
+          "system": "ServiceNow Ansible playbook",
+          "reference": "CI00178246",
+          "detail": "CMDB configuration item created for test"
+        },
+        {
+          "key": "guardicore",
+          "stage": "Post actions",
+          "label": "Guardicore agent",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-5178001",
+          "detail": "Guardicore micro-segmentation agent installed"
+        },
+        {
+          "key": "defender",
+          "stage": "Post actions",
+          "label": "Defender agent",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-2910329",
+          "detail": "Microsoft Defender agent installed and onboarded"
+        },
+        {
+          "key": "grant-perms",
+          "stage": "Post actions",
+          "label": "Grant VM permissions",
+          "via": "Compute & Storage team API",
+          "state": "done",
+          "system": "Compute & Storage team API",
+          "reference": "PERM-989567",
+          "detail": "VM permissions granted to admin"
+        }
+      ],
+      "stages": [
+        "Preparation",
+        "Provisioning",
+        "Post actions"
+      ],
+      "result": {
+        "hostname": "test",
+        "provider": "internal",
+        "ip": "10.27.230.160",
+        "fqdn": null,
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "workflow": [
+          {
+            "step": "Determine datacenter",
+            "stage": "Preparation",
+            "system": "Linux team API",
+            "reference": "DC Ghislenghien",
+            "detail": "Target datacenter determined: DC Ghislenghien"
+          },
+          {
+            "step": "Reserve server street",
+            "stage": "Preparation",
+            "system": "Linux team API",
+            "reference": "STR-07",
+            "detail": "Reserved server street STR-07 in DC Ghislenghien"
+          },
+          {
+            "step": "Create / identify ISO / template",
+            "stage": "Preparation",
+            "system": "Linux team API",
+            "reference": "rhel9-std-2024.03",
+            "detail": "Using build template rhel9-std-2024.03"
+          },
+          {
+            "step": "Reserve IP",
+            "stage": "Preparation",
+            "system": "Network team API",
+            "reference": "10.27.230.160",
+            "detail": "Reserved 10.27.230.160/24 (gw 10.27.230.1, VLAN105)"
+          },
+          {
+            "step": "VM creation",
+            "stage": "Provisioning",
+            "system": "Compute & Storage team API",
+            "reference": "27327",
+            "detail": "Created VM test (id 27327) on esx-31.dc.internal"
+          },
+          {
+            "step": "OMI agent",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-1839949",
+            "detail": "OMI monitoring agent installed and enrolled"
+          },
+          {
+            "step": "Setting PPDM tag",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-7917825",
+            "detail": "PPDM backup tag applied"
+          },
+          {
+            "step": "ServiceNow CMDB update",
+            "stage": "Post actions",
+            "system": "ServiceNow Ansible playbook",
+            "reference": "CI00178246",
+            "detail": "CMDB configuration item created for test"
+          },
+          {
+            "step": "Guardicore agent",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-5178001",
+            "detail": "Guardicore micro-segmentation agent installed"
+          },
+          {
+            "step": "Defender agent",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-2910329",
+            "detail": "Microsoft Defender agent installed and onboarded"
+          },
+          {
+            "step": "Grant VM permissions",
+            "stage": "Post actions",
+            "system": "Compute & Storage team API",
+            "reference": "PERM-989567",
+            "detail": "VM permissions granted to admin"
+          }
+        ]
+      }
+    },
+    {
+      "id": "vzoqM2FhkB",
+      "type": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "prakashtest",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestedBy": "admin",
+        "requestId": "S4LFDKpAhAOB",
+        "autoApproved": true,
+        "approvedBy": null
+      },
+      "status": "ready",
+      "message": "Internal provisioning for \"prakashtest\" completed. Open the summary for the full workflow.",
+      "resources": [
+        {
+          "vmid": null,
+          "hostname": "prakashtest",
+          "type": "vm",
+          "ip": "10.50.225.68",
+          "environment": "VLAN154",
+          "sshReady": true
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T06:09:57.100Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T06:09:57.105Z",
+          "status": "provisioning",
+          "message": "Starting the internal provisioning workflow for \"prakashtest\"…"
+        },
+        {
+          "ts": "2026-07-04T06:09:57.132Z",
+          "status": "provisioning",
+          "message": "Determine datacenter — calling Linux team API…"
+        },
+        {
+          "ts": "2026-07-04T06:09:58.676Z",
+          "status": "provisioning",
+          "message": "Determine datacenter — Linux team API call succeeded · DC Ghislenghien"
+        },
+        {
+          "ts": "2026-07-04T06:09:58.680Z",
+          "status": "provisioning",
+          "message": "Reserve server street — calling Linux team API…"
+        },
+        {
+          "ts": "2026-07-04T06:10:00.223Z",
+          "status": "provisioning",
+          "message": "Reserve server street — Linux team API call succeeded · STR-11"
+        },
+        {
+          "ts": "2026-07-04T06:10:00.228Z",
+          "status": "provisioning",
+          "message": "Create / identify ISO / template — calling Linux team API…"
+        },
+        {
+          "ts": "2026-07-04T06:10:01.798Z",
+          "status": "provisioning",
+          "message": "Create / identify ISO / template — Linux team API call succeeded · rhel9-std-2026.04"
+        },
+        {
+          "ts": "2026-07-04T06:10:01.827Z",
+          "status": "provisioning",
+          "message": "Reserve IP — calling Network team API…"
+        },
+        {
+          "ts": "2026-07-04T06:10:03.374Z",
+          "status": "provisioning",
+          "message": "Reserve IP — Network team API call succeeded · 10.50.225.68"
+        },
+        {
+          "ts": "2026-07-04T06:10:03.379Z",
+          "status": "provisioning",
+          "message": "VM creation — calling Compute & Storage team API…"
+        },
+        {
+          "ts": "2026-07-04T06:10:04.909Z",
+          "status": "provisioning",
+          "message": "VM creation — Compute & Storage team API call succeeded · 41113"
+        },
+        {
+          "ts": "2026-07-04T06:10:04.913Z",
+          "status": "provisioning",
+          "message": "OMI agent — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:10:06.457Z",
+          "status": "provisioning",
+          "message": "OMI agent — Linux team Ansible playbook call succeeded · AAP-8523866"
+        },
+        {
+          "ts": "2026-07-04T06:10:06.461Z",
+          "status": "provisioning",
+          "message": "Setting PPDM tag — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:10:07.993Z",
+          "status": "provisioning",
+          "message": "Setting PPDM tag — Linux team Ansible playbook call succeeded · AAP-9911958"
+        },
+        {
+          "ts": "2026-07-04T06:10:07.998Z",
+          "status": "provisioning",
+          "message": "ServiceNow CMDB update — calling ServiceNow Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:10:09.536Z",
+          "status": "provisioning",
+          "message": "ServiceNow CMDB update — ServiceNow Ansible playbook call succeeded · CI12778978"
+        },
+        {
+          "ts": "2026-07-04T06:10:09.539Z",
+          "status": "provisioning",
+          "message": "Guardicore agent — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:10:11.088Z",
+          "status": "provisioning",
+          "message": "Guardicore agent — Linux team Ansible playbook call succeeded · AAP-7920510"
+        },
+        {
+          "ts": "2026-07-04T06:10:11.091Z",
+          "status": "provisioning",
+          "message": "Defender agent — calling Linux team Ansible playbook…"
+        },
+        {
+          "ts": "2026-07-04T06:10:12.633Z",
+          "status": "provisioning",
+          "message": "Defender agent — Linux team Ansible playbook call succeeded · AAP-5759979"
+        },
+        {
+          "ts": "2026-07-04T06:10:12.637Z",
+          "status": "provisioning",
+          "message": "Grant VM permissions — calling Compute & Storage team API…"
+        },
+        {
+          "ts": "2026-07-04T06:10:14.183Z",
+          "status": "provisioning",
+          "message": "Grant VM permissions — Compute & Storage team API call succeeded · PERM-801316"
+        },
+        {
+          "ts": "2026-07-04T06:10:14.187Z",
+          "status": "ready",
+          "message": "Internal provisioning for \"prakashtest\" completed. Open the summary for the full workflow."
+        }
+      ],
+      "createdAt": "2026-07-04T06:09:57.100Z",
+      "updatedAt": "2026-07-04T06:10:14.187Z",
+      "steps": [
+        {
+          "key": "datacenter",
+          "stage": "Preparation",
+          "label": "Determine datacenter",
+          "via": "Linux team API",
+          "state": "done",
+          "system": "Linux team API",
+          "reference": "DC Ghislenghien",
+          "detail": "Target datacenter determined: DC Ghislenghien"
+        },
+        {
+          "key": "server-street",
+          "stage": "Preparation",
+          "label": "Reserve server street",
+          "via": "Linux team API",
+          "state": "done",
+          "system": "Linux team API",
+          "reference": "STR-11",
+          "detail": "Reserved server street STR-11 in DC Ghislenghien"
+        },
+        {
+          "key": "iso-template",
+          "stage": "Preparation",
+          "label": "Create / identify ISO / template",
+          "via": "Linux team API",
+          "state": "done",
+          "system": "Linux team API",
+          "reference": "rhel9-std-2026.04",
+          "detail": "Using build template rhel9-std-2026.04"
+        },
+        {
+          "key": "ip",
+          "stage": "Preparation",
+          "label": "Reserve IP",
+          "via": "Network team API",
+          "state": "done",
+          "system": "Network team API",
+          "reference": "10.50.225.68",
+          "detail": "Reserved 10.50.225.68/24 (gw 10.50.225.1, VLAN154)"
+        },
+        {
+          "key": "vm-create",
+          "stage": "Provisioning",
+          "label": "VM creation",
+          "via": "Compute & Storage team API",
+          "state": "done",
+          "system": "Compute & Storage team API",
+          "reference": "41113",
+          "detail": "Created VM prakashtest (id 41113) on esx-26.dc.internal"
+        },
+        {
+          "key": "omi",
+          "stage": "Post actions",
+          "label": "OMI agent",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-8523866",
+          "detail": "OMI monitoring agent installed and enrolled"
+        },
+        {
+          "key": "ppdm",
+          "stage": "Post actions",
+          "label": "Setting PPDM tag",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-9911958",
+          "detail": "PPDM backup tag applied"
+        },
+        {
+          "key": "cmdb",
+          "stage": "Post actions",
+          "label": "ServiceNow CMDB update",
+          "via": "ServiceNow Ansible playbook",
+          "state": "done",
+          "system": "ServiceNow Ansible playbook",
+          "reference": "CI12778978",
+          "detail": "CMDB configuration item created for prakashtest"
+        },
+        {
+          "key": "guardicore",
+          "stage": "Post actions",
+          "label": "Guardicore agent",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-7920510",
+          "detail": "Guardicore micro-segmentation agent installed"
+        },
+        {
+          "key": "defender",
+          "stage": "Post actions",
+          "label": "Defender agent",
+          "via": "Linux team Ansible playbook",
+          "state": "done",
+          "system": "Linux team Ansible playbook",
+          "reference": "AAP-5759979",
+          "detail": "Microsoft Defender agent installed and onboarded"
+        },
+        {
+          "key": "grant-perms",
+          "stage": "Post actions",
+          "label": "Grant VM permissions",
+          "via": "Compute & Storage team API",
+          "state": "done",
+          "system": "Compute & Storage team API",
+          "reference": "PERM-801316",
+          "detail": "VM permissions granted to admin"
+        }
+      ],
+      "stages": [
+        "Preparation",
+        "Provisioning",
+        "Post actions"
+      ],
+      "result": {
+        "hostname": "prakashtest",
+        "provider": "internal",
+        "ip": "10.50.225.68",
+        "fqdn": null,
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "workflow": [
+          {
+            "step": "Determine datacenter",
+            "stage": "Preparation",
+            "system": "Linux team API",
+            "reference": "DC Ghislenghien",
+            "detail": "Target datacenter determined: DC Ghislenghien"
+          },
+          {
+            "step": "Reserve server street",
+            "stage": "Preparation",
+            "system": "Linux team API",
+            "reference": "STR-11",
+            "detail": "Reserved server street STR-11 in DC Ghislenghien"
+          },
+          {
+            "step": "Create / identify ISO / template",
+            "stage": "Preparation",
+            "system": "Linux team API",
+            "reference": "rhel9-std-2026.04",
+            "detail": "Using build template rhel9-std-2026.04"
+          },
+          {
+            "step": "Reserve IP",
+            "stage": "Preparation",
+            "system": "Network team API",
+            "reference": "10.50.225.68",
+            "detail": "Reserved 10.50.225.68/24 (gw 10.50.225.1, VLAN154)"
+          },
+          {
+            "step": "VM creation",
+            "stage": "Provisioning",
+            "system": "Compute & Storage team API",
+            "reference": "41113",
+            "detail": "Created VM prakashtest (id 41113) on esx-26.dc.internal"
+          },
+          {
+            "step": "OMI agent",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-8523866",
+            "detail": "OMI monitoring agent installed and enrolled"
+          },
+          {
+            "step": "Setting PPDM tag",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-9911958",
+            "detail": "PPDM backup tag applied"
+          },
+          {
+            "step": "ServiceNow CMDB update",
+            "stage": "Post actions",
+            "system": "ServiceNow Ansible playbook",
+            "reference": "CI12778978",
+            "detail": "CMDB configuration item created for prakashtest"
+          },
+          {
+            "step": "Guardicore agent",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-7920510",
+            "detail": "Guardicore micro-segmentation agent installed"
+          },
+          {
+            "step": "Defender agent",
+            "stage": "Post actions",
+            "system": "Linux team Ansible playbook",
+            "reference": "AAP-5759979",
+            "detail": "Microsoft Defender agent installed and onboarded"
+          },
+          {
+            "step": "Grant VM permissions",
+            "stage": "Post actions",
+            "system": "Compute & Storage team API",
+            "reference": "PERM-801316",
+            "detail": "VM permissions granted to admin"
+          }
+        ]
+      }
+    },
+    {
+      "id": "iU3yCg3_qp",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-116",
+        "hostname": "prakash",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "pkacqx4",
+        "sudoAccess": false,
+        "environment": "vmbr30",
+        "requestedBy": "admin",
+        "requestId": "Csk3-PACLBnW",
+        "autoApproved": true,
+        "approvedBy": null
+      },
+      "status": "failed",
+      "message": "Interrupted",
+      "resources": [
+        {
+          "vmid": "106",
+          "hostname": "prakash",
+          "type": "vm",
+          "ip": null,
+          "environment": "vmbr30",
+          "sshReady": false
+        }
+      ],
+      "error": "Interrupted by a server restart before completion",
+      "logs": [
+        {
+          "ts": "2026-07-04T06:17:48.186Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.219Z",
+          "status": "provisioning",
+          "message": "Receiving your new-server request…"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.225Z",
+          "status": "provisioning",
+          "message": "New server request submitted"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.246Z",
+          "status": "provisioning",
+          "message": "Checking approval requirements…"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.272Z",
+          "status": "provisioning",
+          "message": "Standard request — auto-approved"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.295Z",
+          "status": "provisioning",
+          "message": "Locking in the approval…"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.322Z",
+          "status": "provisioning",
+          "message": "Request approved — kicking off the build"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.342Z",
+          "status": "provisioning",
+          "message": "Carving out your virtual machine on the cluster…"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.481Z",
+          "status": "provisioning",
+          "message": "Virtual machine #106 provisioned"
+        },
+        {
+          "ts": "2026-07-04T06:17:48.484Z",
+          "status": "provisioning",
+          "message": "Laying down the golden OS image…"
+        },
+        {
+          "ts": "2026-07-04T06:19:53.278Z",
+          "status": "provisioning",
+          "message": "MEAN image deployed"
+        },
+        {
+          "ts": "2026-07-04T06:19:53.281Z",
+          "status": "provisioning",
+          "message": "Dialing in your CPU, memory and storage…"
+        },
+        {
+          "ts": "2026-07-04T06:19:53.450Z",
+          "status": "provisioning",
+          "message": "Allocated 2 vCPU · 2 GB RAM · 50 GB disk"
+        },
+        {
+          "ts": "2026-07-04T06:19:53.453Z",
+          "status": "provisioning",
+          "message": "Wiring your machine into the network…"
+        },
+        {
+          "ts": "2026-07-04T06:19:54.087Z",
+          "status": "provisioning",
+          "message": "Attached to \"vmbr30\" (address leased on boot)"
+        },
+        {
+          "ts": "2026-07-04T06:19:54.107Z",
+          "status": "provisioning",
+          "message": "Powering on your virtual machine…"
+        },
+        {
+          "ts": "2026-07-04T06:19:54.176Z",
+          "status": "provisioning",
+          "message": "Powered on"
+        },
+        {
+          "ts": "2026-07-04T06:19:54.180Z",
+          "status": "provisioning",
+          "message": "Waiting for the system to come alive…"
+        },
+        {
+          "ts": "2026-07-04T06:23:49.302Z",
+          "status": "failed",
+          "message": "Interrupted by a server restart before completion",
+          "error": "Interrupted by a server restart before completion"
+        }
+      ],
+      "createdAt": "2026-07-04T06:17:48.186Z",
+      "updatedAt": "2026-07-04T06:23:49.302Z",
+      "steps": [
+        {
+          "key": "submitted",
+          "label": "Request submitted",
+          "active": "Receiving your new-server request…",
+          "done": "New server request submitted",
+          "group": "request",
+          "state": "done",
+          "etaSec": 3,
+          "startedAt": "2026-07-04T06:17:48.219Z",
+          "endedAt": "2026-07-04T06:17:48.223Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approval",
+          "label": "Approvals",
+          "active": "Checking approval requirements…",
+          "done": "Standard request — auto-approved",
+          "group": "request",
+          "state": "done",
+          "etaSec": 3,
+          "startedAt": "2026-07-04T06:17:48.246Z",
+          "endedAt": "2026-07-04T06:17:48.270Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approved",
+          "label": "Approved",
+          "active": "Locking in the approval…",
+          "done": "Request approved — kicking off the build",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:17:48.295Z",
+          "endedAt": "2026-07-04T06:17:48.319Z",
+          "tookSec": 0
+        },
+        {
+          "key": "provision_vm",
+          "label": "Provisioning the VM",
+          "active": "Carving out your virtual machine on the cluster…",
+          "done": "Virtual machine #106 provisioned",
+          "group": "build",
+          "state": "done",
+          "etaSec": 57,
+          "startedAt": "2026-07-04T06:17:48.342Z",
+          "endedAt": "2026-07-04T06:17:48.477Z",
+          "tookSec": 0
+        },
+        {
+          "key": "deploy_os",
+          "label": "Deploying the OS",
+          "active": "Laying down the golden OS image…",
+          "done": "MEAN image deployed",
+          "group": "build",
+          "state": "done",
+          "etaSec": 50,
+          "startedAt": "2026-07-04T06:17:48.484Z",
+          "endedAt": "2026-07-04T06:19:53.275Z",
+          "tookSec": 125
+        },
+        {
+          "key": "allocate_resources",
+          "label": "Allocating resources",
+          "active": "Dialing in your CPU, memory and storage…",
+          "done": "Allocated 2 vCPU · 2 GB RAM · 50 GB disk",
+          "group": "build",
+          "state": "done",
+          "etaSec": 19,
+          "startedAt": "2026-07-04T06:19:53.281Z",
+          "endedAt": "2026-07-04T06:19:53.448Z",
+          "tookSec": 0
+        },
+        {
+          "key": "assign_ip",
+          "label": "Assigning IP address",
+          "active": "Wiring your machine into the network…",
+          "done": "Attached to \"vmbr30\" (address leased on boot)",
+          "group": "build",
+          "state": "done",
+          "etaSec": 15,
+          "startedAt": "2026-07-04T06:19:53.453Z",
+          "endedAt": "2026-07-04T06:19:54.085Z",
+          "tookSec": 1
+        },
+        {
+          "key": "power_on",
+          "label": "Powering on",
+          "active": "Powering on your virtual machine…",
+          "done": "Powered on",
+          "group": "boot",
+          "state": "done",
+          "etaSec": 13,
+          "startedAt": "2026-07-04T06:19:54.107Z",
+          "endedAt": "2026-07-04T06:19:54.174Z",
+          "tookSec": 0
+        },
+        {
+          "key": "system_startup",
+          "label": "System startup",
+          "active": "Waiting for the system to come alive…",
+          "done": "System is online",
+          "group": "boot",
+          "state": "active",
+          "etaSec": 113,
+          "startedAt": "2026-07-04T06:19:54.180Z",
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "initial_setup",
+          "label": "Initial setup",
+          "active": "Running first-boot initialization and creating your account…",
+          "done": "Initial setup complete",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 32,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "default_packages",
+          "label": "Security baseline",
+          "active": "Hardening with the Colruyt baseline — Defender, OMI Client, Guardicore…",
+          "done": "Security baseline installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 57,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "requested_packages",
+          "label": "Requested software",
+          "active": "Installing your requested software…",
+          "done": "Requested software installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 44,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "validate",
+          "label": "Validation",
+          "active": "Running final health checks on your server…",
+          "done": "Server validated end-to-end",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 19,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "summarize",
+          "label": "Summary",
+          "active": "Wrapping up and preparing your summary…",
+          "done": "All done — your server is ready 🎉",
+          "group": "done",
+          "state": "pending",
+          "etaSec": 4,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        }
+      ]
+    },
+    {
+      "id": "F_q-D0eJZF",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "monitor",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr190",
+        "requestedBy": "admin",
+        "requestId": "G-0Mcz4RXNJe",
+        "autoApproved": true,
+        "approvedBy": null
+      },
+      "status": "failed",
+      "message": "Interrupted",
+      "resources": [
+        {
+          "vmid": "107",
+          "hostname": "monitor",
+          "type": "vm",
+          "ip": null,
+          "environment": "vmbr190",
+          "sshReady": false
+        }
+      ],
+      "error": "Interrupted by a server restart before completion",
+      "logs": [
+        {
+          "ts": "2026-07-04T06:31:05.047Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.068Z",
+          "status": "provisioning",
+          "message": "Receiving your new-server request…"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.083Z",
+          "status": "provisioning",
+          "message": "New server request submitted"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.103Z",
+          "status": "provisioning",
+          "message": "Checking approval requirements…"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.130Z",
+          "status": "provisioning",
+          "message": "Standard request — auto-approved"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.151Z",
+          "status": "provisioning",
+          "message": "Locking in the approval…"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.179Z",
+          "status": "provisioning",
+          "message": "Request approved — kicking off the build"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.200Z",
+          "status": "provisioning",
+          "message": "Carving out your virtual machine on the cluster…"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.382Z",
+          "status": "provisioning",
+          "message": "Virtual machine #107 provisioned"
+        },
+        {
+          "ts": "2026-07-04T06:31:05.387Z",
+          "status": "provisioning",
+          "message": "Laying down the golden OS image…"
+        },
+        {
+          "ts": "2026-07-04T06:31:36.092Z",
+          "status": "provisioning",
+          "message": "Alpine image deployed"
+        },
+        {
+          "ts": "2026-07-04T06:31:36.097Z",
+          "status": "provisioning",
+          "message": "Dialing in your CPU, memory and storage…"
+        },
+        {
+          "ts": "2026-07-04T06:31:36.280Z",
+          "status": "provisioning",
+          "message": "Allocated 1 vCPU · 1 GB RAM · 50 GB disk"
+        },
+        {
+          "ts": "2026-07-04T06:31:36.284Z",
+          "status": "provisioning",
+          "message": "Wiring your machine into the network…"
+        },
+        {
+          "ts": "2026-07-04T06:31:37.001Z",
+          "status": "provisioning",
+          "message": "Attached to \"vmbr190\" (address leased on boot)"
+        },
+        {
+          "ts": "2026-07-04T06:31:37.026Z",
+          "status": "provisioning",
+          "message": "Powering on your virtual machine…"
+        },
+        {
+          "ts": "2026-07-04T06:31:37.116Z",
+          "status": "provisioning",
+          "message": "Powered on"
+        },
+        {
+          "ts": "2026-07-04T06:31:37.124Z",
+          "status": "provisioning",
+          "message": "Waiting for the system to come alive…"
+        },
+        {
+          "ts": "2026-07-04T06:38:22.411Z",
+          "status": "failed",
+          "message": "Interrupted by a server restart before completion",
+          "error": "Interrupted by a server restart before completion"
+        }
+      ],
+      "createdAt": "2026-07-04T06:31:05.047Z",
+      "updatedAt": "2026-07-04T06:38:22.411Z",
+      "steps": [
+        {
+          "key": "submitted",
+          "label": "Request submitted",
+          "active": "Receiving your new-server request…",
+          "done": "New server request submitted",
+          "group": "request",
+          "state": "done",
+          "etaSec": 3,
+          "startedAt": "2026-07-04T06:31:05.068Z",
+          "endedAt": "2026-07-04T06:31:05.079Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approval",
+          "label": "Approvals",
+          "active": "Checking approval requirements…",
+          "done": "Standard request — auto-approved",
+          "group": "request",
+          "state": "done",
+          "etaSec": 3,
+          "startedAt": "2026-07-04T06:31:05.103Z",
+          "endedAt": "2026-07-04T06:31:05.128Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approved",
+          "label": "Approved",
+          "active": "Locking in the approval…",
+          "done": "Request approved — kicking off the build",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:31:05.151Z",
+          "endedAt": "2026-07-04T06:31:05.176Z",
+          "tookSec": 0
+        },
+        {
+          "key": "provision_vm",
+          "label": "Provisioning the VM",
+          "active": "Carving out your virtual machine on the cluster…",
+          "done": "Virtual machine #107 provisioned",
+          "group": "build",
+          "state": "done",
+          "etaSec": 57,
+          "startedAt": "2026-07-04T06:31:05.200Z",
+          "endedAt": "2026-07-04T06:31:05.377Z",
+          "tookSec": 0
+        },
+        {
+          "key": "deploy_os",
+          "label": "Deploying the OS",
+          "active": "Laying down the golden OS image…",
+          "done": "Alpine image deployed",
+          "group": "build",
+          "state": "done",
+          "etaSec": 50,
+          "startedAt": "2026-07-04T06:31:05.387Z",
+          "endedAt": "2026-07-04T06:31:36.086Z",
+          "tookSec": 31
+        },
+        {
+          "key": "allocate_resources",
+          "label": "Allocating resources",
+          "active": "Dialing in your CPU, memory and storage…",
+          "done": "Allocated 1 vCPU · 1 GB RAM · 50 GB disk",
+          "group": "build",
+          "state": "done",
+          "etaSec": 19,
+          "startedAt": "2026-07-04T06:31:36.097Z",
+          "endedAt": "2026-07-04T06:31:36.278Z",
+          "tookSec": 0
+        },
+        {
+          "key": "assign_ip",
+          "label": "Assigning IP address",
+          "active": "Wiring your machine into the network…",
+          "done": "Attached to \"vmbr190\" (address leased on boot)",
+          "group": "build",
+          "state": "done",
+          "etaSec": 15,
+          "startedAt": "2026-07-04T06:31:36.284Z",
+          "endedAt": "2026-07-04T06:31:36.998Z",
+          "tookSec": 1
+        },
+        {
+          "key": "power_on",
+          "label": "Powering on",
+          "active": "Powering on your virtual machine…",
+          "done": "Powered on",
+          "group": "boot",
+          "state": "done",
+          "etaSec": 13,
+          "startedAt": "2026-07-04T06:31:37.026Z",
+          "endedAt": "2026-07-04T06:31:37.111Z",
+          "tookSec": 0
+        },
+        {
+          "key": "system_startup",
+          "label": "System startup",
+          "active": "Waiting for the system to come alive…",
+          "done": "System is online",
+          "group": "boot",
+          "state": "active",
+          "etaSec": 113,
+          "startedAt": "2026-07-04T06:31:37.124Z",
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "initial_setup",
+          "label": "Initial setup",
+          "active": "Running first-boot initialization and creating your account…",
+          "done": "Initial setup complete",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 32,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "default_packages",
+          "label": "Security baseline",
+          "active": "Hardening with the Colruyt baseline — Defender, OMI Client, Guardicore…",
+          "done": "Security baseline installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 57,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "requested_packages",
+          "label": "Requested software",
+          "active": "Installing your requested software…",
+          "done": "Requested software installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 44,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "validate",
+          "label": "Validation",
+          "active": "Running final health checks on your server…",
+          "done": "Server validated end-to-end",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 19,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "summarize",
+          "label": "Summary",
+          "active": "Wrapping up and preparing your summary…",
+          "done": "All done — your server is ready 🎉",
+          "group": "done",
+          "state": "pending",
+          "etaSec": 4,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        }
+      ]
+    },
+    {
+      "id": "L_tP5FrbMH",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "test",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr190",
+        "requestedBy": "admin",
+        "requestId": "nee5DKJP7M76",
+        "autoApproved": true,
+        "approvedBy": null
+      },
+      "status": "ready",
+      "message": "Your VM started but never reported a network address (is the guest agent installed?). It was created, but is unreachable.",
+      "resources": [
+        {
+          "vmid": "108",
+          "hostname": "test",
+          "type": "vm",
+          "ip": null,
+          "environment": "vmbr190",
+          "sshReady": false
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T06:42:28.743Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T06:42:28.768Z",
+          "status": "provisioning",
+          "message": "Receiving your new-server request…"
+        },
+        {
+          "ts": "2026-07-04T06:42:28.780Z",
+          "status": "provisioning",
+          "message": "New server request submitted"
+        },
+        {
+          "ts": "2026-07-04T06:42:28.800Z",
+          "status": "provisioning",
+          "message": "Checking approval requirements…"
+        },
+        {
+          "ts": "2026-07-04T06:42:28.824Z",
+          "status": "provisioning",
+          "message": "Standard request — auto-approved"
+        },
+        {
+          "ts": "2026-07-04T06:42:28.846Z",
+          "status": "provisioning",
+          "message": "Locking in the approval…"
+        },
+        {
+          "ts": "2026-07-04T06:42:28.874Z",
+          "status": "provisioning",
+          "message": "Request approved — kicking off the build"
+        },
+        {
+          "ts": "2026-07-04T06:42:28.892Z",
+          "status": "provisioning",
+          "message": "Carving out your virtual machine on the cluster…"
+        },
+        {
+          "ts": "2026-07-04T06:42:29.017Z",
+          "status": "provisioning",
+          "message": "Virtual machine #108 provisioned"
+        },
+        {
+          "ts": "2026-07-04T06:42:29.021Z",
+          "status": "provisioning",
+          "message": "Laying down the golden OS image…"
+        },
+        {
+          "ts": "2026-07-04T06:42:57.893Z",
+          "status": "provisioning",
+          "message": "Alpine image deployed"
+        },
+        {
+          "ts": "2026-07-04T06:42:57.897Z",
+          "status": "provisioning",
+          "message": "Dialing in your CPU, memory and storage…"
+        },
+        {
+          "ts": "2026-07-04T06:42:58.120Z",
+          "status": "provisioning",
+          "message": "Allocated 1 vCPU · 1 GB RAM · 50 GB disk"
+        },
+        {
+          "ts": "2026-07-04T06:42:58.125Z",
+          "status": "provisioning",
+          "message": "Wiring your machine into the network…"
+        },
+        {
+          "ts": "2026-07-04T06:42:58.802Z",
+          "status": "provisioning",
+          "message": "Attached to \"vmbr190\" (address leased on boot)"
+        },
+        {
+          "ts": "2026-07-04T06:42:58.832Z",
+          "status": "provisioning",
+          "message": "Powering on your virtual machine…"
+        },
+        {
+          "ts": "2026-07-04T06:42:58.928Z",
+          "status": "provisioning",
+          "message": "Powered on"
+        },
+        {
+          "ts": "2026-07-04T06:42:58.938Z",
+          "status": "provisioning",
+          "message": "Waiting for the system to come alive…"
+        },
+        {
+          "ts": "2026-07-04T06:53:09.301Z",
+          "status": "provisioning",
+          "message": "Your VM started but never reported a network address (is the guest agent installed?). It was created, but is unreachable."
+        },
+        {
+          "ts": "2026-07-04T06:53:09.308Z",
+          "status": "ready",
+          "message": "Your VM started but never reported a network address (is the guest agent installed?). It was created, but is unreachable."
+        }
+      ],
+      "createdAt": "2026-07-04T06:42:28.743Z",
+      "updatedAt": "2026-07-04T06:53:09.308Z",
+      "steps": [
+        {
+          "key": "submitted",
+          "label": "Request submitted",
+          "active": "Receiving your new-server request…",
+          "done": "New server request submitted",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:42:28.768Z",
+          "endedAt": "2026-07-04T06:42:28.776Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approval",
+          "label": "Approvals",
+          "active": "Checking approval requirements…",
+          "done": "Standard request — auto-approved",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:42:28.800Z",
+          "endedAt": "2026-07-04T06:42:28.822Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approved",
+          "label": "Approved",
+          "active": "Locking in the approval…",
+          "done": "Request approved — kicking off the build",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:42:28.846Z",
+          "endedAt": "2026-07-04T06:42:28.871Z",
+          "tookSec": 0
+        },
+        {
+          "key": "provision_vm",
+          "label": "Provisioning the VM",
+          "active": "Carving out your virtual machine on the cluster…",
+          "done": "Virtual machine #108 provisioned",
+          "group": "build",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:42:28.892Z",
+          "endedAt": "2026-07-04T06:42:29.013Z",
+          "tookSec": 0
+        },
+        {
+          "key": "deploy_os",
+          "label": "Deploying the OS",
+          "active": "Laying down the golden OS image…",
+          "done": "Alpine image deployed",
+          "group": "build",
+          "state": "done",
+          "etaSec": 39,
+          "startedAt": "2026-07-04T06:42:29.021Z",
+          "endedAt": "2026-07-04T06:42:57.889Z",
+          "tookSec": 29
+        },
+        {
+          "key": "allocate_resources",
+          "label": "Allocating resources",
+          "active": "Dialing in your CPU, memory and storage…",
+          "done": "Allocated 1 vCPU · 1 GB RAM · 50 GB disk",
+          "group": "build",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:42:57.897Z",
+          "endedAt": "2026-07-04T06:42:58.117Z",
+          "tookSec": 0
+        },
+        {
+          "key": "assign_ip",
+          "label": "Assigning IP address",
+          "active": "Wiring your machine into the network…",
+          "done": "Attached to \"vmbr190\" (address leased on boot)",
+          "group": "build",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:42:58.125Z",
+          "endedAt": "2026-07-04T06:42:58.797Z",
+          "tookSec": 1
+        },
+        {
+          "key": "power_on",
+          "label": "Powering on",
+          "active": "Powering on your virtual machine…",
+          "done": "Powered on",
+          "group": "boot",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:42:58.832Z",
+          "endedAt": "2026-07-04T06:42:58.923Z",
+          "tookSec": 0
+        },
+        {
+          "key": "system_startup",
+          "label": "System startup",
+          "active": "Waiting for the system to come alive…",
+          "done": "System is online",
+          "group": "boot",
+          "state": "failed",
+          "etaSec": 113,
+          "startedAt": "2026-07-04T06:42:58.938Z",
+          "endedAt": "2026-07-04T06:53:09.301Z",
+          "tookSec": null
+        },
+        {
+          "key": "initial_setup",
+          "label": "Initial setup",
+          "active": "Running first-boot initialization and creating your account…",
+          "done": "Initial setup complete",
+          "group": "config",
+          "state": "skipped",
+          "etaSec": 32,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "default_packages",
+          "label": "Security baseline",
+          "active": "Hardening with the Colruyt baseline — Defender, OMI Client, Guardicore…",
+          "done": "Security baseline installed",
+          "group": "config",
+          "state": "skipped",
+          "etaSec": 57,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "requested_packages",
+          "label": "Requested software",
+          "active": "Installing your requested software…",
+          "done": "Requested software installed",
+          "group": "config",
+          "state": "skipped",
+          "etaSec": 44,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "validate",
+          "label": "Validation",
+          "active": "Running final health checks on your server…",
+          "done": "Server validated end-to-end",
+          "group": "config",
+          "state": "skipped",
+          "etaSec": 19,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "summarize",
+          "label": "Summary",
+          "active": "Wrapping up and preparing your summary…",
+          "done": "All done — your server is ready 🎉",
+          "group": "done",
+          "state": "skipped",
+          "etaSec": 4,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        }
+      ]
+    },
+    {
+      "id": "eUoDG2T1MR",
+      "type": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "testinggggggggg",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr0",
+        "requestedBy": "admin",
+        "requestId": "gsUbHRJQEuzE",
+        "autoApproved": true,
+        "approvedBy": null
+      },
+      "status": "failed",
+      "message": "Interrupted",
+      "resources": [],
+      "error": "Interrupted by a server restart before completion",
+      "logs": [
+        {
+          "ts": "2026-07-04T06:58:14.884Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T06:58:14.908Z",
+          "status": "provisioning",
+          "message": "Receiving your new-server request…"
+        },
+        {
+          "ts": "2026-07-04T06:58:14.923Z",
+          "status": "provisioning",
+          "message": "New server request submitted"
+        },
+        {
+          "ts": "2026-07-04T06:58:14.942Z",
+          "status": "provisioning",
+          "message": "Checking approval requirements…"
+        },
+        {
+          "ts": "2026-07-04T06:58:14.972Z",
+          "status": "provisioning",
+          "message": "Standard request — auto-approved"
+        },
+        {
+          "ts": "2026-07-04T06:58:14.995Z",
+          "status": "provisioning",
+          "message": "Locking in the approval…"
+        },
+        {
+          "ts": "2026-07-04T06:58:15.023Z",
+          "status": "provisioning",
+          "message": "Request approved — kicking off the build"
+        },
+        {
+          "ts": "2026-07-04T06:58:15.044Z",
+          "status": "provisioning",
+          "message": "Carving out your virtual machine on the cluster…"
+        },
+        {
+          "ts": "2026-07-04T06:58:15.518Z",
+          "status": "provisioning",
+          "message": "Virtual machine #109 provisioned"
+        },
+        {
+          "ts": "2026-07-04T06:58:15.521Z",
+          "status": "provisioning",
+          "message": "Laying down the golden OS image…"
+        },
+        {
+          "ts": "2026-07-04T06:58:23.227Z",
+          "status": "failed",
+          "message": "Interrupted by a server restart before completion",
+          "error": "Interrupted by a server restart before completion"
+        }
+      ],
+      "createdAt": "2026-07-04T06:58:14.884Z",
+      "updatedAt": "2026-07-04T06:58:23.227Z",
+      "steps": [
+        {
+          "key": "submitted",
+          "label": "Request submitted",
+          "active": "Receiving your new-server request…",
+          "done": "New server request submitted",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:58:14.907Z",
+          "endedAt": "2026-07-04T06:58:14.919Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approval",
+          "label": "Approvals",
+          "active": "Checking approval requirements…",
+          "done": "Standard request — auto-approved",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:58:14.942Z",
+          "endedAt": "2026-07-04T06:58:14.969Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approved",
+          "label": "Approved",
+          "active": "Locking in the approval…",
+          "done": "Request approved — kicking off the build",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:58:14.995Z",
+          "endedAt": "2026-07-04T06:58:15.020Z",
+          "tookSec": 0
+        },
+        {
+          "key": "provision_vm",
+          "label": "Provisioning the VM",
+          "active": "Carving out your virtual machine on the cluster…",
+          "done": "Virtual machine #109 provisioned",
+          "group": "build",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T06:58:15.044Z",
+          "endedAt": "2026-07-04T06:58:15.514Z",
+          "tookSec": 0
+        },
+        {
+          "key": "deploy_os",
+          "label": "Deploying the OS",
+          "active": "Laying down the golden OS image…",
+          "done": "Operating system deployed",
+          "group": "build",
+          "state": "active",
+          "etaSec": 38,
+          "startedAt": "2026-07-04T06:58:15.521Z",
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "allocate_resources",
+          "label": "Allocating resources",
+          "active": "Dialing in your CPU, memory and storage…",
+          "done": "Requested resources allocated",
+          "group": "build",
+          "state": "pending",
+          "etaSec": 2,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "assign_ip",
+          "label": "Assigning IP address",
+          "active": "Wiring your machine into the network…",
+          "done": "Network attached (DHCP)",
+          "group": "build",
+          "state": "pending",
+          "etaSec": 2,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "power_on",
+          "label": "Powering on",
+          "active": "Powering on your virtual machine…",
+          "done": "Powered on",
+          "group": "boot",
+          "state": "pending",
+          "etaSec": 2,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "system_startup",
+          "label": "System startup",
+          "active": "Waiting for the system to come alive…",
+          "done": "System is online",
+          "group": "boot",
+          "state": "pending",
+          "etaSec": 113,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "initial_setup",
+          "label": "Initial setup",
+          "active": "Running first-boot initialization and creating your account…",
+          "done": "Initial setup complete",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 32,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "default_packages",
+          "label": "Security baseline",
+          "active": "Hardening with the Colruyt baseline — Defender, OMI Client, Guardicore…",
+          "done": "Security baseline installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 57,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "requested_packages",
+          "label": "Requested software",
+          "active": "Installing your requested software…",
+          "done": "Requested software installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 44,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "validate",
+          "label": "Validation",
+          "active": "Running final health checks on your server…",
+          "done": "Server validated end-to-end",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 19,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "summarize",
+          "label": "Summary",
+          "active": "Wrapping up and preparing your summary…",
+          "done": "All done — your server is ready 🎉",
+          "group": "done",
+          "state": "pending",
+          "etaSec": 4,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        }
+      ]
+    },
+    {
+      "id": "ft_LMDCYpZ",
+      "type": "vm",
+      "payload": {
+        "templateId": "alpine",
+        "hostname": "alpine-vm-01",
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 30,
+        "permanent": false,
+        "packages": [
+          "nodejs",
+          "yarn",
+          "nginx",
+          "git"
+        ],
+        "packageSelection": {
+          "selected": [
+            "nodejs",
+            "yarn",
+            "nginx",
+            "git"
+          ],
+          "effective": [
+            "nodejs",
+            "yarn",
+            "nginx",
+            "git"
+          ]
+        },
+        "username": "admin",
+        "sudoAccess": false,
+        "environment": "vmbr0",
+        "requestedBy": "admin",
+        "requestId": "VC5r9M9tcXjc",
+        "autoApproved": true,
+        "approvedBy": null
+      },
+      "status": "provisioning",
+      "message": "Waiting for the system to come alive…",
+      "resources": [
+        {
+          "vmid": "107",
+          "hostname": "alpine-vm-01",
+          "type": "vm",
+          "ip": null,
+          "environment": "vmbr0",
+          "sshReady": false
+        }
+      ],
+      "error": null,
+      "logs": [
+        {
+          "ts": "2026-07-04T12:24:22.867Z",
+          "status": "pending",
+          "message": "Queued"
+        },
+        {
+          "ts": "2026-07-04T12:24:22.887Z",
+          "status": "provisioning",
+          "message": "Receiving your new-server request…"
+        },
+        {
+          "ts": "2026-07-04T12:24:22.903Z",
+          "status": "provisioning",
+          "message": "New server request submitted"
+        },
+        {
+          "ts": "2026-07-04T12:24:22.924Z",
+          "status": "provisioning",
+          "message": "Checking approval requirements…"
+        },
+        {
+          "ts": "2026-07-04T12:24:23.108Z",
+          "status": "provisioning",
+          "message": "Standard request — auto-approved"
+        },
+        {
+          "ts": "2026-07-04T12:24:23.116Z",
+          "status": "provisioning",
+          "message": "Locking in the approval…"
+        },
+        {
+          "ts": "2026-07-04T12:24:23.126Z",
+          "status": "provisioning",
+          "message": "Request approved — kicking off the build"
+        },
+        {
+          "ts": "2026-07-04T12:24:23.131Z",
+          "status": "provisioning",
+          "message": "Carving out your virtual machine on the cluster…"
+        },
+        {
+          "ts": "2026-07-04T12:24:23.274Z",
+          "status": "provisioning",
+          "message": "Virtual machine #107 provisioned"
+        },
+        {
+          "ts": "2026-07-04T12:24:23.285Z",
+          "status": "provisioning",
+          "message": "Laying down the golden OS image…"
+        },
+        {
+          "ts": "2026-07-04T12:24:53.970Z",
+          "status": "provisioning",
+          "message": "Alpine Linux image deployed"
+        },
+        {
+          "ts": "2026-07-04T12:24:53.972Z",
+          "status": "provisioning",
+          "message": "Dialing in your CPU, memory and storage…"
+        },
+        {
+          "ts": "2026-07-04T12:24:54.132Z",
+          "status": "provisioning",
+          "message": "Allocated 2 vCPU · 4 GB RAM · 32 GB disk"
+        },
+        {
+          "ts": "2026-07-04T12:24:54.150Z",
+          "status": "provisioning",
+          "message": "Wiring your machine into the network…"
+        },
+        {
+          "ts": "2026-07-04T12:24:54.296Z",
+          "status": "provisioning",
+          "message": "Attached to \"vmbr0\" (address leased on boot)"
+        },
+        {
+          "ts": "2026-07-04T12:24:54.331Z",
+          "status": "provisioning",
+          "message": "Powering on your virtual machine…"
+        },
+        {
+          "ts": "2026-07-04T12:24:54.424Z",
+          "status": "provisioning",
+          "message": "Powered on"
+        },
+        {
+          "ts": "2026-07-04T12:24:54.441Z",
+          "status": "provisioning",
+          "message": "Waiting for the system to come alive…"
+        }
+      ],
+      "createdAt": "2026-07-04T12:24:22.867Z",
+      "updatedAt": "2026-07-04T12:24:54.441Z",
+      "steps": [
+        {
+          "key": "submitted",
+          "label": "Request submitted",
+          "active": "Receiving your new-server request…",
+          "done": "New server request submitted",
+          "group": "request",
+          "state": "done",
+          "etaSec": 3,
+          "startedAt": "2026-07-04T12:24:22.887Z",
+          "endedAt": "2026-07-04T12:24:22.902Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approval",
+          "label": "Approvals",
+          "active": "Checking approval requirements…",
+          "done": "Standard request — auto-approved",
+          "group": "request",
+          "state": "done",
+          "etaSec": 3,
+          "startedAt": "2026-07-04T12:24:22.924Z",
+          "endedAt": "2026-07-04T12:24:22.935Z",
+          "tookSec": 0
+        },
+        {
+          "key": "approved",
+          "label": "Approved",
+          "active": "Locking in the approval…",
+          "done": "Request approved — kicking off the build",
+          "group": "request",
+          "state": "done",
+          "etaSec": 2,
+          "startedAt": "2026-07-04T12:24:23.116Z",
+          "endedAt": "2026-07-04T12:24:23.122Z",
+          "tookSec": 0
+        },
+        {
+          "key": "provision_vm",
+          "label": "Provisioning the VM",
+          "active": "Carving out your virtual machine on the cluster…",
+          "done": "Virtual machine #107 provisioned",
+          "group": "build",
+          "state": "done",
+          "etaSec": 57,
+          "startedAt": "2026-07-04T12:24:23.131Z",
+          "endedAt": "2026-07-04T12:24:23.266Z",
+          "tookSec": 0
+        },
+        {
+          "key": "deploy_os",
+          "label": "Deploying the OS",
+          "active": "Laying down the golden OS image…",
+          "done": "Alpine Linux image deployed",
+          "group": "build",
+          "state": "done",
+          "etaSec": 50,
+          "startedAt": "2026-07-04T12:24:23.285Z",
+          "endedAt": "2026-07-04T12:24:53.967Z",
+          "tookSec": 31
+        },
+        {
+          "key": "allocate_resources",
+          "label": "Allocating resources",
+          "active": "Dialing in your CPU, memory and storage…",
+          "done": "Allocated 2 vCPU · 4 GB RAM · 32 GB disk",
+          "group": "build",
+          "state": "done",
+          "etaSec": 19,
+          "startedAt": "2026-07-04T12:24:53.972Z",
+          "endedAt": "2026-07-04T12:24:54.112Z",
+          "tookSec": 0
+        },
+        {
+          "key": "assign_ip",
+          "label": "Assigning IP address",
+          "active": "Wiring your machine into the network…",
+          "done": "Attached to \"vmbr0\" (address leased on boot)",
+          "group": "build",
+          "state": "done",
+          "etaSec": 15,
+          "startedAt": "2026-07-04T12:24:54.149Z",
+          "endedAt": "2026-07-04T12:24:54.274Z",
+          "tookSec": 0
+        },
+        {
+          "key": "power_on",
+          "label": "Powering on",
+          "active": "Powering on your virtual machine…",
+          "done": "Powered on",
+          "group": "boot",
+          "state": "done",
+          "etaSec": 13,
+          "startedAt": "2026-07-04T12:24:54.331Z",
+          "endedAt": "2026-07-04T12:24:54.416Z",
+          "tookSec": 0
+        },
+        {
+          "key": "system_startup",
+          "label": "System startup",
+          "active": "Waiting for the system to come alive…",
+          "done": "System is online",
+          "group": "boot",
+          "state": "active",
+          "etaSec": 113,
+          "startedAt": "2026-07-04T12:24:54.441Z",
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "initial_setup",
+          "label": "Initial setup",
+          "active": "Running first-boot initialization and creating your account…",
+          "done": "Initial setup complete",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 32,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "default_packages",
+          "label": "Security baseline",
+          "active": "Hardening with the Colruyt baseline — Defender, OMI Client, Guardicore…",
+          "done": "Security baseline installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 57,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "requested_packages",
+          "label": "Requested software",
+          "active": "Installing your requested software…",
+          "done": "Requested software installed",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 44,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "validate",
+          "label": "Validation",
+          "active": "Running final health checks on your server…",
+          "done": "Server validated end-to-end",
+          "group": "config",
+          "state": "pending",
+          "etaSec": 19,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        },
+        {
+          "key": "summarize",
+          "label": "Summary",
+          "active": "Wrapping up and preparing your summary…",
+          "done": "All done — your server is ready 🎉",
+          "group": "done",
+          "state": "pending",
+          "etaSec": 4,
+          "startedAt": null,
+          "endedAt": null,
+          "tookSec": null
+        }
+      ]
+    }
+  ]
+}

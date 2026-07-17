@@ -1,0 +1,32 @@
+{
+  "users": [
+    {
+      "id": "ayqiYZcM",
+      "username": "admin",
+      "displayName": "Administrator",
+      "email": "admin@cpc.local",
+      "role": "admin",
+      "source": "local",
+      "passwordHash": "$2a$10$NwpS/vrDtWpYsYnWVXiI0OTz4onC85buA1Wy8bj1DIR/2tcmKdqcG",
+      "createdAt": "2026-07-01T14:42:16.588Z",
+      "preferences": {
+        "theme": "slate",
+        "showBackground": true
+      }
+    },
+    {
+      "id": "yMBwRyp3",
+      "username": "rahul",
+      "displayName": "rv",
+      "email": "rv@gmail.com",
+      "role": "user",
+      "source": "local",
+      "passwordHash": "$2a$10$BgpkAt/TpT0pgatuBvnoO.qL1rGJN/PrC9uA8F7xAbqx6uRnrfdTW",
+      "preferences": {
+        "theme": "colruyt",
+        "showBackground": true
+      },
+      "createdAt": "2026-07-03T05:57:10.713Z"
+    }
+  ]
+}

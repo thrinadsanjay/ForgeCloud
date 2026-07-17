@@ -1,0 +1,54 @@
+{
+  "templates": {
+    "alpine": {
+      "submitted": {
+        "avgSec": 0,
+        "lastSec": 0,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:22.903Z"
+      },
+      "approval": {
+        "avgSec": 0,
+        "lastSec": 0,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:23.107Z"
+      },
+      "approved": {
+        "avgSec": 0,
+        "lastSec": 0,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:23.126Z"
+      },
+      "provision_vm": {
+        "avgSec": 0,
+        "lastSec": 0,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:23.273Z"
+      },
+      "deploy_os": {
+        "avgSec": 31,
+        "lastSec": 31,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:53.969Z"
+      },
+      "allocate_resources": {
+        "avgSec": 0,
+        "lastSec": 0,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:54.131Z"
+      },
+      "assign_ip": {
+        "avgSec": 0,
+        "lastSec": 0,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:54.295Z"
+      },
+      "power_on": {
+        "avgSec": 0,
+        "lastSec": 0,
+        "samples": 1,
+        "updatedAt": "2026-07-04T12:24:54.423Z"
+      }
+    }
+  }
+}

@@ -1,0 +1,1011 @@
+{
+  "requests": [
+    {
+      "id": "Q10EpMdjMdum",
+      "kind": "vm",
+      "payload": {
+        "kind": "vm",
+        "templateId": "rhel",
+        "hostname": "rhel-vm-01",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "chat",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "a1qH26gGhP",
+      "createdAt": "2026-07-03T07:03:58.855Z",
+      "updatedAt": "2026-07-03T07:07:59.093Z"
+    },
+    {
+      "id": "2QWdDHrDJ0Ty",
+      "kind": "vm",
+      "payload": {
+        "templateId": "alpine",
+        "hostname": "llm-inference-vm",
+        "cpu": 8,
+        "memoryGB": 32,
+        "diskGB": 100,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        }
+      },
+      "requestedBy": "rahul",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": true,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": "admin",
+      "approvedAt": "2026-07-03T13:15:05.908Z",
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "cdyRuchSQX",
+      "createdAt": "2026-07-03T13:14:08.370Z",
+      "updatedAt": "2026-07-03T13:19:45.341Z"
+    },
+    {
+      "id": "BMQtpxKWCMvw",
+      "kind": "vm",
+      "payload": {
+        "templateId": "alpine",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        }
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "provisioning",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "0yfAnN83ef",
+      "createdAt": "2026-07-03T14:34:31.528Z",
+      "updatedAt": "2026-07-03T14:34:31.534Z"
+    },
+    {
+      "id": "la6-M3N9_873",
+      "kind": "vm",
+      "payload": {
+        "templateId": "alpine",
+        "hostname": "test2",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        }
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "provisioning",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "vKNvza6RgB",
+      "createdAt": "2026-07-03T14:41:28.150Z",
+      "updatedAt": "2026-07-03T14:41:28.183Z"
+    },
+    {
+      "id": "bOJUBROoSSKK",
+      "kind": "vm",
+      "payload": {
+        "templateId": "alpine",
+        "hostname": "test3",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        }
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "provisioning",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "EAvOgDk9LS",
+      "createdAt": "2026-07-03T14:53:46.119Z",
+      "updatedAt": "2026-07-03T14:53:46.142Z"
+    },
+    {
+      "id": "l7zSH6Qb6blU",
+      "kind": "vm",
+      "payload": {
+        "templateId": "rhel",
+        "hostname": "rhel1",
+        "cpu": 1,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        }
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "provisioning",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "E1nViiCV_H",
+      "createdAt": "2026-07-03T14:57:30.255Z",
+      "updatedAt": "2026-07-03T14:57:30.259Z"
+    },
+    {
+      "id": "f5fSEpn_z5nk",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "cpc-diag-01",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 5,
+        "packages": [],
+        "username": "diaguser",
+        "sudoAccess": false,
+        "environment": "vmbr30"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "provisioning",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "yMlYyUnUHe",
+      "createdAt": "2026-07-03T16:39:32.388Z",
+      "updatedAt": "2026-07-03T16:39:32.409Z"
+    },
+    {
+      "id": "KGIa37gs85li",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-200",
+        "hostname": "test12",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 35,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": true,
+        "environment": "vmbr0"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "failed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "e4yNgAle_a",
+      "createdAt": "2026-07-03T16:52:19.778Z",
+      "updatedAt": "2026-07-03T17:21:10.255Z"
+    },
+    {
+      "id": "eSDYD31aF5CF",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-200",
+        "hostname": "test32",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 35,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr0"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "foo6tOWZh3",
+      "createdAt": "2026-07-03T17:06:54.548Z",
+      "updatedAt": "2026-07-03T17:21:10.271Z"
+    },
+    {
+      "id": "tShme9f5t4TQ",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-200",
+        "hostname": "docker01",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "docker"
+        ],
+        "packageSelection": {
+          "required": [
+            "docker"
+          ],
+          "selected": [
+            "docker"
+          ],
+          "effective": [
+            "docker"
+          ]
+        },
+        "username": "user",
+        "sudoAccess": false,
+        "environment": "vmbr0"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "MJKTiEeyhf",
+      "createdAt": "2026-07-03T17:13:17.281Z",
+      "updatedAt": "2026-07-03T17:21:10.295Z"
+    },
+    {
+      "id": "Kneu5nHPJHRC",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "alpine-test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr0"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "failed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "gEvITmZkkB",
+      "createdAt": "2026-07-03T17:45:59.623Z",
+      "updatedAt": "2026-07-03T17:55:14.212Z"
+    },
+    {
+      "id": "BPdA2JFMr5vg",
+      "kind": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "RTG3Gr3dea",
+      "createdAt": "2026-07-04T03:39:23.366Z",
+      "updatedAt": "2026-07-04T03:51:34.969Z"
+    },
+    {
+      "id": "QEpk4gPDMvlL",
+      "kind": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "demo-app-01",
+        "cpu": 4,
+        "memoryGB": 8,
+        "diskGB": 100
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "u4IvLMKp9E",
+      "createdAt": "2026-07-04T03:39:46.646Z",
+      "updatedAt": "2026-07-04T03:51:34.972Z"
+    },
+    {
+      "id": "Fr-akhzGmZhZ",
+      "kind": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "steps-demo",
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 40
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "TniNHxikrD",
+      "createdAt": "2026-07-04T03:50:06.452Z",
+      "updatedAt": "2026-07-04T03:51:35.005Z"
+    },
+    {
+      "id": "4ld6NsGaS31u",
+      "kind": "internal",
+      "payload": {
+        "templateId": "mock-internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "8x6m3pZKpu",
+      "createdAt": "2026-07-04T03:51:50.148Z",
+      "updatedAt": "2026-07-04T03:54:57.690Z"
+    },
+    {
+      "id": "LGtHt2x8sPpz",
+      "kind": "vm",
+      "payload": {
+        "templateId": "alpine",
+        "hostname": "alpine-llm-01",
+        "cpu": 8,
+        "memoryGB": 32,
+        "diskGB": 100,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        }
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "rejected",
+      "requiresApproval": true,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": "admin",
+      "rejectedAt": "2026-07-04T03:55:24.793Z",
+      "rejectionReason": "test",
+      "jobId": null,
+      "createdAt": "2026-07-03T07:05:08.981Z",
+      "updatedAt": "2026-07-04T03:55:24.793Z"
+    },
+    {
+      "id": "5MXnF7h3Py4b",
+      "kind": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "MBVNtEbia-",
+      "createdAt": "2026-07-04T04:40:01.754Z",
+      "updatedAt": "2026-07-04T04:40:02.060Z"
+    },
+    {
+      "id": "7-P_hFlvRPp7",
+      "kind": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "ZVl_eYTC7F",
+      "createdAt": "2026-07-04T04:43:09.706Z",
+      "updatedAt": "2026-07-04T04:43:10.380Z"
+    },
+    {
+      "id": "GUUIrF2NGhHc",
+      "kind": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "failed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "8sTXCmGxxw",
+      "createdAt": "2026-07-04T04:28:33.671Z",
+      "updatedAt": "2026-07-04T05:56:48.303Z"
+    },
+    {
+      "id": "WVksR1BtKNMC",
+      "kind": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test123",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "failed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "LL5HVulgC-",
+      "createdAt": "2026-07-04T04:29:07.422Z",
+      "updatedAt": "2026-07-04T05:56:48.307Z"
+    },
+    {
+      "id": "mou20As1LTwY",
+      "kind": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "IYPhly_Cmm",
+      "createdAt": "2026-07-04T04:43:48.249Z",
+      "updatedAt": "2026-07-04T05:56:48.336Z"
+    },
+    {
+      "id": "J7LWM2Tqv_Bg",
+      "kind": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "test",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "d5YE-9aIHW",
+      "createdAt": "2026-07-04T06:00:18.954Z",
+      "updatedAt": "2026-07-04T09:34:49.089Z"
+    },
+    {
+      "id": "S4LFDKpAhAOB",
+      "kind": "internal",
+      "payload": {
+        "templateId": "internal-linux",
+        "hostname": "prakashtest",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "vzoqM2FhkB",
+      "createdAt": "2026-07-04T06:09:57.094Z",
+      "updatedAt": "2026-07-04T09:34:49.090Z"
+    },
+    {
+      "id": "Csk3-PACLBnW",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-116",
+        "hostname": "prakash",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "pkacqx4",
+        "sudoAccess": false,
+        "environment": "vmbr30"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "failed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "iU3yCg3_qp",
+      "createdAt": "2026-07-04T06:17:48.169Z",
+      "updatedAt": "2026-07-04T09:34:49.097Z"
+    },
+    {
+      "id": "G-0Mcz4RXNJe",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "monitor",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr190"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "failed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "F_q-D0eJZF",
+      "createdAt": "2026-07-04T06:31:05.041Z",
+      "updatedAt": "2026-07-04T09:34:49.103Z"
+    },
+    {
+      "id": "nee5DKJP7M76",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "test",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr190"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "completed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "L_tP5FrbMH",
+      "createdAt": "2026-07-04T06:42:28.738Z",
+      "updatedAt": "2026-07-04T09:34:49.109Z"
+    },
+    {
+      "id": "gsUbHRJQEuzE",
+      "kind": "vm",
+      "payload": {
+        "templateId": "tpl-100",
+        "hostname": "testinggggggggg",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "username": "test",
+        "sudoAccess": false,
+        "environment": "vmbr0"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "failed",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "eUoDG2T1MR",
+      "createdAt": "2026-07-04T06:58:14.878Z",
+      "updatedAt": "2026-07-04T09:34:49.115Z"
+    },
+    {
+      "id": "VC5r9M9tcXjc",
+      "kind": "vm",
+      "payload": {
+        "templateId": "alpine",
+        "hostname": "alpine-vm-01",
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 30,
+        "permanent": false,
+        "packages": [
+          "nodejs",
+          "yarn",
+          "nginx",
+          "git"
+        ],
+        "packageSelection": {
+          "selected": [
+            "nodejs",
+            "yarn",
+            "nginx",
+            "git"
+          ],
+          "effective": [
+            "nodejs",
+            "yarn",
+            "nginx",
+            "git"
+          ]
+        },
+        "username": "admin",
+        "sudoAccess": false,
+        "environment": "vmbr0"
+      },
+      "requestedBy": "admin",
+      "source": "portal",
+      "status": "provisioning",
+      "requiresApproval": false,
+      "policy": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 50
+      },
+      "approvedBy": null,
+      "approvedAt": null,
+      "rejectedBy": null,
+      "rejectedAt": null,
+      "rejectionReason": null,
+      "jobId": "ft_LMDCYpZ",
+      "createdAt": "2026-07-04T12:24:22.862Z",
+      "updatedAt": "2026-07-04T12:24:23.137Z"
+    }
+  ]
+}

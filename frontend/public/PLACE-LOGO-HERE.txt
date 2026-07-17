@@ -1,0 +1,7 @@
+Save the app logo image in this folder as:
+
+    logo.png
+
+It is used as the top-nav brand mark and the browser favicon (referenced as
+"/logo.png"). Until this file exists, the app falls back to the built-in SVG
+mark. You can delete this note once logo.png is added.

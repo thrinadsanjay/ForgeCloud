@@ -1,0 +1,34 @@
+{
+  "web": {
+    "label": "Web server",
+    "packages": ["nginx", "nodejs"]
+  },
+  "db": {
+    "label": "Database",
+    "packages": ["postgres", "mysql", "mongodb"]
+  },
+  "docker": {
+    "label": "Containers",
+    "packages": ["docker", "docker-compose"]
+  },
+  "api": {
+    "label": "API / backend",
+    "packages": ["nodejs", "nginx", "git"]
+  },
+  "cache": {
+    "label": "Cache",
+    "packages": ["redis"]
+  },
+  "queue": {
+    "label": "Message queue",
+    "packages": ["rabbitmq"]
+  },
+  "app": {
+    "label": "General app",
+    "packages": ["git", "curl"]
+  },
+  "worker": {
+    "label": "Background worker",
+    "packages": ["nodejs", "git"]
+  }
+}
