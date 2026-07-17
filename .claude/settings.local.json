@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check backend/src/services/requestStore.js)",
+      "Bash(./stop.sh)",
+      "Bash(./start.sh)",
+      "Bash(./status.sh)",
+      "Bash(netstat -ano)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(curl -s -m 5 http://localhost:4100/health)",
+      "Bash(tasklist //FI \"IMAGENAME eq node.exe\")",
+      "Bash(curl -s -m 5 -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:4100/api/mappings)"
+    ]
+  }
+}

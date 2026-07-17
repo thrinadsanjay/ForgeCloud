@@ -1,0 +1,65 @@
+# Forge — container deployment.
+#
+#   docker compose up -d --build
+#
+# Runtime data lives in PostgreSQL (forge-db volume). Configuration is done
+# at runtime via env vars below and/or the in-app Settings page.
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: forge-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: proxmox_ssp
+      POSTGRES_USER: ssp
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+    volumes:
+      - forge-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ssp -d proxmox_ssp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  forge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: forge:latest
+    container_name: forge
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "4100:4100"
+    environment:
+      NODE_ENV: production
+      PORT: "4100"
+      DATABASE_URL: postgresql://ssp:${DB_PASSWORD:-changeme}@db:5432/proxmox_ssp
+      # --- Set these for a real deployment (or configure via Settings UI) ---
+      # JWT_SECRET: "change-me-to-a-long-random-string"
+      # FORGE_ADMIN_PASSWORD: "set-a-strong-first-run-admin-password"
+      # PROXMOX_HOST: "10.0.0.10"
+      # PROXMOX_PORT: "8006"
+      # PROXMOX_NODE: "pve"
+      # PROXMOX_USE_API_TOKEN: "true"
+      # PROXMOX_TOKEN_ID: "root@pam!forge-portal"
+      # PROXMOX_TOKEN_SECRET: "..."
+      # PROXMOX_USERNAME: "root@pam"
+      # PROXMOX_PASSWORD: "..."
+      # PROXMOX_VERIFY_SSL: "false"
+    # Alternatively, load everything from a file (kept out of the image):
+    # env_file:
+    #   - backend/.env
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://127.0.0.1:'+(process.env.PORT||4100)+'/health',r=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"]
+      interval: 30s
+      timeout: 4s
+      retries: 3
+      start_period: 15s
+
+volumes:
+  forge-db:

@@ -1,0 +1,3490 @@
+{
+  "entries": [
+    {
+      "id": "gHJSgP3AYR",
+      "timestamp": "2026-07-01T14:42:16.742Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "zyjCh_4kt3",
+      "timestamp": "2026-07-01T14:51:26.404Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.create",
+      "target": "rhel-vm-01",
+      "status": "success",
+      "detail": {
+        "via": "chat",
+        "jobId": "EYiv9fFymA"
+      }
+    },
+    {
+      "id": "sTE-k7JkKt",
+      "timestamp": "2026-07-01T14:56:56.341Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 114",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "-q6IDVFuL3",
+      "timestamp": "2026-07-01T14:57:07.771Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 105",
+      "status": "failure",
+      "detail": {
+        "error": "Proxmox API error [DELETE /nodes/prmx1pc01/qemu/105?purge=1&destroy-unreferenced-disks=1]: {\"message\":\"VM 105 is running - destroy failed\\n\",\"data\":null}"
+      }
+    },
+    {
+      "id": "U8jmcDMyLL",
+      "timestamp": "2026-07-01T14:57:31.452Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 105",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "a2mLwGy152",
+      "timestamp": "2026-07-01T14:57:42.296Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 105",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "Hyc5DDImY7",
+      "timestamp": "2026-07-01T14:57:49.961Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 105",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "qBx9QAztK8",
+      "timestamp": "2026-07-01T14:59:55.251Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.create",
+      "target": "alpine-vm-01",
+      "status": "success",
+      "detail": {
+        "via": "chat",
+        "jobId": "R6dUDsVJ__"
+      }
+    },
+    {
+      "id": "421f6hoXuw",
+      "timestamp": "2026-07-01T15:08:19.257Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 103",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "s_vUcJDZ4E",
+      "timestamp": "2026-07-01T15:08:24.931Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 103",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "jQXa9sv06k",
+      "timestamp": "2026-07-01T15:08:26.443Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 103",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "paIHaHsnI0",
+      "timestamp": "2026-07-01T15:08:32.992Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 103",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "HofjAzI2dM",
+      "timestamp": "2026-07-01T15:09:37.223Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.create",
+      "target": "alpine-vm-01",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 20,
+        "jobId": "jGhw4VQfjK"
+      }
+    },
+    {
+      "id": "3f-qu59tiO",
+      "timestamp": "2026-07-01T15:18:10.356Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 103",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "X0XE6Apl_f",
+      "timestamp": "2026-07-01T15:18:14.779Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 103",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "5dNTziYoLz",
+      "timestamp": "2026-07-01T15:18:24.065Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 103",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "YWU61Uglnt",
+      "timestamp": "2026-07-01T15:43:35.258Z",
+      "actor": {
+        "username": "admin"
+      },
+      "action": "vm.create",
+      "target": "alpine-vm-01",
+      "status": "success",
+      "detail": {
+        "via": "chat",
+        "jobId": "iojtEAy7bJ"
+      }
+    },
+    {
+      "id": "L1EKNezYLG",
+      "timestamp": "2026-07-01T15:43:55.708Z",
+      "actor": {
+        "username": "admin"
+      },
+      "action": "vm.create",
+      "target": "alpine-vm-01",
+      "status": "success",
+      "detail": {
+        "via": "chat",
+        "jobId": "9vvadTayMr"
+      }
+    },
+    {
+      "id": "iEuyqB193Z",
+      "timestamp": "2026-07-01T15:46:15.185Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 105",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "8LtboHMOEe",
+      "timestamp": "2026-07-01T15:46:16.223Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 101",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "wD-WtpaAGo",
+      "timestamp": "2026-07-01T15:46:18.378Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 105",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "5NCSbbHbog",
+      "timestamp": "2026-07-01T15:46:19.231Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 105",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "pdHRPzfY2m",
+      "timestamp": "2026-07-01T15:46:20.255Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 101",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "g9Y9xlu338",
+      "timestamp": "2026-07-01T15:46:23.221Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 105",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "-PCeSxXcBJ",
+      "timestamp": "2026-07-01T15:46:26.458Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 104",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "RB1HImL_5S",
+      "timestamp": "2026-07-01T15:46:27.190Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 104",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "rfuU6cZSI4",
+      "timestamp": "2026-07-01T15:46:30.729Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 104",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "D1Il6LuW_I",
+      "timestamp": "2026-07-01T15:46:36.067Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 104",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "9JOvleCt_E",
+      "timestamp": "2026-07-02T08:40:18.484Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "bxtsGGkk66",
+      "timestamp": "2026-07-02T09:36:31.825Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.create",
+      "target": "alpine-vm-01",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "jobId": "98dt3J0nVW"
+      }
+    },
+    {
+      "id": "nVkFu3q3W1",
+      "timestamp": "2026-07-02T09:43:46.787Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "_xe14sGUaY",
+      "timestamp": "2026-07-02T11:27:53.683Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "stack.create",
+      "target": "webapp-poc",
+      "status": "success",
+      "detail": {
+        "stackId": "lamp-stack",
+        "jobId": "qmu0IbzW9d"
+      }
+    },
+    {
+      "id": "-SZuGBtfVA",
+      "timestamp": "2026-07-03T01:54:58.533Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "k4Jw4jtdEi",
+      "timestamp": "2026-07-03T02:43:53.361Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "o_KE3osWNa",
+      "timestamp": "2026-07-03T02:49:31.880Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "webapp-poc-db (VMID 104)",
+      "status": "success",
+      "detail": {
+        "via": "chat"
+      }
+    },
+    {
+      "id": "RlQ0XjLI5c",
+      "timestamp": "2026-07-03T02:52:03.924Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.start",
+      "target": "VMID 104",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "pSHcBqNcRt",
+      "timestamp": "2026-07-03T05:34:33.748Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "4Q5R0f03U5",
+      "timestamp": "2026-07-03T05:57:10.731Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "user.create",
+      "target": "rahul",
+      "status": "success",
+      "detail": {
+        "role": "user"
+      }
+    },
+    {
+      "id": "R7JQd-XyVx",
+      "timestamp": "2026-07-03T05:57:42.337Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "JQ22UjtZoN",
+      "timestamp": "2026-07-03T06:00:12.226Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "vm.request",
+      "target": "alpine-llm-01",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 8,
+        "memoryGB": 32,
+        "diskGB": 200,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "rIGZCYOwRxGr",
+        "jobId": null,
+        "status": "pending_approval"
+      }
+    },
+    {
+      "id": "jNACjQC-Ht",
+      "timestamp": "2026-07-03T06:04:39.239Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "4LNx5-e7iI",
+      "timestamp": "2026-07-03T06:36:57.732Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "vX5cIe5qnN",
+      "timestamp": "2026-07-03T06:37:09.921Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "vm.request",
+      "target": "alpine-llm-01",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 8,
+        "memoryGB": 32,
+        "diskGB": 200,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "OBpT7Zpy0HYh",
+        "jobId": null,
+        "status": "pending_approval"
+      }
+    },
+    {
+      "id": "vJ1ciJSv9v",
+      "timestamp": "2026-07-03T06:37:25.609Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "sQebk-Whdi",
+      "timestamp": "2026-07-03T06:37:52.026Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "request.approve",
+      "target": "Request OBpT7Zpy0HYh",
+      "status": "success",
+      "detail": {
+        "requestId": "OBpT7Zpy0HYh",
+        "jobId": "yKjKMF62z4"
+      }
+    },
+    {
+      "id": "6jzzh2ikAU",
+      "timestamp": "2026-07-03T06:38:21.357Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "lpqMJYwMi5",
+      "timestamp": "2026-07-03T06:51:32.615Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "_ZiTN5jg_p",
+      "timestamp": "2026-07-03T06:56:45.724Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "sv_5_lr4RN",
+      "timestamp": "2026-07-03T07:03:58.911Z",
+      "actor": {
+        "username": "admin"
+      },
+      "action": "vm.request",
+      "target": "rhel-vm-01",
+      "status": "success",
+      "detail": {
+        "via": "chat",
+        "requestId": "Q10EpMdjMdum",
+        "jobId": "a1qH26gGhP"
+      }
+    },
+    {
+      "id": "mr7-ibOLZx",
+      "timestamp": "2026-07-03T07:05:08.986Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "alpine-llm-01",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 8,
+        "memoryGB": 32,
+        "diskGB": 100,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "LGtHt2x8sPpz",
+        "jobId": null,
+        "status": "pending_approval"
+      }
+    },
+    {
+      "id": "EotvY7Qcou",
+      "timestamp": "2026-07-03T07:07:56.907Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "LtCFdpV7AB",
+      "timestamp": "2026-07-03T09:10:08.429Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "Yj3RhARJeA",
+      "timestamp": "2026-07-03T11:32:24.110Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.shutdown",
+      "target": "VMID 101",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "Vl8df97D__",
+      "timestamp": "2026-07-03T11:34:20.872Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "faYqBB-DUB",
+      "timestamp": "2026-07-03T13:05:31.369Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "g4JcWkq3pG",
+      "timestamp": "2026-07-03T13:14:08.417Z",
+      "actor": {
+        "id": "yMBwRyp3",
+        "username": "rahul",
+        "role": "user"
+      },
+      "action": "vm.request",
+      "target": "llm-inference-vm",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 8,
+        "memoryGB": 32,
+        "diskGB": 100,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "2QWdDHrDJ0Ty",
+        "jobId": null,
+        "status": "pending_approval"
+      }
+    },
+    {
+      "id": "ZOxzd9b4Bt",
+      "timestamp": "2026-07-03T13:14:51.067Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "oLco7fSbkW",
+      "timestamp": "2026-07-03T13:15:05.944Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "request.approve",
+      "target": "Request 2QWdDHrDJ0Ty",
+      "status": "success",
+      "detail": {
+        "requestId": "2QWdDHrDJ0Ty",
+        "jobId": "cdyRuchSQX"
+      }
+    },
+    {
+      "id": "Fs7XgnDxUv",
+      "timestamp": "2026-07-03T14:34:31.585Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "BMQtpxKWCMvw",
+        "jobId": "0yfAnN83ef",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "v35C3gCmn4",
+      "timestamp": "2026-07-03T14:41:28.236Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "test2",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "la6-M3N9_873",
+        "jobId": "vKNvza6RgB",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "2LDmA9omBX",
+      "timestamp": "2026-07-03T14:53:46.163Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "test3",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "bOJUBROoSSKK",
+        "jobId": "EAvOgDk9LS",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "zuAFTK5h1l",
+      "timestamp": "2026-07-03T14:57:30.306Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "rhel1",
+      "status": "success",
+      "detail": {
+        "templateId": "rhel",
+        "cpu": 1,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "python",
+          "nodejs"
+        ],
+        "packageSelection": {
+          "recommendedDefaults": [
+            "python",
+            "nodejs"
+          ],
+          "additional": [],
+          "selected": [
+            "python",
+            "nodejs"
+          ],
+          "effective": [
+            "python",
+            "nodejs"
+          ]
+        },
+        "requestId": "l7zSH6Qb6blU",
+        "jobId": "E1nViiCV_H",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "XZ4mPDNGCZ",
+      "timestamp": "2026-07-03T15:46:39.850Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "3ALvEwMGG3",
+      "timestamp": "2026-07-03T15:48:45.654Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "NJ4--HYcgV",
+      "timestamp": "2026-07-03T15:49:10.711Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "8EGcTvQEBF",
+      "timestamp": "2026-07-03T15:49:11.018Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 100",
+      "status": "success",
+      "detail": {
+        "osName": "Alpine Linux"
+      }
+    },
+    {
+      "id": "KTrhSFjUFw",
+      "timestamp": "2026-07-03T15:49:11.481Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.delete",
+      "target": "VMID 100",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "-7Y-vdoZID",
+      "timestamp": "2026-07-03T15:52:57.477Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 100",
+      "status": "success",
+      "detail": {
+        "osName": "Alpine"
+      }
+    },
+    {
+      "id": "DVux-RYQ33",
+      "timestamp": "2026-07-03T15:53:17.857Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 200",
+      "status": "success",
+      "detail": {
+        "osName": "RHEL9"
+      }
+    },
+    {
+      "id": "F_B_U_94I9",
+      "timestamp": "2026-07-03T15:53:30.209Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.network.save",
+      "target": "vmbr30",
+      "status": "success",
+      "detail": {
+        "type": "bridge"
+      }
+    },
+    {
+      "id": "kUsFs3L2p8",
+      "timestamp": "2026-07-03T15:53:36.960Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.network.save",
+      "target": "vmbr190",
+      "status": "success",
+      "detail": {
+        "type": "bridge"
+      }
+    },
+    {
+      "id": "0V5h6ci278",
+      "timestamp": "2026-07-03T15:53:44.403Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.network.save",
+      "target": "vmbr0",
+      "status": "success",
+      "detail": {
+        "type": "bridge"
+      }
+    },
+    {
+      "id": "B67gx52n-p",
+      "timestamp": "2026-07-03T16:00:21.865Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "Yf7IfBnmMR",
+      "timestamp": "2026-07-03T16:00:22.487Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 100",
+      "status": "success",
+      "detail": {
+        "osName": "Alpine Linux"
+      }
+    },
+    {
+      "id": "v9gW-CPkCQ",
+      "timestamp": "2026-07-03T16:00:22.678Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.delete",
+      "target": "VMID 100",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "0t8oIYhICV",
+      "timestamp": "2026-07-03T16:01:40.833Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "VRE2mdPTlV",
+      "timestamp": "2026-07-03T16:27:29.082Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "Ry0pgzFbPT",
+      "timestamp": "2026-07-03T16:39:32.274Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "g1up1aHH8i",
+      "timestamp": "2026-07-03T16:39:32.411Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "cpc-diag-01",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-100",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 5,
+        "packages": [],
+        "requestId": "f5fSEpn_z5nk",
+        "jobId": "yMlYyUnUHe",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "SSy0nrhHQN",
+      "timestamp": "2026-07-03T16:41:44.031Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "MU46O66w3F",
+      "timestamp": "2026-07-03T16:43:39.900Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "UamLSjDPVo",
+      "timestamp": "2026-07-03T16:43:40.097Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.stop",
+      "target": "VMID 116",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "igL7vtzGAH",
+      "timestamp": "2026-07-03T16:43:46.369Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 116",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "ZSCfu6YrNi",
+      "timestamp": "2026-07-03T16:52:19.848Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "test12",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-200",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 35,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "requestId": "KGIa37gs85li",
+        "jobId": "e4yNgAle_a",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "ptZE_ZEEpj",
+      "timestamp": "2026-07-03T17:04:42.605Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "JFF5kjdTdJ",
+      "timestamp": "2026-07-03T17:06:54.580Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "test32",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-200",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 35,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "requestId": "eSDYD31aF5CF",
+        "jobId": "foo6tOWZh3",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "kz61_OL_FU",
+      "timestamp": "2026-07-03T17:13:17.317Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "docker01",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-200",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [
+          "docker"
+        ],
+        "packageSelection": {
+          "required": [
+            "docker"
+          ],
+          "selected": [
+            "docker"
+          ],
+          "effective": [
+            "docker"
+          ]
+        },
+        "requestId": "tShme9f5t4TQ",
+        "jobId": "MJKTiEeyhf",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "2xfQTslkXW",
+      "timestamp": "2026-07-03T17:23:41.763Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "65fkoevdGN",
+      "timestamp": "2026-07-03T17:33:09.046Z",
+      "actor": {
+        "username": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "failure",
+      "detail": {
+        "reason": "bad credentials"
+      }
+    },
+    {
+      "id": "P8mp9LNxkg",
+      "timestamp": "2026-07-03T17:33:14.295Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "73uYe2A99s",
+      "timestamp": "2026-07-03T17:42:28.950Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "w7S82NimFM",
+      "timestamp": "2026-07-03T17:42:48.880Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "Skgr_WsTKP",
+      "timestamp": "2026-07-03T17:45:59.675Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "alpine-test",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-100",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "requestId": "Kneu5nHPJHRC",
+        "jobId": "gEvITmZkkB",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "Oeae0x0uXd",
+      "timestamp": "2026-07-03T17:53:21.612Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "servicenow.incident.create",
+      "target": "INC1006917",
+      "status": "success",
+      "detail": {
+        "jobId": "HSexI4eDJj",
+        "shortDescription": "CPC provisioning failed: inc-demo",
+        "mock": true
+      }
+    },
+    {
+      "id": "D3Y0MSga1T",
+      "timestamp": "2026-07-03T17:58:10.407Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 100",
+      "status": "success",
+      "detail": {
+        "osName": "ColruytStandard"
+      }
+    },
+    {
+      "id": "w8kVUFyJia",
+      "timestamp": "2026-07-04T03:13:13.337Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "P0-PqcRtFu",
+      "timestamp": "2026-07-04T03:39:17.070Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.open",
+      "target": "REQ4508546",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "requestedBy": "prakash",
+        "mock": true
+      }
+    },
+    {
+      "id": "t8YcCHGry2",
+      "timestamp": "2026-07-04T03:39:17.119Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.ipam.address.allocate",
+      "target": "10.49.23.140",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "vlan": 129,
+        "mock": true
+      }
+    },
+    {
+      "id": "MaQfH64JWF",
+      "timestamp": "2026-07-04T03:39:17.162Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.compute.capacity.reserve",
+      "target": "esx-11.dc.internal",
+      "status": "success",
+      "detail": {
+        "cpu": 4,
+        "memoryGB": 8,
+        "cluster": "PROD-CL2",
+        "mock": true
+      }
+    },
+    {
+      "id": "ZGr24oaB6K",
+      "timestamp": "2026-07-04T03:39:17.228Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.storage.volume.reserve",
+      "target": "vol-18876767",
+      "status": "success",
+      "detail": {
+        "diskGB": 100,
+        "datastore": "ds-san-prod-08",
+        "mock": true
+      }
+    },
+    {
+      "id": "FW6YM2P56F",
+      "timestamp": "2026-07-04T03:39:17.281Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.firewall.access.request",
+      "target": "CHG4989454",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "ip": "10.49.23.140",
+        "ruleCount": 3,
+        "mock": true
+      }
+    },
+    {
+      "id": "448k-hEK1L",
+      "timestamp": "2026-07-04T03:39:17.338Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.dns.record.create",
+      "target": "demo-app-01.cpc.internal",
+      "status": "success",
+      "detail": {
+        "ip": "10.49.23.140",
+        "mock": true
+      }
+    },
+    {
+      "id": "HvkrxZdeOe",
+      "timestamp": "2026-07-04T03:39:17.388Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.cmdb.ci.register",
+      "target": "CI16889438",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "ip": "10.49.23.140",
+        "owner": "prakash",
+        "mock": true
+      }
+    },
+    {
+      "id": "Tsc1p5jWVy",
+      "timestamp": "2026-07-04T03:39:17.440Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.close",
+      "target": "TASK1337385",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "mock": true
+      }
+    },
+    {
+      "id": "8HFaNJgiov",
+      "timestamp": "2026-07-04T03:39:23.478Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "mock-internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "BPdA2JFMr5vg",
+        "jobId": "RTG3Gr3dea",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "Ji6S5-iIim",
+      "timestamp": "2026-07-04T03:39:25.674Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.open",
+      "target": "REQ4506864",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "requestedBy": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "N2AZTn0Cj_",
+      "timestamp": "2026-07-04T03:39:28.314Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.ipam.address.allocate",
+      "target": "10.115.23.22",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "vlan": 195,
+        "mock": true
+      }
+    },
+    {
+      "id": "AMGXatWOQ9",
+      "timestamp": "2026-07-04T03:39:30.750Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.compute.capacity.reserve",
+      "target": "esx-31.dc.internal",
+      "status": "success",
+      "detail": {
+        "cpu": 2,
+        "memoryGB": 2,
+        "cluster": "PROD-CL1",
+        "mock": true
+      }
+    },
+    {
+      "id": "lSSQFD9q8h",
+      "timestamp": "2026-07-04T03:39:33.589Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.storage.volume.reserve",
+      "target": "vol-73418449",
+      "status": "success",
+      "detail": {
+        "diskGB": 50,
+        "datastore": "ds-san-prod-02",
+        "mock": true
+      }
+    },
+    {
+      "id": "1f9bDsffR_",
+      "timestamp": "2026-07-04T03:39:36.641Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.firewall.access.request",
+      "target": "CHG1980057",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "ip": "10.115.23.22",
+        "ruleCount": 3,
+        "mock": true
+      }
+    },
+    {
+      "id": "QkEXQi6QZG",
+      "timestamp": "2026-07-04T03:39:38.977Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.dns.record.create",
+      "target": "test.cpc.internal",
+      "status": "success",
+      "detail": {
+        "ip": "10.115.23.22",
+        "mock": true
+      }
+    },
+    {
+      "id": "sXggtnXF5h",
+      "timestamp": "2026-07-04T03:39:41.512Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.cmdb.ci.register",
+      "target": "CI11612987",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "ip": "10.115.23.22",
+        "owner": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "fLtSpLR93Y",
+      "timestamp": "2026-07-04T03:39:43.548Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.close",
+      "target": "TASK0035196",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "mock": true
+      }
+    },
+    {
+      "id": "Evzhd-U2Y9",
+      "timestamp": "2026-07-04T03:39:46.214Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "rck_eKxbEf",
+      "timestamp": "2026-07-04T03:39:46.712Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "demo-app-01",
+      "status": "success",
+      "detail": {
+        "templateId": "mock-internal-linux",
+        "cpu": 4,
+        "memoryGB": 8,
+        "diskGB": 100,
+        "requestId": "QEpk4gPDMvlL",
+        "jobId": "u4IvLMKp9E",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "BMEq0f45ex",
+      "timestamp": "2026-07-04T03:39:48.916Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.open",
+      "target": "REQ4506865",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "requestedBy": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "IqILvezjjb",
+      "timestamp": "2026-07-04T03:39:51.556Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.ipam.address.allocate",
+      "target": "10.24.75.137",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "vlan": 104,
+        "mock": true
+      }
+    },
+    {
+      "id": "cBPorlYFl0",
+      "timestamp": "2026-07-04T03:39:53.998Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.compute.capacity.reserve",
+      "target": "esx-23.dc.internal",
+      "status": "success",
+      "detail": {
+        "cpu": 4,
+        "memoryGB": 8,
+        "cluster": "PROD-CL4",
+        "mock": true
+      }
+    },
+    {
+      "id": "s67gIy_H9X",
+      "timestamp": "2026-07-04T03:39:56.853Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.storage.volume.reserve",
+      "target": "vol-77142997",
+      "status": "success",
+      "detail": {
+        "diskGB": 100,
+        "datastore": "ds-san-prod-08",
+        "mock": true
+      }
+    },
+    {
+      "id": "dzcBR0lInH",
+      "timestamp": "2026-07-04T03:39:59.884Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.firewall.access.request",
+      "target": "CHG6011363",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "ip": "10.24.75.137",
+        "ruleCount": 3,
+        "mock": true
+      }
+    },
+    {
+      "id": "PPfzsv_edC",
+      "timestamp": "2026-07-04T03:40:02.224Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.dns.record.create",
+      "target": "demo-app-01.cpc.internal",
+      "status": "success",
+      "detail": {
+        "ip": "10.24.75.137",
+        "mock": true
+      }
+    },
+    {
+      "id": "NdK_FMBY4t",
+      "timestamp": "2026-07-04T03:40:04.810Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.cmdb.ci.register",
+      "target": "CI52185505",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "ip": "10.24.75.137",
+        "owner": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "W8pX6UI0ou",
+      "timestamp": "2026-07-04T03:40:06.863Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.close",
+      "target": "TASK6545767",
+      "status": "success",
+      "detail": {
+        "hostname": "demo-app-01",
+        "mock": true
+      }
+    },
+    {
+      "id": "KZ8Fa0fFke",
+      "timestamp": "2026-07-04T03:50:06.541Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "steps-demo",
+      "status": "success",
+      "detail": {
+        "templateId": "mock-internal-linux",
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 40,
+        "requestId": "Fr-akhzGmZhZ",
+        "jobId": "TniNHxikrD",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "C56EKIUIyS",
+      "timestamp": "2026-07-04T03:50:08.720Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.open",
+      "target": "REQ4507543",
+      "status": "success",
+      "detail": {
+        "hostname": "steps-demo",
+        "requestedBy": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "IYVIwq4WKe",
+      "timestamp": "2026-07-04T03:50:11.368Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.ipam.address.allocate",
+      "target": "10.61.172.169",
+      "status": "success",
+      "detail": {
+        "hostname": "steps-demo",
+        "vlan": 141,
+        "mock": true
+      }
+    },
+    {
+      "id": "363e7ik36E",
+      "timestamp": "2026-07-04T03:50:13.811Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.compute.capacity.reserve",
+      "target": "esx-32.dc.internal",
+      "status": "success",
+      "detail": {
+        "cpu": 2,
+        "memoryGB": 4,
+        "cluster": "PROD-CL2",
+        "mock": true
+      }
+    },
+    {
+      "id": "PVfw0b96w2",
+      "timestamp": "2026-07-04T03:50:16.662Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.storage.volume.reserve",
+      "target": "vol-25011044",
+      "status": "success",
+      "detail": {
+        "diskGB": 40,
+        "datastore": "ds-san-prod-04",
+        "mock": true
+      }
+    },
+    {
+      "id": "m08slvOCvj",
+      "timestamp": "2026-07-04T03:50:19.719Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.firewall.access.request",
+      "target": "CHG8829822",
+      "status": "success",
+      "detail": {
+        "hostname": "steps-demo",
+        "ip": "10.61.172.169",
+        "ruleCount": 3,
+        "mock": true
+      }
+    },
+    {
+      "id": "Gx-3pYJS5-",
+      "timestamp": "2026-07-04T03:50:22.061Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.dns.record.create",
+      "target": "steps-demo.cpc.internal",
+      "status": "success",
+      "detail": {
+        "ip": "10.61.172.169",
+        "mock": true
+      }
+    },
+    {
+      "id": "YaQ4ADXlc_",
+      "timestamp": "2026-07-04T03:50:24.614Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.cmdb.ci.register",
+      "target": "CI15505037",
+      "status": "success",
+      "detail": {
+        "hostname": "steps-demo",
+        "ip": "10.61.172.169",
+        "owner": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "zOEfZMgJwV",
+      "timestamp": "2026-07-04T03:50:26.671Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.close",
+      "target": "TASK1973607",
+      "status": "success",
+      "detail": {
+        "hostname": "steps-demo",
+        "mock": true
+      }
+    },
+    {
+      "id": "t3fHWoXqso",
+      "timestamp": "2026-07-04T03:51:50.274Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "mock-internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "4ld6NsGaS31u",
+        "jobId": "8x6m3pZKpu",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "o7sDy6MJsW",
+      "timestamp": "2026-07-04T03:51:52.483Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.open",
+      "target": "REQ4507544",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "requestedBy": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "n2_dMC7Ak6",
+      "timestamp": "2026-07-04T03:51:55.133Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.ipam.address.allocate",
+      "target": "10.116.231.196",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "vlan": 196,
+        "mock": true
+      }
+    },
+    {
+      "id": "vdAd-oNXvu",
+      "timestamp": "2026-07-04T03:51:57.591Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.compute.capacity.reserve",
+      "target": "esx-05.dc.internal",
+      "status": "success",
+      "detail": {
+        "cpu": 2,
+        "memoryGB": 2,
+        "cluster": "PROD-CL4",
+        "mock": true
+      }
+    },
+    {
+      "id": "ssX59Y5zBM",
+      "timestamp": "2026-07-04T03:52:00.434Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.storage.volume.reserve",
+      "target": "vol-32057503",
+      "status": "success",
+      "detail": {
+        "diskGB": 50,
+        "datastore": "ds-san-prod-02",
+        "mock": true
+      }
+    },
+    {
+      "id": "lnxkLyn7wE",
+      "timestamp": "2026-07-04T03:52:03.478Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.firewall.access.request",
+      "target": "CHG8725931",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "ip": "10.116.231.196",
+        "ruleCount": 3,
+        "mock": true
+      }
+    },
+    {
+      "id": "EdGWBVsauA",
+      "timestamp": "2026-07-04T03:52:05.824Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.dns.record.create",
+      "target": "test.cpc.internal",
+      "status": "success",
+      "detail": {
+        "ip": "10.116.231.196",
+        "mock": true
+      }
+    },
+    {
+      "id": "v-PJd44UZw",
+      "timestamp": "2026-07-04T03:52:08.365Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.cmdb.ci.register",
+      "target": "CI62858350",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "ip": "10.116.231.196",
+        "owner": "admin",
+        "mock": true
+      }
+    },
+    {
+      "id": "ziAJIaUI1F",
+      "timestamp": "2026-07-04T03:52:10.403Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.close",
+      "target": "TASK5133557",
+      "status": "success",
+      "detail": {
+        "hostname": "test",
+        "mock": true
+      }
+    },
+    {
+      "id": "lsIAPPxROn",
+      "timestamp": "2026-07-04T03:55:24.797Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "request.reject",
+      "target": "Request LGtHt2x8sPpz",
+      "status": "success",
+      "detail": {
+        "requestId": "LGtHt2x8sPpz",
+        "reason": "test"
+      }
+    },
+    {
+      "id": "NTd1fDJtAc",
+      "timestamp": "2026-07-04T04:24:21.098Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 106",
+      "status": "failure",
+      "detail": {
+        "error": "Proxmox API error [DELETE /nodes/prmx1pc01/qemu/106?purge=1&destroy-unreferenced-disks=1]: {\"data\":null,\"message\":\"VM 106 is running - destroy failed\\n\"}"
+      }
+    },
+    {
+      "id": "VuhhJ7GB-H",
+      "timestamp": "2026-07-04T04:24:35.273Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "VMID 106",
+      "status": "failure",
+      "detail": {
+        "error": "Proxmox API error [DELETE /nodes/prmx1pc01/qemu/106?purge=1&destroy-unreferenced-disks=1]: {\"message\":\"VM 106 is running - destroy failed\\n\",\"data\":null}"
+      }
+    },
+    {
+      "id": "bStWgs8x8i",
+      "timestamp": "2026-07-04T04:28:33.760Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "GUUIrF2NGhHc",
+        "jobId": "8sTXCmGxxw",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "w2aB_uN8Bv",
+      "timestamp": "2026-07-04T04:28:33.807Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "servicenow.incident.create",
+      "target": "INC1003899",
+      "status": "success",
+      "detail": {
+        "jobId": "8sTXCmGxxw",
+        "shortDescription": "CPC provisioning failed: test",
+        "mock": true
+      }
+    },
+    {
+      "id": "-ZA3Y6-cK3",
+      "timestamp": "2026-07-04T04:29:07.492Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test123",
+      "status": "success",
+      "detail": {
+        "templateId": "internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "WVksR1BtKNMC",
+        "jobId": "LL5HVulgC-",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "ItGZmgLVTj",
+      "timestamp": "2026-07-04T04:29:07.526Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "servicenow.incident.create",
+      "target": "INC1003900",
+      "status": "success",
+      "detail": {
+        "jobId": "LL5HVulgC-",
+        "shortDescription": "CPC provisioning failed: test123",
+        "mock": true
+      }
+    },
+    {
+      "id": "k_GhTZUOKe",
+      "timestamp": "2026-07-04T04:40:02.085Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "5MXnF7h3Py4b",
+        "jobId": "MBVNtEbia-",
+        "status": "completed"
+      }
+    },
+    {
+      "id": "bBDV3FSxF-",
+      "timestamp": "2026-07-04T04:43:10.441Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "7-P_hFlvRPp7",
+        "jobId": "ZVl_eYTC7F",
+        "status": "completed"
+      }
+    },
+    {
+      "id": "so-yBdXjui",
+      "timestamp": "2026-07-04T04:43:48.333Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "mou20As1LTwY",
+        "jobId": "IYPhly_Cmm",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "NfLwk-8Ofx",
+      "timestamp": "2026-07-04T04:43:49.844Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.open",
+      "target": "REQ4508423",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "yWfSUsLPwm",
+      "timestamp": "2026-07-04T04:43:51.383Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.ipam.address.allocate",
+      "target": "10.92.201.224",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "Go7BRNU8rp",
+      "timestamp": "2026-07-04T04:43:52.925Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.compute.capacity.reserve",
+      "target": "esx-14.dc.internal",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "bJ5aFjGAR9",
+      "timestamp": "2026-07-04T04:43:54.474Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.storage.volume.reserve",
+      "target": "vol-82145898",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "tGgKbtZ5RV",
+      "timestamp": "2026-07-04T04:43:56.042Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.firewall.access.request",
+      "target": "CHG8678889",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "FVEIFs0jNb",
+      "timestamp": "2026-07-04T04:43:57.588Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.dns.record.create",
+      "target": "test.cpc.internal",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "cf6JsA5zS3",
+      "timestamp": "2026-07-04T04:43:59.134Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.cmdb.ci.register",
+      "target": "CI67384576",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "F0xTkNhDHs",
+      "timestamp": "2026-07-04T04:44:00.681Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.itsm.request.close",
+      "target": "TASK5359915",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "0CAH003eKm",
+      "timestamp": "2026-07-04T05:18:12.131Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 100",
+      "status": "success",
+      "detail": {
+        "osName": "Alpine"
+      }
+    },
+    {
+      "id": "ND6qMBvf9c",
+      "timestamp": "2026-07-04T05:51:53.641Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 116",
+      "status": "success",
+      "detail": {
+        "osName": "MEAN"
+      }
+    },
+    {
+      "id": "1DDMy6OZLC",
+      "timestamp": "2026-07-04T06:00:19.034Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "J7LWM2Tqv_Bg",
+        "jobId": "d5YE-9aIHW",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "YfdhbYEWxA",
+      "timestamp": "2026-07-04T06:00:20.545Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX.datacenter",
+      "target": "DC Ghislenghien",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "8vTeKj4fPL",
+      "timestamp": "2026-07-04T06:00:22.086Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX.server-street",
+      "target": "STR-07",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "TTNJriI1Lf",
+      "timestamp": "2026-07-04T06:00:23.639Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX.iso-template",
+      "target": "rhel9-std-2024.03",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "a2xYdjZ_Su",
+      "timestamp": "2026-07-04T06:00:25.200Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.NETWORK.ip",
+      "target": "10.27.230.160",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "jBRSMtgB_C",
+      "timestamp": "2026-07-04T06:00:26.758Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.COMPUTE.vm-create",
+      "target": "27327",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "bYA6G9khDh",
+      "timestamp": "2026-07-04T06:00:28.308Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.omi",
+      "target": "AAP-1839949",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "rsHcGIuxXC",
+      "timestamp": "2026-07-04T06:00:29.867Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.ppdm",
+      "target": "AAP-7917825",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "i_4hTbbIFy",
+      "timestamp": "2026-07-04T06:00:31.418Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.SERVICENOW_ANSIBLE.cmdb",
+      "target": "CI00178246",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "A74YhedDe6",
+      "timestamp": "2026-07-04T06:00:32.974Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.guardicore",
+      "target": "AAP-5178001",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "abHCIvGeDK",
+      "timestamp": "2026-07-04T06:00:34.530Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.defender",
+      "target": "AAP-2910329",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "kr95i7P8E0",
+      "timestamp": "2026-07-04T06:00:36.077Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.COMPUTE.grant-perms",
+      "target": "PERM-989567",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "ArhI5D_kWn",
+      "timestamp": "2026-07-04T06:09:57.161Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "internal.request",
+      "target": "prakashtest",
+      "status": "success",
+      "detail": {
+        "templateId": "internal-linux",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "requestId": "S4LFDKpAhAOB",
+        "jobId": "vzoqM2FhkB",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "ZmVyQzT77W",
+      "timestamp": "2026-07-04T06:09:58.673Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX.datacenter",
+      "target": "DC Ghislenghien",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "yRfXOPYqFy",
+      "timestamp": "2026-07-04T06:10:00.220Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX.server-street",
+      "target": "STR-11",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "d3RaXYoFAT",
+      "timestamp": "2026-07-04T06:10:01.794Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX.iso-template",
+      "target": "rhel9-std-2026.04",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "L00QcstIcj",
+      "timestamp": "2026-07-04T06:10:03.371Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.NETWORK.ip",
+      "target": "10.50.225.68",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "QbjntB4Wv4",
+      "timestamp": "2026-07-04T06:10:04.906Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.COMPUTE.vm-create",
+      "target": "41113",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "T4sGUTEEOu",
+      "timestamp": "2026-07-04T06:10:06.454Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.omi",
+      "target": "AAP-8523866",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "id9YmKpINi",
+      "timestamp": "2026-07-04T06:10:07.991Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.ppdm",
+      "target": "AAP-9911958",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "AAPMUzcJRY",
+      "timestamp": "2026-07-04T06:10:09.533Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.SERVICENOW_ANSIBLE.cmdb",
+      "target": "CI12778978",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "nKNgAJ94Di",
+      "timestamp": "2026-07-04T06:10:11.085Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.guardicore",
+      "target": "AAP-7920510",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "KO-068F2SB",
+      "timestamp": "2026-07-04T06:10:12.629Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.LINUX_ANSIBLE.defender",
+      "target": "AAP-5759979",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "Y8Hkq27cRM",
+      "timestamp": "2026-07-04T06:10:14.179Z",
+      "actor": {
+        "username": "system",
+        "role": "system"
+      },
+      "action": "internal.COMPUTE.grant-perms",
+      "target": "PERM-801316",
+      "status": "success",
+      "detail": {
+        "simulated": true
+      }
+    },
+    {
+      "id": "eYl0bLin-Z",
+      "timestamp": "2026-07-04T06:17:48.369Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "prakash",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-116",
+        "cpu": 2,
+        "memoryGB": 2,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "requestId": "Csk3-PACLBnW",
+        "jobId": "iU3yCg3_qp",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "P7kJT_4Kyf",
+      "timestamp": "2026-07-04T06:21:07.069Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "FntjeZ4GML",
+      "timestamp": "2026-07-04T06:31:05.230Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "monitor",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-100",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "requestId": "G-0Mcz4RXNJe",
+        "jobId": "F_q-D0eJZF",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "vV7EyNBB7F",
+      "timestamp": "2026-07-04T06:42:28.921Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "test",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-100",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "requestId": "nee5DKJP7M76",
+        "jobId": "L_tP5FrbMH",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "F_d6FD5tba",
+      "timestamp": "2026-07-04T06:46:54.903Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 115",
+      "status": "success",
+      "detail": {
+        "osName": "MERN Stack"
+      }
+    },
+    {
+      "id": "Y1Ww4XJMMV",
+      "timestamp": "2026-07-04T06:47:27.524Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 114",
+      "status": "success",
+      "detail": {
+        "osName": "LAMP Stack"
+      }
+    },
+    {
+      "id": "-DxPXfkHxW",
+      "timestamp": "2026-07-04T06:47:48.063Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "mapping.template.save",
+      "target": "VMID 116",
+      "status": "success",
+      "detail": {
+        "osName": "MEAN Stack"
+      }
+    },
+    {
+      "id": "TM6JpiTC7i",
+      "timestamp": "2026-07-04T06:51:09.187Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "settings.update",
+      "target": "system settings",
+      "status": "success",
+      "detail": {
+        "keys": [
+          "PROXMOX_HOST",
+          "PROXMOX_PORT",
+          "PROXMOX_NODE",
+          "PROXMOX_USERNAME",
+          "PROXMOX_PASSWORD",
+          "PROXMOX_VERIFY_SSL",
+          "K3S_API_URL",
+          "K3S_API_TOKEN",
+          "K3S_VERIFY_TLS",
+          "VM_SSH_PASSWORD",
+          "SNIPPET_STORAGE",
+          "INTERNAL_LINUX_URL",
+          "INTERNAL_LINUX_TOKEN",
+          "INTERNAL_NETWORK_URL",
+          "INTERNAL_NETWORK_TOKEN",
+          "INTERNAL_COMPUTE_URL",
+          "INTERNAL_COMPUTE_TOKEN",
+          "INTERNAL_LINUX_ANSIBLE_URL",
+          "INTERNAL_LINUX_ANSIBLE_TOKEN",
+          "INTERNAL_SERVICENOW_ANSIBLE_URL",
+          "INTERNAL_SERVICENOW_ANSIBLE_TOKEN",
+          "INTERNAL_VERIFY_TLS",
+          "INTERNAL_HTTP_TIMEOUT_MS",
+          "GEMINI_API_KEY",
+          "GEMINI_MODEL",
+          "AUTO_APPROVE_DEPLOYMENTS",
+          "APPROVAL_CPU_THRESHOLD",
+          "APPROVAL_MEMORY_GB_THRESHOLD",
+          "APPROVAL_DISK_GB_THRESHOLD",
+          "ENTRA_TENANT_ID",
+          "ENTRA_CLIENT_ID",
+          "ENTRA_CLIENT_SECRET",
+          "ENTRA_REDIRECT_URI"
+        ]
+      }
+    },
+    {
+      "id": "aW-kViM3zY",
+      "timestamp": "2026-07-04T06:51:40.874Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "k8s.namespace.create",
+      "target": "nsfromapp",
+      "status": "success",
+      "detail": {
+        "team": "",
+        "env": "test",
+        "project": ""
+      }
+    },
+    {
+      "id": "tAeFj2o81T",
+      "timestamp": "2026-07-04T06:54:13.814Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "0x1BppO6tD",
+      "timestamp": "2026-07-04T06:54:56.357Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "k8s.namespace.delete",
+      "target": "nsfromapp",
+      "status": "success",
+      "detail": {}
+    },
+    {
+      "id": "0MsJc5LX2A",
+      "timestamp": "2026-07-04T06:58:15.091Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "testinggggggggg",
+      "status": "success",
+      "detail": {
+        "templateId": "tpl-100",
+        "cpu": 1,
+        "memoryGB": 1,
+        "diskGB": 50,
+        "packages": [],
+        "packageSelection": {
+          "required": [],
+          "selected": [],
+          "effective": []
+        },
+        "requestId": "gsUbHRJQEuzE",
+        "jobId": "eUoDG2T1MR",
+        "status": "provisioning"
+      }
+    },
+    {
+      "id": "5C-BQAYmYE",
+      "timestamp": "2026-07-04T07:06:59.841Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.connect",
+      "target": "VMID 102 (10.161.230.24)",
+      "status": "success",
+      "detail": {
+        "sshUser": "cpc"
+      }
+    },
+    {
+      "id": "PCZD3YTwYJ",
+      "timestamp": "2026-07-04T07:07:21.200Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.connect",
+      "target": "VMID 102 (10.161.230.24)",
+      "status": "success",
+      "detail": {
+        "sshUser": "cpc"
+      }
+    },
+    {
+      "id": "4jZwfmHkwz",
+      "timestamp": "2026-07-04T07:21:00.690Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "nKRxHJin9O",
+      "timestamp": "2026-07-04T07:21:35.134Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "qfALXUq8oK",
+      "timestamp": "2026-07-04T09:18:58.686Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.delete",
+      "target": "testinggggggggg (VMID 109)",
+      "status": "success",
+      "detail": {
+        "via": "chat"
+      }
+    },
+    {
+      "id": "yJFvTnGkXv",
+      "timestamp": "2026-07-04T09:54:25.534Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "BvtxIKBcmo",
+      "timestamp": "2026-07-04T10:26:01.909Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "auth.login",
+      "target": "",
+      "status": "success",
+      "detail": {
+        "method": "local"
+      }
+    },
+    {
+      "id": "7kHufMKBCe",
+      "timestamp": "2026-07-04T12:24:23.140Z",
+      "actor": {
+        "id": "ayqiYZcM",
+        "username": "admin",
+        "role": "admin"
+      },
+      "action": "vm.request",
+      "target": "alpine-vm-01",
+      "status": "success",
+      "detail": {
+        "templateId": "alpine",
+        "cpu": 2,
+        "memoryGB": 4,
+        "diskGB": 30,
+        "packages": [
+          "nodejs",
+          "yarn",
+          "nginx",
+          "git"
+        ],
+        "packageSelection": {
+          "selected": [
+            "nodejs",
+            "yarn",
+            "nginx",
+            "git"
+          ],
+          "effective": [
+            "nodejs",
+            "yarn",
+            "nginx",
+            "git"
+          ]
+        },
+        "requestId": "VC5r9M9tcXjc",
+        "jobId": "ft_LMDCYpZ",
+        "status": "provisioning"
+      }
+    }
+  ]
+}

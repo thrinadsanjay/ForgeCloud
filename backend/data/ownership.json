@@ -1,0 +1,89 @@
+{
+  "owners": {
+    "102": {
+      "username": null,
+      "hostname": null,
+      "createdAt": "2026-07-04T07:01:22.375Z",
+      "ip": "10.161.230.24"
+    },
+    "103": {
+      "username": "admin",
+      "hostname": "webapp-poc-app",
+      "createdAt": "2026-07-02T11:32:53.828Z",
+      "ip": "10.161.230.101"
+    },
+    "104": {
+      "username": "admin",
+      "hostname": "webapp-poc-db",
+      "createdAt": "2026-07-02T11:32:53.848Z",
+      "ip": "10.161.230.103"
+    },
+    "105": {
+      "username": "admin",
+      "hostname": "alpine-vm-01",
+      "createdAt": "2026-07-01T15:46:31.222Z",
+      "ip": "10.161.230.102"
+    },
+    "106": {
+      "username": "admin",
+      "hostname": "prakash",
+      "createdAt": "2026-07-04T06:19:54.190Z"
+    },
+    "107": {
+      "username": "admin",
+      "hostname": "alpine-vm-01",
+      "createdAt": "2026-07-04T12:24:54.447Z"
+    },
+    "108": {
+      "username": "admin",
+      "hostname": "test",
+      "createdAt": "2026-07-04T06:53:09.335Z"
+    },
+    "110": {
+      "username": "admin",
+      "hostname": "test",
+      "createdAt": "2026-07-03T14:37:03.018Z",
+      "ip": "10.161.230.111"
+    },
+    "112": {
+      "username": "rahul",
+      "hostname": "llm-inference-vm",
+      "createdAt": "2026-07-03T13:17:37.430Z",
+      "ip": "10.161.230.110"
+    },
+    "113": {
+      "username": "admin",
+      "hostname": "alpine-test",
+      "createdAt": "2026-07-03T17:46:46.707Z"
+    },
+    "114": {
+      "username": "admin",
+      "hostname": "test3",
+      "createdAt": "2026-07-03T14:56:17.986Z",
+      "ip": "10.161.230.113"
+    },
+    "115": {
+      "username": "admin",
+      "hostname": "rhel1",
+      "createdAt": "2026-07-03T15:01:05.217Z",
+      "ip": "10.161.230.114"
+    },
+    "116": {
+      "username": "admin",
+      "hostname": "test12",
+      "createdAt": "2026-07-03T16:53:58.802Z",
+      "ip": "10.161.230.115"
+    },
+    "117": {
+      "username": "admin",
+      "hostname": "test32",
+      "createdAt": "2026-07-03T17:09:16.087Z"
+    },
+    "118": {
+      "username": "admin",
+      "hostname": "docker01",
+      "createdAt": "2026-07-03T17:19:54.612Z",
+      "ip": "10.161.230.55"
+    }
+  }
+}

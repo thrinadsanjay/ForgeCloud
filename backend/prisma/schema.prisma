@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id
+  username     String   @unique
+  displayName  String?
+  email        String?
+  role         String   @default("user")
+  source       String   @default("local")
+  passwordHash String?
+  preferences  Json     @default("{}")
+  createdAt    DateTime @default(now())
+}
+
+model PersonalAccessToken {
+  id         String    @id
+  name       String
+  username   String
+  role       String
+  prefix     String
+  tokenHash  String
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+}
+
+model Group {
+  name      String   @id
+  members   Json     @default("[]")
+  quotas    Json     @default("{}")
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key   String @id
+  value String
+}
+
+model AuditEntry {
+  id        String   @id
+  timestamp DateTime @default(now())
+  actor     Json
+  action    String
+  target    String   @default("")
+  status    String
+  detail    Json     @default("{}")
+
+  @@index([timestamp])
+}
+
+model ProvisionRequest {
+  id          String   @id
+  kind        String
+  status      String
+  requestedBy String
+  data        Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([status])
+  @@index([requestedBy])
+}
+
+model DeploymentJob {
+  id        String   @id
+  type      String
+  status    String
+  data      Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}
+
+model ResourceOwnership {
+  vmid      Int      @id
+  username  String?
+  hostname  String?
+  ip        String?
+  createdAt DateTime @default(now())
+}
+
+model ResourceExpiry {
+  vmid      Int      @id
+  expiresAt DateTime
+  setBy     String
+  ttlDays   Int
+  type      String?
+  updatedAt DateTime @default(now())
+}
+
+model TemplateMapping {
+  vmid            Int       @id
+  osName          String?
+  credUser        String?
+  credPassword    String?
+  connectivity    String?
+  port            Int?
+  packageManager  String?
+  cloudInitFile   String?
+  cloudInitSource String?
+  updatedAt       DateTime?
+}
+
+model NetworkMapping {
+  iface     String    @id
+  label     String?
+  type      String?
+  updatedAt DateTime?
+}
+
+model Package {
+  id         String  @id
+  name       String
+  category   String?
+  installPkg String?  // OS package name for apt/yum; defaults to id when null
+  installCmd String?
+  isDefault  Boolean @default(false) // always installed & pre-checked; user cannot opt out
+  enabled    Boolean @default(true)
+  sortOrder  Int     @default(0)
+}
+
+model SecurityBaselineAgent {
+  id        String  @id
+  name      String
+  pkg       String
+  enabled   Boolean @default(true)
+  sortOrder Int     @default(0)
+}
+
+model CatalogTemplate {
+  id          String  @id
+  kind        String
+  name        String
+  vmid        Int?
+  type        String?
+  defaultUser String?
+  osFamily    String?
+  config      Json    @default("{}")
+  enabled     Boolean @default(true)
+}
+
+model WorkflowTemplate {
+  id          String         @id
+  name        String
+  provider    String         @default("internal")
+  description String?
+  osName      String?
+  enabled     Boolean        @default(true)
+  steps       WorkflowStep[]
+}
+
+model WorkflowStep {
+  id         String           @id
+  workflowId String
+  workflow   WorkflowTemplate @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  key        String
+  stage      String
+  label      String
+  via        String?
+  system     String?
+  kind       String?
+  sortOrder  Int
+
+  @@unique([workflowId, key])
+}
+
+model TemplateDefault {
+  presetKey String @id
+  items     Json
+}
+
+model CostRate {
+  id           String @id @default("default")
+  perCpu       Float
+  perGbRam     Float
+  perGbStorage Float
+}
+
+model InstanceSize {
+  key       String  @id
+  label     String
+  cpu       Int
+  memoryGB  Int
+  sortOrder Int     @default(0)
+  enabled   Boolean @default(true)
+}
+
+model Notification {
+  id        String   @id
+  recipient String?
+  role      String?
+  type      String   @default("info")
+  title     String
+  message   String   @default("")
+  link      String?
+  meta      Json     @default("{}")
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([recipient])
+  @@index([role])
+}
+
+model ChatSession {
+  id        String   @id @default(cuid())
+  username  String
+  title     String   @default("New chat")
+  messages  Json     @default("[]")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([username, updatedAt])
+}
+
+model StepTiming {
+  templateKey String
+  stepKey     String
+  avgSec      Int
+  lastSec     Int
+  samples     Int      @default(0)
+  updatedAt   DateTime @default(now())
+
+  @@id([templateKey, stepKey])
+}
+
+model AiPlaybookCache {
+  id           String @id @default("default")
+  plans        Json   @default("{}")
+  troubleshoot Json   @default("{}")
+}
+
+model DeploymentStepDef {
+  key    String @id
+  label  String
+  active String
+  done   String
+  eta    Int
+  group  String
+}
+
+model ServiceNowTicket {
+  id             String   @id
+  requestId      String   @unique
+  jobId          String?
+  requestNumber  String?
+  requestSysId   String?
+  ritmNumber     String?
+  ritmSysId      String?
+  incidentNumber String?
+  incidentSysId  String?
+  ciNumber       String?
+  ciSysId        String?
+  ciClass        String?
+  cmdbItems      Json     @default("[]")
+  state          String   @default("submitted")
+  mock           Boolean  @default(false)
+  workNotes      Json     @default("[]")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([jobId])
+  @@index([ritmNumber])
+  @@index([requestNumber])
+}

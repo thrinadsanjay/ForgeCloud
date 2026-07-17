@@ -1,0 +1,36 @@
+# Keep the build context small and dev state out of the image.
+
+# Dependencies / build outputs (reinstalled & rebuilt inside the image)
+**/node_modules
+**/dist
+frontend/dist
+backend/node_modules
+
+# Runtime state from the dev machine
+backend/data
+data
+
+# Secrets & local env
+.env
+**/.env
+!.env.example
+
+# Logs, pids, scratch
+logs
+*.log
+*.pid
+
+# Tooling / VCS / docs
+.git
+.gitignore
+.claude
+*.md
+start.sh
+stop.sh
+status.sh
+
+# Editor / OS cruft
+.vscode
+.idea
+.DS_Store
+Thumbs.db

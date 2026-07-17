@@ -1,0 +1,29 @@
+{
+  "name": "forge-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch-path=./src src/server.js",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate deploy",
+    "db:push": "prisma db push",
+    "db:seed": "node src/scripts/seed-defaults.js",
+    "db:import-json": "node src/scripts/migrate-json-to-db.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.5.0",
+    "axios": "^1.7.2",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "jsonwebtoken": "^9.0.2",
+    "nanoid": "^5.0.7",
+    "ssh2": "^1.16.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "prisma": "^6.5.0"
+  }
+}

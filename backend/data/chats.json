@@ -1,0 +1,77 @@
+{
+  "chats": {
+    "rahul": [
+      {
+        "role": "assistant",
+        "text": "Tell me what to provision and I’ll return an editable proposal you can adjust before provisioning."
+      },
+      {
+        "role": "user",
+        "text": "Propose a VM for LLM inference"
+      },
+      {
+        "role": "assistant",
+        "text": "I prepared an editable proposal so you can review the defaults before provisioning.",
+        "proposal": {
+          "kind": "vm",
+          "templateId": "alpine",
+          "templateName": "Alpine Linux",
+          "hostname": "llm-inference-vm",
+          "cpu": 8,
+          "memoryGB": 32,
+          "diskGB": 100,
+          "additionalPackages": [],
+          "packages": [
+            "python",
+            "nodejs"
+          ]
+        }
+      },
+      {
+        "role": "assistant",
+        "text": "Request 2QWdDHrDJ0Ty submitted and waiting for admin approval."
+      }
+    ],
+    "admin": [
+      {
+        "role": "assistant",
+        "text": "Tell me what to provision and I’ll return an editable proposal you can adjust before provisioning."
+      },
+      {
+        "role": "user",
+        "text": "I want a VM to deploy next js app"
+      },
+      {
+        "role": "assistant",
+        "text": "I prepared an editable proposal so you can review the defaults before provisioning.",
+        "proposal": {
+          "kind": "vm",
+          "templateId": "alpine",
+          "templateName": "Alpine Linux",
+          "hostname": "alpine-vm-01",
+          "cpu": 2,
+          "memoryGB": 4,
+          "diskGB": 30,
+          "packages": [
+            "nodejs",
+            "yarn",
+            "nginx",
+            "git"
+          ],
+          "environment": "vmbr0",
+          "username": "admin",
+          "sudoAccess": false
+        },
+        "resourceList": null
+      },
+      {
+        "role": "assistant",
+        "text": "Provisioning started from your proposal. Tracking as job ft_LMDCYpZ."
+      },
+      {
+        "role": "assistant",
+        "text": "Job ft_LMDCYpZ: Carving out your virtual machine on the cluster…"
+      }
+    ]
+  }
+}
