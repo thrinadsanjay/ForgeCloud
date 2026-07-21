@@ -160,8 +160,11 @@ export default function Provision({ embedded = false }) {
       .then((data) => {
         const list = Array.isArray(data) ? data : [];
         const normalized = list.map((p) => (typeof p === "string" ? { id: p, isDefault: false } : p));
-        const ids = normalized.map((p) => p.id);
-        setPackageCategories(buildPackageCategories(ids.length ? ids : FALLBACK_PACKAGE_IDS));
+        setPackageCategories(
+          normalized.length
+            ? buildPackageCategories(normalized)
+            : buildPackageCategories(FALLBACK_PACKAGE_IDS),
+        );
         setLockedPackageIds(normalized.filter((p) => p.isDefault).map((p) => p.id));
       })
       .catch(() => {

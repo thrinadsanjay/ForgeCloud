@@ -1,0 +1,44 @@
+---
+- name: Refuse Windows guests (not supported in MVP)
+  ansible.builtin.fail:
+    msg: "Forge initial_setup supports Linux only (Debian/Ubuntu/RHEL/SUSE). Windows is deferred."
+  when: ansible_system == "Win32NT" or ansible_os_family == "Windows"
+
+- name: Assert supported Linux family
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family in ["Debian", "RedHat", "Suse"]
+    fail_msg: >-
+      Unsupported OS family '{{ ansible_os_family }}' / distro '{{ ansible_distribution }}'.
+      Supported: Debian, Ubuntu, RHEL/Rocky/Alma/CentOS, SUSE/openSUSE.
+
+- name: Apply hostname
+  ansible.builtin.include_tasks: hostname.yml
+  when: manage_hostname | bool and hostname | length > 0
+
+- name: Configure repositories
+  ansible.builtin.include_tasks: repos.yml
+  when: repositories | length > 0
+
+- name: Refresh package cache
+  ansible.builtin.include_tasks: cache.yml
+  when: update_package_cache | bool
+
+- name: Install packages
+  ansible.builtin.include_tasks: packages.yml
+  when: packages | length > 0
+
+- name: Create users
+  ansible.builtin.include_tasks: users.yml
+  when: create_users | length > 0
+
+- name: Configure mounts
+  ansible.builtin.include_tasks: mounts.yml
+  when: mounts | length > 0
+
+- name: SSH password authentication policy
+  ansible.builtin.include_tasks: sshd.yml
+
+- name: Remove Forge deploy key after setup
+  ansible.builtin.include_tasks: remove_forge_key.yml
+  when: remove_forge_key | bool and forge_pubkey | length > 0

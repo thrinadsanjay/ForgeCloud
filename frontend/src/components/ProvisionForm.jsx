@@ -1,17 +1,37 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { getInstanceSizes, suggestHostname, previewCapacity } from "../api/client.js";
-import applicationProfiles from "../data/applicationProfiles.json";
+import { getInstanceSizes, suggestHostname, previewCapacity, getApplicationRoles } from "../api/client.js";
+import applicationProfilesFallback from "../data/applicationProfiles.json";
 
-const APPLICATION_OPTIONS = Object.entries(applicationProfiles).map(([id, meta]) => ({
-  id,
-  label: meta.label || id,
-  packages: Array.isArray(meta.packages) ? meta.packages : [],
-}));
+function rolesFromFallbackJson() {
+  return Object.entries(applicationProfilesFallback).map(([id, meta], i) => ({
+    id,
+    label: meta.label || id,
+    selection: id === "db" ? "single" : (id === "docker" || id === "cache" || id === "queue" ? "bundle" : id === "app" ? "suggest" : "multi"),
+    allowMultiOverride: id === "db",
+    defaultOptionId: id === "db" ? "postgres" : null,
+    options: Array.isArray(meta.packages) ? meta.packages : [],
+    enabled: true,
+    sortOrder: i,
+  }));
+}
 
-function packagesForApplication(appId) {
-  if (!appId) return [];
-  const hit = APPLICATION_OPTIONS.find((a) => a.id === appId);
-  return hit?.packages || [];
+/** Initial packages to apply when a role is selected. */
+export function initialPackagesForRole(role, { allowMulti = false } = {}) {
+  if (!role) return [];
+  const opts = Array.isArray(role.options) ? role.options : [];
+  if (role.selection === "bundle") return [...opts];
+  if (role.selection === "suggest") return [...opts];
+  if (role.selection === "single" && !allowMulti) {
+    const def = role.defaultOptionId && opts.includes(role.defaultOptionId)
+      ? role.defaultOptionId
+      : null;
+    return def ? [def] : [];
+  }
+  // multi, or single+allowMulti: nothing pre-checked (except optional default for multi)
+  if (role.selection === "multi" && role.defaultOptionId && opts.includes(role.defaultOptionId)) {
+    return [role.defaultOptionId];
+  }
+  return [];
 }
 
 // Sensible fallbacks so the estimate renders even before the rates load.
@@ -83,7 +103,34 @@ const PACKAGE_CATEGORY_DEFS = [
 
 export const FALLBACK_PACKAGE_IDS = PACKAGE_CATEGORY_DEFS.flatMap((c) => c.items);
 
-export function buildPackageCategories(packageIds = FALLBACK_PACKAGE_IDS) {
+/** Build category groups from id list and/or package objects `{ id, category }`. */
+export function buildPackageCategories(packageIdsOrRows = FALLBACK_PACKAGE_IDS) {
+  const rows = Array.isArray(packageIdsOrRows) ? packageIdsOrRows : [];
+  const asObjects = rows.length && typeof rows[0] === "object";
+  if (asObjects) {
+    const byCat = new Map();
+    for (const p of rows) {
+      const id = p.id || p;
+      const cat = (p.category || "Uncategorized").trim() || "Uncategorized";
+      if (!byCat.has(cat)) byCat.set(cat, []);
+      byCat.get(cat).push(id);
+    }
+    const preferred = PACKAGE_CATEGORY_DEFS.map((c) => c.name);
+    const groups = [];
+    for (const name of preferred) {
+      if (byCat.has(name)) {
+        groups.push({ name, items: byCat.get(name) });
+        byCat.delete(name);
+      }
+    }
+    for (const [name, items] of byCat) {
+      if (name !== "Uncategorized") groups.push({ name, items });
+    }
+    if (byCat.has("Uncategorized")) groups.push({ name: "Uncategorized", items: byCat.get("Uncategorized") });
+    return groups.length ? groups : [{ name: "Packages", items: rows.map((p) => p.id) }];
+  }
+
+  const packageIds = rows;
   const available = new Set(packageIds);
   const used = new Set();
   const groups = PACKAGE_CATEGORY_DEFS.map((cat) => {
@@ -107,21 +154,34 @@ function matchSizeKey(sizes, cpu, memoryGB) {
 // highlighted and also listed in a summary strip so the choice stays visible
 // while searching. The catalog area scrolls internally, so adding more packages
 // never changes the form's height.
-function PackagePicker({ categories, selected, locked = [], onToggle, onClear, templateDefaults = [] }) {
+function PackagePicker({
+  categories,
+  selected,
+  locked = [],
+  onToggle,
+  onClear,
+  templateDefaults = [],
+  exclude = [],
+  title = "Select packages to install",
+}) {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const lockedSet = useMemo(() => new Set(locked), [locked]);
+  const excludeSet = useMemo(() => new Set(exclude), [exclude]);
 
   const groups = categories
-    .map((cat) => ({ name: cat.name, items: cat.items.filter((pkg) => pkg.toLowerCase().includes(q)) }))
+    .map((cat) => ({
+      name: cat.name,
+      items: cat.items.filter((pkg) => !excludeSet.has(pkg) && pkg.toLowerCase().includes(q)),
+    }))
     .filter((cat) => cat.items.length > 0);
 
-  const optionalSelected = selected.filter((p) => !lockedSet.has(p));
+  const optionalSelected = selected.filter((p) => !lockedSet.has(p) && !excludeSet.has(p));
 
   return (
     <div className="pkg-picker">
       <div className="pkg-picker-head">
-        <label>Select packages to install</label>
+        <label>{title}</label>
         {optionalSelected.length > 0 && (
           <button type="button" className="pkg-clear" onClick={onClear}>
             Clear optional ({optionalSelected.length})
@@ -248,6 +308,8 @@ export default function ProvisionForm({
   const [requiredPackages, setRequiredPackages] = useState(() =>
     Array.from(new Set([...(initialPackages || []), ...lockedPackageIds]))
   );
+  const [appRoles, setAppRoles] = useState(() => rolesFromFallbackJson());
+  const [roleAllowMulti, setRoleAllowMulti] = useState(false);
   const [sizes, setSizes] = useState([]);
   const [sizeKey, setSizeKey] = useState("custom");
   const [hostnameBusy, setHostnameBusy] = useState(false);
@@ -259,14 +321,41 @@ export default function ProvisionForm({
   const appPackagesRef = useRef([]);
   const capacityGenRef = useRef(0);
 
+  const activeRole = useMemo(
+    () => appRoles.find((r) => r.id === form.application) || null,
+    [appRoles, form.application],
+  );
+  const roleOptionSet = useMemo(
+    () => new Set(activeRole?.options || []),
+    [activeRole],
+  );
+  const rolePicks = useMemo(
+    () => requiredPackages.filter((p) => roleOptionSet.has(p)),
+    [requiredPackages, roleOptionSet],
+  );
+  const dbMultiWarning = activeRole?.id === "db" && rolePicks.length > 1;
+  const sizeNudgeMultiDb = dbMultiWarning && (sizeKey === "micro" || sizeKey === "mini");
+
+  useEffect(() => {
+    let cancelled = false;
+    getApplicationRoles()
+      .then((rows) => {
+        if (cancelled) return;
+        if (Array.isArray(rows) && rows.length) setAppRoles(rows);
+      })
+      .catch(() => { /* keep fallback */ });
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     hostnameTouchedRef.current = !!(initialValues?.hostname && String(initialValues.hostname).trim());
     setHostnameEditing(false);
+    setRoleAllowMulti(false);
     const initialApp = initialValues?.application || "";
-    appPackagesRef.current = [];
     setForm(makeInitialForm());
     const base = Array.from(new Set([...(initialPackages || []), ...lockedPackageIds]));
-    const appPkgs = packagesForApplication(initialApp);
+    const role = appRoles.find((r) => r.id === initialApp);
+    const appPkgs = initialPackagesForRole(role, { allowMulti: false });
     appPackagesRef.current = appPkgs;
     setRequiredPackages(Array.from(new Set([...base, ...appPkgs])));
   }, [selected.kind, item.id, lockedPackageIds.join("|")]);
@@ -287,6 +376,7 @@ export default function ProvisionForm({
         templateId: item.id,
         stackId: item.id,
         application: form.application || undefined,
+        rolePackages: appPackagesRef.current,
         environment: envLabel || form.environment || undefined,
         os: item.osName || item.name,
       });
@@ -308,10 +398,10 @@ export default function ProvisionForm({
     const t = setTimeout(() => { applySuggestedHostname(); }, 50);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item.id, selected.kind, form.application, envLabel]);
+  }, [item.id, selected.kind, form.application, envLabel, rolePicks.join("|")]);
 
-  const applyApplicationPackages = (appId) => {
-    const nextAppPkgs = packagesForApplication(appId);
+  const applyRolePackages = (role, allowMulti) => {
+    const nextAppPkgs = initialPackagesForRole(role, { allowMulti });
     const prevAppPkgs = new Set(appPackagesRef.current);
     const locked = new Set(lockedPackageIds);
     setRequiredPackages((prev) => {
@@ -324,7 +414,55 @@ export default function ProvisionForm({
   const onApplicationChange = (e) => {
     const application = e.target.value;
     setForm((f) => ({ ...f, application }));
-    applyApplicationPackages(application);
+    setRoleAllowMulti(false);
+    const role = appRoles.find((r) => r.id === application) || null;
+    applyRolePackages(role, false);
+  };
+
+  const setRolePickSingle = (pkgId) => {
+    if (!activeRole) return;
+    const prev = new Set(appPackagesRef.current);
+    const locked = new Set(lockedPackageIds);
+    const next = pkgId ? [pkgId] : [];
+    setRequiredPackages((curr) => {
+      const kept = curr.filter((p) => locked.has(p) || !prev.has(p));
+      return Array.from(new Set([...kept, ...next]));
+    });
+    appPackagesRef.current = next;
+  };
+
+  const toggleRolePick = (pkgId) => {
+    if (!activeRole) return;
+    const locked = new Set(lockedPackageIds);
+    if (locked.has(pkgId)) return;
+    setRequiredPackages((prev) => {
+      const inRole = prev.filter((p) => roleOptionSet.has(p));
+      const outside = prev.filter((p) => !roleOptionSet.has(p));
+      let nextRole;
+      if (activeRole.selection === "single" && !roleAllowMulti) {
+        nextRole = inRole.includes(pkgId) ? [] : [pkgId];
+      } else if (activeRole.selection === "bundle") {
+        // Bundle stays all-or-nothing via role reselect; allow unchecking individuals
+        nextRole = inRole.includes(pkgId)
+          ? inRole.filter((p) => p !== pkgId)
+          : [...inRole, pkgId];
+      } else {
+        nextRole = inRole.includes(pkgId)
+          ? inRole.filter((p) => p !== pkgId)
+          : [...inRole, pkgId];
+      }
+      appPackagesRef.current = nextRole;
+      return Array.from(new Set([...outside, ...nextRole]));
+    });
+  };
+
+  const onAllowMultiChange = (checked) => {
+    setRoleAllowMulti(checked);
+    if (!checked && activeRole?.selection === "single") {
+      // Collapse to default or first pick
+      const keep = rolePicks[0] || activeRole.defaultOptionId || null;
+      setRolePickSingle(keep && roleOptionSet.has(keep) ? keep : (activeRole.defaultOptionId || null));
+    }
   };
 
   // Load admin-defined instance sizes, then pick the size that matches the
@@ -704,20 +842,72 @@ export default function ProvisionForm({
                   <label>Application <span className="muted" style={{ fontWeight: 400 }}>(optional)</span></label>
                   <select value={form.application || ""} onChange={onApplicationChange}>
                     <option value="">None — pick packages yourself</option>
-                    {APPLICATION_OPTIONS.map((a) => (
+                    {appRoles.map((a) => (
                       <option key={a.id} value={a.id}>{a.label}</option>
                     ))}
                   </select>
-                  {form.application && packagesForApplication(form.application).length > 0 && (
-                    <p className="muted provision-app-hint">
-                      Selects {packagesForApplication(form.application).join(", ")} below. You can still add or remove packages.
-                    </p>
-                  )}
+                  <p className="muted provision-app-hint">
+                    Choose software for this role below. Add anything else under Additional software.
+                  </p>
                 </div>
+
+                {activeRole && (activeRole.options || []).length > 0 && (
+                  <div className="provision-role-panel">
+                    <div className="provision-role-panel-head">
+                      <span>For this role — {activeRole.label}</span>
+                      {activeRole.selection === "bundle" && (
+                        <span className="muted" style={{ fontSize: 12 }}>Selected together as a set</span>
+                      )}
+                    </div>
+                    {activeRole.allowMultiOverride && activeRole.selection === "single" && (
+                      <label className="provision-role-multi-toggle">
+                        <input
+                          type="checkbox"
+                          checked={roleAllowMulti}
+                          onChange={(e) => onAllowMultiChange(e.target.checked)}
+                        />
+                        Allow multiple database engines on this server
+                      </label>
+                    )}
+                    <div className="provision-role-options">
+                      {(activeRole.options || []).map((pkgId) => {
+                        const checked = rolePicks.includes(pkgId);
+                        const singleMode = activeRole.selection === "single" && !roleAllowMulti;
+                        return (
+                          <label key={pkgId} className={`provision-role-option ${checked ? "on" : ""}`}>
+                            <input
+                              type={singleMode ? "radio" : "checkbox"}
+                              name={`role-pkg-${activeRole.id}`}
+                              checked={checked}
+                              onChange={() => {
+                                if (singleMode) setRolePickSingle(checked ? null : pkgId);
+                                else toggleRolePick(pkgId);
+                              }}
+                            />
+                            <span>{pkgId}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    {dbMultiWarning && (
+                      <p className="provision-role-warn">
+                        Unusual on one VM — fine for labs or migration; prefer one engine in production.
+                      </p>
+                    )}
+                    {sizeNudgeMultiDb && (
+                      <p className="provision-role-warn">
+                        Micro/Mini may be tight for multiple database engines — consider a larger size.
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <PackagePicker
                   categories={packageCategories}
                   selected={requiredPackages}
                   locked={lockedPackageIds}
+                  exclude={[...roleOptionSet]}
+                  title="Additional software"
                   onToggle={toggleRequiredPackage}
                   onClear={clearRequiredPackages}
                   templateDefaults={stackDefaultPackages}

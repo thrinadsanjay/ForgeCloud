@@ -1,0 +1,16 @@
+---
+- name: Configure PasswordAuthentication
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PasswordAuthentication\s+'
+    line: "PasswordAuthentication {{ 'yes' if ssh_pwauth | bool else 'no' }}"
+    state: present
+  notify: reload sshd
+
+- name: Ensure PubkeyAuthentication yes
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?\s*PubkeyAuthentication\s+'
+    line: "PubkeyAuthentication yes"
+    state: present
+  notify: reload sshd

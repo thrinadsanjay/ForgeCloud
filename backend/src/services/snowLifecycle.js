@@ -254,7 +254,7 @@ export async function onProvisioningComplete(job) {
       message: job.result?.allOk === false
         ? `Your server "${host}" is up at ${ip}, but some setup steps had warnings. Open Deployments for details.`
         : `Your server "${host}" is ready at ${ip}.`,
-      link: "/deployments",
+      link: `/deployments?tab=completed&job=${encodeURIComponent(job.id)}`,
       meta: { requestId: ticket.requestId, jobId: job.id, ritmNumber: ticket.ritmNumber, ciNumber: cmdbItems[0]?.ciNumber },
     });
   }
@@ -325,7 +325,7 @@ export async function onProvisioningFailed(job) {
       type: "provision_failed",
       title: `Provisioning failed — ${host}`,
       message: errorText,
-      link: "/deployments",
+      link: `/deployments?tab=failed&job=${encodeURIComponent(job.id)}`,
       meta: {
         requestId: ticket?.requestId || requestId,
         jobId: job.id,

@@ -24,14 +24,20 @@ RUN npx prisma generate
 
 FROM node:20-alpine AS runtime
 ENV NODE_ENV=production \
-    PORT=4100
+    PORT=4100 \
+    ANSIBLE_ROOT=/app/ansible
 WORKDIR /app
+
+USER root
+RUN apk add --no-cache ansible openssh-client sshpass python3 py3-yaml py3-passlib \
+  && mkdir -p /app/ansible
 
 COPY --from=backend-deps /app/backend/node_modules ./backend/node_modules
 COPY backend/package.json backend/package-lock.json ./backend/
 RUN test -s ./backend/package.json && test -s ./backend/package-lock.json
 COPY backend/prisma ./backend/prisma
 COPY backend/src ./backend/src
+COPY ansible ./ansible
 COPY --from=frontend-build /app/frontend/dist ./frontend/dist
 
 RUN chown -R node:node /app

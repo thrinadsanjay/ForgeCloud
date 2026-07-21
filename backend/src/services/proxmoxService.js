@@ -405,12 +405,52 @@ export async function setCloudInit({ node = process.env.PROXMOX_NODE, vmid, host
     payload.ipconfig0 = `ip=${staticIp.full},gw=${staticIp.gateway}`;
     payload.nameserver = staticIp.dns;
   } else {
+    // DHCP — let the guest lease address + DNS from the network; do not pin 8.8.8.8.
     payload.ipconfig0 = "ip=dhcp";
-    payload.nameserver = "8.8.8.8";
   }
 
   if (sshKeys) payload.sshkeys = encodeURIComponent(sshKeys);
   await pveMutate("put", `/nodes/${node}/qemu/${vmid}/config`, payload, { node });
+}
+
+/**
+ * Ansible bootstrap without snippet storage: Proxmox native cloud-init fields
+ * (ciuser / cipassword / sshkeys). Creates the service account on first boot so
+ * Forge can SSH in with the deploy key even when PasswordAuthentication is off.
+ * Note: QEMU config has no `hostname` property — guest hostname comes from the
+ * VM name (set at clone) and/or richer cloud-init user-data.
+ */
+export async function setAnsibleBootstrapCi({
+  node = process.env.PROXMOX_NODE,
+  vmid,
+  hostname,
+  serviceUser = "forge",
+  servicePassword = "",
+  sshPublicKeys = [],
+}) {
+  const keys = (sshPublicKeys || [])
+    .map((k) => String(k || "").trim())
+    .filter(Boolean)
+    .join("\n");
+
+  const payload = {
+    ciuser: String(serviceUser || "forge").trim() || "forge",
+    searchdomain: "local",
+    ipconfig0: "ip=dhcp",
+  };
+  if (servicePassword) payload.cipassword = String(servicePassword);
+  if (keys) payload.sshkeys = encodeURIComponent(keys);
+
+  await pveMutate("put", `/nodes/${node}/qemu/${vmid}/config`, payload, { node });
+
+  // Align Proxmox VM name with requested hostname when provided (cloud-init
+  // often derives the guest hostname from the VM name).
+  const name = String(hostname || "").trim();
+  if (name) {
+    await pveMutate("put", `/nodes/${node}/qemu/${vmid}/config`, { name }, { node }).catch((err) => {
+      console.warn(`[proxmox] could not set VM name to "${name}": ${err.userMessage || err.message}`);
+    });
+  }
 }
 
 // Edit an existing VM's specs. cores/memory are applied live where the guest
@@ -587,19 +627,52 @@ export async function getDiskSizeGB({ node = process.env.PROXMOX_NODE, vmid, dis
   return Math.ceil(size);
 }
 
-// Attach the VM's primary NIC to a bridge/VLAN and configure it for DHCP.
-// A dotted iface (vmbr0.100) is split into bridge + VLAN tag. The guest agent
-// is enabled so we can discover the DHCP-assigned address after boot.
-export async function setVmNetwork({ node = process.env.PROXMOX_NODE, vmid, iface, model = "virtio" }) {
+// Attach the VM's primary NIC to a bridge/VLAN. By default we tell cloud-init
+// to use DHCP (ipconfig0=ip=dhcp) — Forge does NOT assign a static IP unless
+// IPAM is integrated and a reservation is passed in. A dotted iface
+// (vmbr0.100) is split into bridge + VLAN tag. Guest agent is enabled so we
+// can discover the DHCP-leased address after boot.
+export async function setVmNetwork({
+  node = process.env.PROXMOX_NODE,
+  vmid,
+  iface,
+  model = "virtio",
+  useDhcp = true,
+  staticIp = null,
+}) {
   let bridge = iface, tag = null;
   const dotted = /^(.+)\.(\d+)$/.exec(iface || "");
   if (dotted) { bridge = dotted[1]; tag = dotted[2]; }
 
+  // 1) Always attach the NIC + enable guest agent (independent of IP mode).
   await pveMutate("put", `/nodes/${node}/qemu/${vmid}/config`, {
     net0: `${model},bridge=${bridge}${tag ? `,tag=${tag}` : ""}`,
-    ipconfig0: "ip=dhcp",
-    agent: "1", // enable qemu-guest-agent channel so we can read the leased IP
+    agent: "1",
   }, { node });
+
+  // 2) IP addressing — static only when an IPAM reservation is supplied.
+  if (staticIp?.full) {
+    const payload = {
+      ipconfig0: `ip=${staticIp.full}${staticIp.gateway ? `,gw=${staticIp.gateway}` : ""}`,
+    };
+    if (staticIp.dns) payload.nameserver = staticIp.dns;
+    await pveMutate("put", `/nodes/${node}/qemu/${vmid}/config`, payload, { node });
+    return;
+  }
+
+  if (!useDhcp) return;
+
+  // DHCP via cloud-init. Soft-fail: some templates lack a cloud-init drive; the
+  // guest OS can still lease an address via its own DHCP client on the NIC.
+  try {
+    await pveMutate("put", `/nodes/${node}/qemu/${vmid}/config`, {
+      ipconfig0: "ip=dhcp",
+    }, { node });
+  } catch (err) {
+    console.warn(
+      `[proxmox] could not set ipconfig0=dhcp on VM ${vmid} (guest may still use DHCP): ${err.userMessage || err.message}`
+    );
+  }
 }
 
 // Read the VM's IPv4 address from the qemu-guest-agent (requires the agent to
@@ -656,6 +729,16 @@ export async function setCicustom({ node = process.env.PROXMOX_NODE, vmid, file,
   }, { node });
 }
 
+/** Whether the given storage advertises the `snippets` content type. */
+export async function storageSupportsSnippets(storage = process.env.SNIPPET_STORAGE || "local") {
+  const name = String(storage || "local").trim() || "local";
+  const rows = await listStorage().catch(() => []);
+  const row = (rows || []).find((r) => r.storage === name);
+  if (!row) return false;
+  const content = String(row.content || "");
+  return /(^|,)snippets(,|$)/.test(content);
+}
+
 // Upload a cloud-init user-data file to the snippets storage on the Proxmox node.
 export async function uploadSnippet({
   node = process.env.PROXMOX_NODE,
@@ -663,6 +746,14 @@ export async function uploadSnippet({
   filename,
   content,
 }) {
+  const storageName = String(storage || "local").trim() || "local";
+  if (!(await storageSupportsSnippets(storageName))) {
+    throw new ProxmoxTaskError(
+      `Proxmox storage "${storageName}" does not allow snippets. In Proxmox: Datacenter → Storage → ${storageName} → Edit → enable "Snippets", then retry.`,
+      { detail: `storage=${storageName} content types do not include snippets` },
+    );
+  }
+
   await ensureAuth();
   const boundary = `----Forge${Date.now()}`;
   const body = [
@@ -685,7 +776,7 @@ export async function uploadSnippet({
 
   const client = ensureClient();
   try {
-    await client.post(`/nodes/${node}/storage/${storage}/upload`, body, {
+    await client.post(`/nodes/${node}/storage/${storageName}/upload`, body, {
       headers: {
         ...buildAuthHeaders("post"),
         "Content-Type": `multipart/form-data; boundary=${boundary}`,
@@ -695,8 +786,11 @@ export async function uploadSnippet({
   } catch (err) {
     const detail = err.response?.data || err.message;
     const text = extractPveErrorText(detail);
+    const hint = /snippet|content type|400/i.test(`${text} ${err.message}`)
+      ? ` Check that storage "${storageName}" has Snippets enabled.`
+      : "";
     throw new ProxmoxTaskError(
-      mapExitstatusToUserMessage(text, text) || "Proxmox could not upload the cloud-init snippet.",
+      (mapExitstatusToUserMessage(text, text) || "Proxmox could not upload the cloud-init snippet.") + hint,
       { detail: typeof detail === "string" ? detail : JSON.stringify(detail) }
     );
   }

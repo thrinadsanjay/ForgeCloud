@@ -30,6 +30,7 @@ const NAV_CATEGORIES = [
     id: "automation",
     label: "Automation",
     items: [
+      { id: "ansible", label: "Ansible", icon: "plug" },
       { id: "internal", label: "Internal Provisioning", icon: "plug" },
       { id: "n8n", label: "n8n Webhooks", icon: "hook" },
       { id: "ai", label: "AI Assistant", icon: "ai" },
@@ -70,6 +71,11 @@ const SECTION_META = {
     summary: "Defaults applied when a user provisions without overrides.",
     docs: "Cloud-init password and snippet storage for new VMs.",
   },
+  ansible: {
+    title: "Ansible",
+    summary: "Forge runs initial_setup on Linux guests over SSH after boot.",
+    docs: "Enable Ansible, set the service account, and paste Forge deploy keys. Windows guests are not supported yet.",
+  },
   internal: {
     title: "Internal Provisioning",
     summary: "Optional internal workflow systems outside Proxmox templates.",
@@ -97,7 +103,7 @@ const SECTION_META = {
   },
   oidc: {
     title: "OIDC SSO",
-    summary: "Enterprise SSO via OIDC (Entra ID, Keycloak, Okta, …).",
+    summary: "Enterprise SSO via OIDC (Entra ID, Google, Okta, Keycloak, LDAP/AD bridge, …).",
     docs: "Issuer, credentials, redirect URI, then test login.",
   },
   cost: {
@@ -848,7 +854,10 @@ function OidcView({ group, form, onChange, actions }) {
             <div className="pc-field pc-field-stack">
               <div className="pc-field-label">
                 <label htmlFor="oidc-provider-preset">Provider</label>
-                <p className="pc-help">Preset fills a typical issuer pattern — edit as needed.</p>
+                <p className="pc-help">
+                  Preset fills a typical issuer pattern — edit placeholders like {"{tenant}"} before saving.
+                  Classic LDAP/AD needs an OIDC bridge (Keycloak, Dex, or AD FS).
+                </p>
               </div>
               <select
                 id="oidc-provider-preset"
@@ -856,20 +865,66 @@ function OidcView({ group, form, onChange, actions }) {
                 defaultValue=""
                 onChange={(e) => {
                   const v = e.target.value;
+                  const scopes = "openid profile email";
                   if (v === "entra") {
                     onChange("OIDC_ISSUER", "https://login.microsoftonline.com/{tenant}/v2.0");
-                    onChange("OIDC_SCOPES", "openid profile email");
-                  } else if (v === "keycloak") {
-                    onChange("OIDC_ISSUER", "https://keycloak.internal/realms/{realm}");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "google") {
+                    onChange("OIDC_ISSUER", "https://accounts.google.com");
+                    onChange("OIDC_SCOPES", scopes);
                   } else if (v === "okta") {
                     onChange("OIDC_ISSUER", "https://{org}.okta.com");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "keycloak") {
+                    onChange("OIDC_ISSUER", "https://keycloak.internal/realms/{realm}");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "auth0") {
+                    onChange("OIDC_ISSUER", "https://{tenant}.auth0.com");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "pingone") {
+                    onChange("OIDC_ISSUER", "https://auth.pingone.com/{envId}/as");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "onelogin") {
+                    onChange("OIDC_ISSUER", "https://{subdomain}.onelogin.com/oidc/2");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "jumpcloud") {
+                    onChange("OIDC_ISSUER", "https://oauth.id.jumpcloud.com");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "cognito") {
+                    onChange("OIDC_ISSUER", "https://cognito-idp.{region}.amazonaws.com/{userPoolId}");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "gitlab") {
+                    onChange("OIDC_ISSUER", "https://gitlab.com");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "adfs") {
+                    onChange("OIDC_ISSUER", "https://adfs.{domain}/adfs");
+                    onChange("OIDC_SCOPES", scopes);
+                  } else if (v === "ldap") {
+                    // Classic LDAP/AD is not OIDC — point admins at a common OIDC bridge pattern.
+                    onChange("OIDC_ISSUER", "https://keycloak.internal/realms/{realm}");
+                    onChange("OIDC_SCOPES", scopes);
                   }
                 }}
               >
                 <option value="">Custom / already configured</option>
-                <option value="entra">Microsoft Entra ID</option>
-                <option value="keycloak">Keycloak</option>
-                <option value="okta">Okta</option>
+                <optgroup label="Cloud IdPs">
+                  <option value="entra">Microsoft Entra ID</option>
+                  <option value="google">Google Workspace</option>
+                  <option value="okta">Okta</option>
+                  <option value="auth0">Auth0</option>
+                  <option value="cognito">Amazon Cognito</option>
+                </optgroup>
+                <optgroup label="Enterprise / on-prem">
+                  <option value="keycloak">Keycloak</option>
+                  <option value="adfs">Active Directory (AD FS)</option>
+                  <option value="ldap">LDAP / AD (via Keycloak / Dex)</option>
+                  <option value="pingone">PingOne / PingFederate</option>
+                  <option value="onelogin">OneLogin</option>
+                  <option value="jumpcloud">JumpCloud</option>
+                </optgroup>
+                <optgroup label="Developer platforms">
+                  <option value="gitlab">GitLab</option>
+                </optgroup>
               </select>
             </div>
           )}

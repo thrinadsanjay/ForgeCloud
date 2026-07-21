@@ -1,0 +1,21 @@
+---
+- name: Ensure mount parent directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ mounts }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Configure persistent mounts
+  ansible.builtin.mount:
+    path: "{{ item.path }}"
+    src: "{{ item.src }}"
+    fstype: "{{ item.fstype | default('ext4') }}"
+    opts: "{{ item.opts | default('defaults') }}"
+    state: mounted
+  loop: "{{ mounts }}"
+  loop_control:
+    label: "{{ item.path }}"
+  when: item.src is defined and item.path is defined

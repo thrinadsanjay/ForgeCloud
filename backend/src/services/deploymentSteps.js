@@ -10,7 +10,7 @@ export const VM_STEP_DEFS = [
   { key: "provision_vm",       label: "Provisioning the VM",   active: "Carving out your virtual machine on the cluster…",                    done: "Virtual machine provisioned",                  eta: 45, group: "build" },
   { key: "deploy_os",          label: "Deploying the OS",      active: "Laying down the golden OS image…",                                    done: "Operating system deployed",                    eta: 40, group: "build" },
   { key: "allocate_resources", label: "Allocating resources",  active: "Dialing in your CPU, memory and storage…",                            done: "Requested resources allocated",                eta: 15, group: "build" },
-  { key: "assign_ip",          label: "Assigning IP address",  active: "Wiring your machine into the network…",                               done: "Network attached (DHCP)",                      eta: 12, group: "build" },
+  { key: "assign_ip",          label: "Attaching network",     active: "Connecting the NIC — IP via DHCP…",                                   done: "Network attached · DHCP",                      eta: 12, group: "build" },
   { key: "power_on",           label: "Powering on",           active: "Powering on your virtual machine…",                                   done: "Powered on",                                   eta: 10, group: "boot" },
   { key: "system_startup",     label: "System startup",        active: "Waiting for the system to come alive…",                               done: "System is online",                             eta: 90, group: "boot" },
   { key: "initial_setup",      label: "Initial setup",         active: "Running first-boot initialization and creating your account…",        done: "Initial setup complete",                       eta: 25, group: "config" },
@@ -19,6 +19,12 @@ export const VM_STEP_DEFS = [
   { key: "validate",           label: "Validation",            active: "Running final health checks on your server…",                         done: "Server validated end-to-end",                  eta: 15, group: "config" },
   { key: "summarize",          label: "Summary",               active: "Wrapping up and preparing your summary…",                             done: "All done — your server is ready",              eta: 3,  group: "done" },
 ];
+
+export const VM_STEP_KEYS = VM_STEP_DEFS.map((d) => d.key);
+
+export function vmStepIndex(key) {
+  return VM_STEP_KEYS.indexOf(key);
+}
 
 function nowIso() { return new Date().toISOString(); }
 

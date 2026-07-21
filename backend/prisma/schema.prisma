@@ -117,14 +117,27 @@ model NetworkMapping {
 }
 
 model Package {
-  id         String  @id
-  name       String
-  category   String?
-  installPkg String?  // OS package name for apt/yum; defaults to id when null
-  installCmd String?
-  isDefault  Boolean @default(false) // always installed & pre-checked; user cannot opt out
-  enabled    Boolean @default(true)
-  sortOrder  Int     @default(0)
+  id           String  @id
+  name         String
+  category     String?
+  installPkg   String?  // OS package name for apt/yum; defaults to id when null
+  installCmd   String?
+  hostnameCode String?  // short {app} token when this is the sole role pick (e.g. psql)
+  isDefault    Boolean @default(false) // always installed & pre-checked; user cannot opt out
+  enabled      Boolean @default(true)
+  sortOrder    Int     @default(0)
+}
+
+/// Provision "Application" roles — filter/guide package picking (single/multi/bundle/suggest).
+model ApplicationRole {
+  id                 String  @id
+  label              String
+  selection          String  // single | multi | bundle | suggest
+  allowMultiOverride Boolean @default(false)
+  defaultOptionId    String?
+  options            Json    @default("[]") // string[] package ids
+  enabled            Boolean @default(true)
+  sortOrder          Int     @default(0)
 }
 
 model SecurityBaselineAgent {

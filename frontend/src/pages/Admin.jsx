@@ -28,6 +28,7 @@ const NAV = [
     label: "Catalog",
     items: [
       { id: "packages", label: "Packages", icon: "box" },
+      { id: "app-roles", label: "App roles", icon: "flow" },
       { id: "sizes", label: "Sizes", icon: "size" },
       { id: "hostname", label: "Hostnames", icon: "tag" },
       { id: "workflows", label: "Workflows", icon: "flow" },
@@ -44,15 +45,22 @@ const NAV = [
     ],
   },
   {
+    id: "automation",
+    label: "Automation",
+    items: [
+      { id: "ansible", label: "Ansible", icon: "ansible" },
+      { id: "internal", label: "Internal APIs", icon: "plug" },
+      { id: "n8n", label: "Webhooks", icon: "hook" },
+      { id: "ai", label: "AI Provider", icon: "ai" },
+    ],
+  },
+  {
     id: "integrations",
     label: "Integrations",
     items: [
       { id: "servicenow", label: "ServiceNow", icon: "cloud" },
       { id: "ipam", label: "IPAM", icon: "net" },
       { id: "oidc", label: "OIDC SSO", icon: "key" },
-      { id: "internal", label: "Internal APIs", icon: "plug" },
-      { id: "n8n", label: "Webhooks", icon: "hook" },
-      { id: "ai", label: "AI Provider", icon: "ai" },
     ],
   },
   {
@@ -70,9 +78,9 @@ const ALL_ITEMS = NAV.flatMap((g) => g.items);
 const ALL_IDS = new Set(ALL_ITEMS.map((i) => i.id));
 
 const SETTING_TABS = new Set([
-  "proxmox", "k3s", "vm", "internal", "n8n", "servicenow", "ipam", "oidc", "cost", "approvals", "ai",
+  "proxmox", "k3s", "vm", "ansible", "internal", "n8n", "servicenow", "ipam", "oidc", "cost", "approvals", "ai",
 ]);
-const CATALOG_TABS = new Set(["packages", "sizes", "hostname", "workflows"]);
+const CATALOG_TABS = new Set(["packages", "app-roles", "sizes", "hostname", "workflows"]);
 
 const LEGACY = {
   settings: "proxmox",
@@ -146,6 +154,8 @@ function NavIcon({ name }) {
       return <svg {...p}><path d="M12 3v4M12 17v4M3 12h4M17 12h4M5.6 5.6l2.8 2.8M15.6 15.6l2.8 2.8M18.4 5.6l-2.8 2.8M8.4 15.6l-2.8 2.8" /><circle cx="12" cy="12" r="2.5" /></svg>;
     case "ai":
       return <svg {...p}><path d="M12 3v3M12 18v3M3 12h3M18 12h3" /><circle cx="12" cy="12" r="4" /></svg>;
+    case "ansible":
+      return <svg {...p}><path d="M4 19 12 5l8 14" /><path d="M8.5 15h7" /><circle cx="12" cy="11" r="1.5" /></svg>;
     case "audit":
       return <svg {...p}><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" /><rect x="9" y="3" width="6" height="4" rx="1" /><path d="M9 12h6M9 16h4" /></svg>;
     case "info":
@@ -156,55 +166,72 @@ function NavIcon({ name }) {
 }
 
 function RolesPage() {
-  const rows = [
-    { role: "admin", can: ["Full admin", "Approve deployments", "Manage users & groups", "Platform settings"] },
-    { role: "approver", can: ["Approve size-policy holds", "View all deployments", "Provision resources"] },
-    { role: "user", can: ["Provision own resources", "View own deployments", "Use Forge Assist"] },
+  const roles = [
+    {
+      id: "admin",
+      icon: { label: "Ad", bg: "#ea580c" },
+      can: ["Full admin", "Approve deployments", "Manage users & groups", "Platform settings"],
+    },
+    {
+      id: "approver",
+      icon: { label: "Ap", bg: "#059669" },
+      can: ["Approve size-policy holds", "View all deployments", "Provision resources"],
+    },
+    {
+      id: "user",
+      icon: { label: "Us", bg: "#2563eb" },
+      can: ["Provision own resources", "View own deployments", "Use Forge Assist"],
+    },
   ];
+  const matrix = [
+    ["Manage users & groups", true, false, false],
+    ["Platform settings", true, false, false],
+    ["Approve deployments", true, true, false],
+    ["View all deployments", true, true, false],
+    ["Provision resources", true, true, true],
+    ["Own resources only", false, false, true],
+  ];
+
   return (
-    <div>
+    <div className="adm-board">
       <AdminPageHeader
         title="Roles & permissions"
-        description="Built-in portal roles and what each can do. Assign roles on the Users page."
+        description="Built-in portal roles. Assign them on the Users page."
       />
-      <div className="admin-role-grid">
-        {rows.map((r) => (
-          <section key={r.role} className="adm-card">
-            <h3 className="adm-card-title">{ROLE_LABELS[r.role]}</h3>
-            <ul className="admin-role-list">
-              {r.can.map((c) => <li key={c}>{c}</li>)}
-            </ul>
-          </section>
+      <div className="adm-stat-grid role-perm-cards">
+        {roles.map((r) => (
+          <div key={r.id} className="adm-stat-card role-perm-card">
+            <span className="adm-entity-icon" style={{ background: r.icon.bg }} aria-hidden="true">{r.icon.label}</span>
+            <div>
+              <div className="adm-stat-label">{ROLE_LABELS[r.id]}</div>
+              <ul className="role-perm-list">
+                {r.can.map((c) => <li key={c}>{c}</li>)}
+              </ul>
+            </div>
+          </div>
         ))}
       </div>
-      <div className="adm-card" style={{ padding: 0, overflow: "hidden", marginTop: 14 }}>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Capability</th>
-              <th>Admin</th>
-              <th>Approver</th>
-              <th>User</th>
-            </tr>
-          </thead>
-          <tbody>
-            {[
-              ["Manage users & groups", "✓", "—", "—"],
-              ["Platform settings", "✓", "—", "—"],
-              ["Approve deployments", "✓", "✓", "—"],
-              ["View all deployments", "✓", "✓", "—"],
-              ["Provision resources", "✓", "✓", "✓"],
-              ["Own resources only", "—", "—", "✓"],
-            ].map((row) => (
-              <tr key={row[0]}>
-                <td>{row[0]}</td>
-                <td>{row[1]}</td>
-                <td>{row[2]}</td>
-                <td>{row[3]}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      <div className="adm-table-wrap">
+        <div className="adm-table-head">
+          <h3 className="adm-table-title">Capability matrix</h3>
+          <span className="muted adm-table-count">Quick reference</span>
+        </div>
+        <div className="role-matrix">
+          <div className="role-matrix-row role-matrix-head">
+            <div>Capability</div>
+            <div>Admin</div>
+            <div>Approver</div>
+            <div>User</div>
+          </div>
+          {matrix.map(([cap, a, ap, u]) => (
+            <div key={cap} className="role-matrix-row">
+              <div className="role-matrix-cap">{cap}</div>
+              <div>{a ? <span className="role-matrix-yes">Yes</span> : <span className="muted">—</span>}</div>
+              <div>{ap ? <span className="role-matrix-yes">Yes</span> : <span className="muted">—</span>}</div>
+              <div>{u ? <span className="role-matrix-yes">Yes</span> : <span className="muted">—</span>}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

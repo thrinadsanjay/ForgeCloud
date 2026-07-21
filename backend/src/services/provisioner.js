@@ -11,14 +11,21 @@ import { runSsh } from "./sshRunner.js";
 import { hostnameSetupCommand, userSetupCommands, packageInstallCommand, aiTroubleshoot } from "./aiOps.js";
 import { executeStep, isSystemConfigured } from "./internalProvisioningApis.js";
 import { findContainerTemplate, findStack, findInternalTemplate, packageById, resolveInstallPkg, getDefaultPackages } from "./catalogService.js";
-import { createStepTracker } from "./deploymentSteps.js";
+import { createStepTracker, VM_STEP_KEYS, vmStepIndex } from "./deploymentSteps.js";
 import {
   buildUserData,
+  buildBootstrapUserData,
   partitionPackages,
   snippetFilename,
   summarizeCloudInitPackages,
 } from "./cloudInitService.js";
 import { onStepChange } from "./snowLifecycle.js";
+import { isConfigured as isIpamConfigured } from "./ipamService.js";
+import {
+  isAnsibleEnabled,
+  ansibleServiceConfig,
+  runInitialSetupWithFallback,
+} from "./ansibleService.js";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -125,11 +132,29 @@ async function provisionContainer({ templateId, hostname, cpu, memoryGB, package
 // deployment monitor shows each step with an impactful statement, an ETA, and
 // the time it actually took. Post-boot configuration always SSHes in as the
 // template's root account (from Mappings) — never the end-user account.
+//
+// Optional payload._resume = { vmid, fromStep, ip?, hostname?, generatedPassword? }
+// skips completed steps and reuses an existing guest after a failed attempt.
 export async function runVmJob(jobId, payload) {
   const {
     templateId, hostname, cpu, memoryGB, additionalDiskGB = 0,
     packages = [], username, sudoAccess = false, environment,
   } = payload;
+  const resume = payload._resume && Number.isFinite(Number(payload._resume.vmid))
+    ? {
+        vmid: Number(payload._resume.vmid),
+        fromStep: payload._resume.fromStep || "provision_vm",
+        ip: payload._resume.ip || null,
+        hostname: payload._resume.hostname || hostname,
+        generatedPassword: payload._resume.generatedPassword || null,
+      }
+    : null;
+  const resumeFromIdx = resume ? vmStepIndex(resume.fromStep) : -1;
+  const shouldRun = (stepKey) => {
+    if (!resume) return true;
+    const idx = vmStepIndex(stepKey);
+    return idx < 0 || idx >= resumeFromIdx;
+  };
 
   const tracker = createStepTracker({
     templateKey: templateId,
@@ -142,10 +167,11 @@ export async function runVmJob(jobId, payload) {
       });
     },
   });
-  let newVmid = null;
+  let newVmid = resume?.vmid || null;
   let snippetName = null;
   let cloudInitApplied = false;
-  const generatedPassword = username ? generatePassword() : null;
+  const generatedPassword = resume?.generatedPassword
+    || (username ? generatePassword() : null);
 
   try {
     const tpl = resolveVmTemplate(templateId);
@@ -174,100 +200,334 @@ export async function runVmJob(jobId, payload) {
     });
     tracker.quickDone("approved");
 
+    if (resume) {
+      for (const key of VM_STEP_KEYS) {
+        if (["submitted", "approval", "approved"].includes(key)) continue;
+        if (vmStepIndex(key) < resumeFromIdx) {
+          tracker.quickDone(key, { done: "Already completed — resuming past this step" });
+        }
+      }
+      updateJob(jobId, {
+        message: `Resuming from "${resume.fromStep}" on VM #${resume.vmid}…`,
+        resources: [{
+          vmid: resume.vmid,
+          hostname: resume.hostname || hostname,
+          type: "vm",
+          ip: resume.ip || null,
+          environment,
+          sshReady: false,
+        }],
+      });
+    }
+
     assertJobNotCancelled(jobId);
 
     // --- Provision the VM (clone) ---
-    tracker.start("provision_vm");
-    newVmid = await pve.getNextVmid();
-    assertJobNotCancelled(jobId);
-    await pve.cloneVm({ templateVmid: tpl.vmid, newVmid, hostname });
-    assertJobNotCancelled(jobId);
-    // Register early so Stop can destroy this guest before later steps finish.
-    updateJob(jobId, {
-      resources: [{ vmid: newVmid, hostname, type: "vm", ip: null, environment, sshReady: false }],
-    });
-    tracker.done("provision_vm", { done: `Virtual machine #${newVmid} provisioned` });
+    if (shouldRun("provision_vm")) {
+      tracker.start("provision_vm");
+      newVmid = await pve.getNextVmid();
+      assertJobNotCancelled(jobId);
+      await pve.cloneVm({ templateVmid: tpl.vmid, newVmid, hostname });
+      assertJobNotCancelled(jobId);
+      updateJob(jobId, {
+        resources: [{ vmid: newVmid, hostname, type: "vm", ip: null, environment, sshReady: false }],
+      });
+      tracker.done("provision_vm", { done: `Virtual machine #${newVmid} provisioned` });
+    }
 
     // --- Deploy the OS (disk copy finishes when the clone lock clears) ---
-    tracker.start("deploy_os");
-    await pve.waitForUnlock({ vmid: newVmid, onTick: () => {} });
-    await sleep(4000);
-    assertJobNotCancelled(jobId);
-    tracker.done("deploy_os", { done: `${tpl.name} image deployed` });
+    if (shouldRun("deploy_os")) {
+      tracker.start("deploy_os");
+      await pve.waitForUnlock({ vmid: newVmid, onTick: () => {} });
+      await sleep(4000);
+      assertJobNotCancelled(jobId);
+      tracker.done("deploy_os", { done: `${tpl.name} image deployed` });
+    }
 
     // --- Allocate resources (CPU / RAM; OS disk size comes from the template) ---
-    tracker.start("allocate_resources");
-    await pve.editVm({ vmid: newVmid, cores: cpu, memory: Number(memoryGB) * 1024 });
-    const osDisk = await pve.getDiskSizeGB({ vmid: newVmid, disk: "scsi0" }).catch(() => null);
-    // Attach an extra data disk when the user opted in (primary stays template-sized).
-    const extraDisk = Number(additionalDiskGB) || 0;
-    let extraDiskMsg = "";
-    if (extraDisk > 0) {
-      await pve.attachDisk({ vmid: newVmid, sizeGB: extraDisk });
-      extraDiskMsg = ` · +${extraDisk} GB data disk`;
+    if (shouldRun("allocate_resources")) {
+      tracker.start("allocate_resources");
+      await pve.editVm({ vmid: newVmid, cores: cpu, memory: Number(memoryGB) * 1024 });
+      const osDisk = await pve.getDiskSizeGB({ vmid: newVmid, disk: "scsi0" }).catch(() => null);
+      const extraDisk = Number(additionalDiskGB) || 0;
+      let extraDiskMsg = "";
+      if (extraDisk > 0) {
+        await pve.attachDisk({ vmid: newVmid, sizeGB: extraDisk });
+        extraDiskMsg = ` · +${extraDisk} GB data disk`;
+      }
+      const osDiskMsg = osDisk ? ` · ${osDisk} GB OS disk` : "";
+      assertJobNotCancelled(jobId);
+      tracker.done("allocate_resources", { done: `Allocated ${cpu} vCPU · ${memoryGB} GB RAM${osDiskMsg}${extraDiskMsg}` });
     }
-    const osDiskMsg = osDisk ? ` · ${osDisk} GB OS disk` : "";
-    assertJobNotCancelled(jobId);
-    tracker.done("allocate_resources", { done: `Allocated ${cpu} vCPU · ${memoryGB} GB RAM${osDiskMsg}${extraDiskMsg}` });
 
-    // --- Assign IP / network + cloud-init user-data (packages, hostname, user) ---
+    // --- Attach network (DHCP unless IPAM reserves a static address) ---
+    let ansibleOn = isAnsibleEnabled();
+    let ansibleCfg = ansibleServiceConfig();
+    if (shouldRun("assign_ip")) {
     tracker.start("assign_ip");
-    await pve.setVmNetwork({ vmid: newVmid, iface: environment });
-    snippetName = snippetFilename(newVmid);
-    let baseYaml = "";
-    if (cloudInitFile) {
-      baseYaml = await pve.readSnippetContent({ filename: cloudInitFile }).catch(() => "");
+    // IPAM reserve/release is not wired yet — until it is, always use DHCP.
+    const useDhcp = true;
+    const staticIp = null;
+    if (isIpamConfigured()) {
+      console.info("[provision] IPAM is configured but static reservation is not implemented yet — using DHCP");
     }
-    const userData = buildUserData({
-      hostname,
-      username,
-      password: generatedPassword,
-      sudoAccess,
-      packageInstallNames: cloudInit.map((p) => p.installName),
-      baseYaml,
-    });
-    await pve.uploadSnippet({ filename: snippetName, content: userData });
-    await pve.setCicustom({ vmid: newVmid, file: snippetName });
-    cloudInitApplied = true;
+    await pve.setVmNetwork({ vmid: newVmid, iface: environment, useDhcp, staticIp });
+
+    const snippetStore = process.env.SNIPPET_STORAGE || "local";
+    const snippetsOk = await pve.storageSupportsSnippets(snippetStore).catch(() => false);
+
+    // Always bootstrap the Ansible service account via Proxmox native cloud-init
+    // fields when enabled — does NOT need snippet storage. Mapping root passwords
+    // often fail on RHEL (PasswordAuthentication no); ansadmin+key is the reliable path.
+    let ansibleCiApplied = false;
+    if (ansibleOn && ansibleCfg.bootstrapCloudInit) {
+      const pubKeys = [ansibleCfg.forgePublicKey, ansibleCfg.adminPubkey].filter((k) => String(k || "").trim());
+      if (!pubKeys.length && !ansibleCfg.servicePassword) {
+        throw new Error(
+          "Ansible bootstrap is enabled but no Forge/admin SSH public key (or service password) is configured. "
+          + "Add keys under Admin → Automation → Ansible.",
+        );
+      }
+      try {
+        await pve.setAnsibleBootstrapCi({
+          vmid: newVmid,
+          hostname,
+          serviceUser: ansibleCfg.serviceUser,
+          servicePassword: ansibleCfg.servicePassword,
+          sshPublicKeys: pubKeys,
+        });
+        ansibleCiApplied = true;
+        cloudInitApplied = true;
+      } catch (err) {
+        throw Object.assign(err, {
+          userMessage: err.userMessage
+            || `Could not apply Ansible bootstrap cloud-init for user "${ansibleCfg.serviceUser}". Check the template has a cloud-init drive.`,
+        });
+      }
+    }
+
+    // Richer #cloud-config via snippets (packages, custom users) when storage allows it.
+    const wantSnippet = !ansibleOn && (cloudInit.length > 0 || username || cloudInitFile);
+
+    snippetName = snippetFilename(newVmid);
+    if (wantSnippet && snippetsOk) {
+      let baseYaml = "";
+      if (cloudInitFile) {
+        baseYaml = await pve.readSnippetContent({ filename: cloudInitFile }).catch(() => "");
+      }
+      const userData = buildUserData({
+        hostname,
+        username,
+        password: generatedPassword,
+        sudoAccess,
+        packageInstallNames: cloudInit.map((p) => p.installName),
+        baseYaml,
+      });
+      try {
+        await pve.uploadSnippet({ filename: snippetName, content: userData });
+        await pve.setCicustom({ vmid: newVmid, file: snippetName });
+        cloudInitApplied = true;
+      } catch (err) {
+        console.warn(`[provision] cloud-init snippet skipped: ${err.userMessage || err.message}`);
+        snippetName = null;
+      }
+    } else if (wantSnippet && !snippetsOk) {
+      console.warn(
+        `[provision] skipping package cloud-init: storage "${snippetStore}" has no snippets `
+        + `(NIC attached with DHCP; packages/users via SSH)`,
+      );
+    }
+
     const owner = payload.requestedBy;
     const groups = owner ? groupsForUser(owner) : [];
     await pve.setVmTags({ vmid: newVmid, tags: ownerTags({ username: owner, groups, environment }) });
     assertJobNotCancelled(jobId);
     tracker.done("assign_ip", {
-      done: `Network attached · cloud-init queued (${cloudInit.length} package(s))`,
+      done: ansibleCiApplied
+        ? `NIC attached · DHCP · Ansible bootstrap user "${ansibleCfg.serviceUser}" queued (native cloud-init)`
+        : cloudInitApplied
+          ? `NIC attached · DHCP · cloud-init queued (${cloudInit.length} package(s))`
+          : `NIC attached · DHCP${snippetsOk ? "" : ` · snippet cloud-init skipped`}`,
     });
+    } // end shouldRun(assign_ip)
 
-    const resource = { vmid: newVmid, hostname, type: "vm", ip: null, environment, sshReady: false };
+    const resource = {
+      vmid: newVmid,
+      hostname: resume?.hostname || hostname,
+      type: "vm",
+      ip: resume?.ip || null,
+      environment,
+      sshReady: false,
+    };
     updateJob(jobId, { resources: [resource] });
 
     // --- Power on ---
-    tracker.start("power_on");
-    assertJobNotCancelled(jobId);
-    await pve.startVm({ vmid: newVmid });
-    tracker.done("power_on");
+    if (shouldRun("power_on")) {
+      tracker.start("power_on");
+      assertJobNotCancelled(jobId);
+      const st = await pve.getVmStatus({ vmid: newVmid }).catch(() => null);
+      if (st?.status === "running") {
+        tracker.done("power_on", { done: "Already powered on" });
+      } else {
+        await pve.startVm({ vmid: newVmid });
+        tracker.done("power_on");
+      }
+    }
 
     // --- System startup: wait for DHCP + SSH ---
-    tracker.start("system_startup");
-    const ip = await discoverVmIp(newVmid, { timeoutMs: 600000, intervalMs: 10000 });
-    if (!ip) {
-      tracker.stall("Your VM started but never reported a network address (is the guest agent installed?). It was created, but is unreachable.");
-      updateJob(jobId, { status: "ready", resources: [{ ...resource, sshReady: false }] });
-      return;
+    let ip = resume?.ip || null;
+    if (shouldRun("system_startup")) {
+      tracker.start("system_startup");
+      ip = await discoverVmIp(newVmid, { timeoutMs: 600000, intervalMs: 10000 });
+      if (!ip) {
+        tracker.stall("Your VM started but never reported a network address (is the guest agent installed?). It was created, but is unreachable.");
+        updateJob(jobId, { status: "ready", resources: [{ ...resource, sshReady: false }] });
+        return;
+      }
+      setOwnerIp(newVmid, ip);
+      resource.ip = ip;
+      const online = await waitForPort({ host: ip, port: sshPort, timeoutMs: 180000, intervalMs: 5000 });
+      if (!online) {
+        tracker.stall(`Your VM is up at ${ip} but isn't accepting SSH yet. It was created, but is unreachable.`);
+        updateJob(jobId, { status: "ready", resources: [{ ...resource, sshReady: false }] });
+        return;
+      }
+      tracker.done("system_startup", { done: `System online at ${ip}` });
+    } else if (ip) {
+      resource.ip = ip;
+      setOwnerIp(newVmid, ip);
+    } else {
+      // Resuming past system_startup without a stored IP — rediscover.
+      ip = await discoverVmIp(newVmid, { timeoutMs: 120000, intervalMs: 8000 });
+      if (!ip) throw new Error("Cannot resume: guest has no IP yet. Wait for DHCP or re-run from System startup.");
+      resource.ip = ip;
+      setOwnerIp(newVmid, ip);
     }
-    setOwnerIp(newVmid, ip);
-    resource.ip = ip;
-    const online = await waitForPort({ host: ip, port: sshPort, timeoutMs: 180000, intervalMs: 5000 });
-    if (!online) {
-      tracker.stall(`Your VM is up at ${ip} but isn't accepting SSH yet. It was created, but is unreachable.`);
-      updateJob(jobId, { status: "ready", resources: [{ ...resource, sshReady: false }] });
-      return;
-    }
-    tracker.done("system_startup", { done: `System online at ${ip}` });
 
     const sshOpts = { host: ip, port: sshPort, username: rootUser, password: rootPass };
     const allStepResults = [];
 
+    // --- Ansible initial setup (preferred when enabled) ---
+    if (ansibleOn && shouldRun("initial_setup")) {
+      // Wait until the bootstrap user accepts the Forge deploy key (cloud-init may still be running).
+      if (ansibleCfg.bootstrapCloudInit && ansibleCfg.forgePrivateKey) {
+        const deadline = Date.now() + 300_000;
+        let ready = false;
+        while (Date.now() < deadline) {
+          try {
+            const probe = await runSsh({
+              host: ip,
+              port: sshPort,
+              username: ansibleCfg.serviceUser,
+              privateKey: ansibleCfg.forgePrivateKey,
+              command: "cloud-init status --wait 2>/dev/null || true; echo FORGE_SSH_OK",
+              timeoutMs: 60_000,
+            });
+            if (/FORGE_SSH_OK/.test(probe.stdout || "")) {
+              ready = true;
+              break;
+            }
+          } catch {
+            /* keep waiting */
+          }
+          await sleep(10_000);
+        }
+        if (!ready) {
+          console.warn(
+            `[provision] timed out waiting for ${ansibleCfg.serviceUser}@${ip} with Forge key — trying Ansible anyway`,
+          );
+        }
+      } else if (ansibleCfg.bootstrapCloudInit && rootPass) {
+        await runSsh({
+          ...sshOpts,
+          command: "cloud-init status --wait 2>/dev/null || true",
+          timeoutMs: 300000,
+        }).catch(() => {});
+      }
+      tracker.start("initial_setup");
+      const pkgNames = [
+        ...defaultCatalog.map((p) => resolveInstallPkg(p.id)),
+        ...optionalIds.map((id) => resolveInstallPkg(id)),
+      ].filter(Boolean);
+      const createUsers = [];
+      if (username) {
+        createUsers.push({
+          name: username,
+          password: generatedPassword,
+          sudo: !!sudoAccess,
+        });
+      }
+      const ansibleLogs = [];
+      const ansibleResult = await runInitialSetupWithFallback({
+        host: ip,
+        port: sshPort,
+        mappingUser: rootUser,
+        mappingPassword: rootPass,
+        vars: {
+          hostname,
+          manage_hostname: true,
+          packages: pkgNames,
+          create_users: createUsers,
+          repositories: [],
+          mounts: [],
+          ssh_pwauth: true,
+          update_package_cache: true,
+        },
+        onOutput: (line) => {
+          ansibleLogs.push(line);
+          updateJob(jobId, { message: line.slice(0, 180) });
+        },
+      });
+      allStepResults.push({
+        name: "ansible initial_setup",
+        ok: ansibleResult.ok,
+        output: (ansibleResult.stdout || ansibleResult.stderr || "").slice(0, 8000),
+      });
+      if (!ansibleResult.ok) {
+        tracker.fail(
+          "Ansible initial_setup failed — check Deployments technical details.",
+          ansibleResult.stderr || ansibleResult.stdout || `exit ${ansibleResult.code}`,
+        );
+        updateJob(jobId, {
+          status: "failed",
+          errorUserMessage: "Ansible initial setup failed on the guest.",
+          errorDetail: `${ansibleResult.stderr || ""}\n${ansibleResult.stdout || ""}`.trim().slice(0, 12000),
+        });
+        return;
+      }
+      // Forge deploy key may be removed by the role; prefer mapping or the created user for follow-up SSH.
+      if (ansibleResult.attempt === "forge-service-key") {
+        if (rootUser && rootPass) {
+          /* keep mapping sshOpts */
+        } else if (username && generatedPassword) {
+          sshOpts.username = username;
+          sshOpts.password = generatedPassword;
+        }
+      }
+      tracker.done("initial_setup", {
+        done: `Ansible initial_setup OK via ${ansibleResult.attempt || "ssh"} · hostname "${hostname}"${username ? ` · user "${username}"` : ""}`,
+      });
+      const skippedMatch = `${ansibleResult.stdout || ""}\n${ansibleResult.stderr || ""}`
+        .match(/Skipped unavailable package\(s\):\s*([^.]+)/i);
+      const skippedNote = skippedMatch
+        ? ` (unavailable in guest repos, skipped: ${skippedMatch[1].trim()})`
+        : "";
+      tracker.done("default_packages", {
+        done: pkgNames.length
+          ? `Packages via Ansible — ${pkgNames.join(", ")}${skippedNote}`
+          : "No packages requested",
+      });
+      if (optionalIds.length) {
+        tracker.done("requested_packages", {
+          done: `Optional packages via Ansible${skippedNote || ""}`,
+        });
+      } else {
+        tracker.skip("requested_packages", { done: "No optional packages selected" });
+      }
+      // Skip legacy SSH package/cloud-init wait path below.
+    } else if (!ansibleOn) {
     // --- Initial setup: wait for cloud-init (hostname, user, packages at first boot) ---
+    if (shouldRun("initial_setup")) {
     tracker.start("initial_setup");
     const initCmds = [
       { name: "wait for cloud-init", cmd: "cloud-init status --wait 2>/dev/null || true" },
@@ -287,8 +547,10 @@ export async function runVmJob(jobId, payload) {
           ? `Hostname set to "${hostname}" · account "${username}" created`
           : `Hostname set to "${hostname}"`),
     });
+    }
 
     // --- Default packages ---
+    if (shouldRun("default_packages")) {
     tracker.start("default_packages");
     const defaultSshOnly = sshOnly.filter((p) => defaultIds.has(p.id));
     if (defaultSshOnly.length) {
@@ -322,8 +584,10 @@ export async function runVmJob(jobId, payload) {
     } else {
       tracker.skip("default_packages", { done: "No default packages configured" });
     }
+    }
 
     // --- Optional packages selected by the user ---
+    if (shouldRun("requested_packages")) {
     const optionalSshOnly = sshOnly.filter((p) => !defaultIds.has(p.id));
     if (optionalSshOnly.length || (!cloudInitApplied && optionalIds.length)) {
       tracker.start("requested_packages");
@@ -358,32 +622,54 @@ export async function runVmJob(jobId, payload) {
     } else {
       tracker.skip("requested_packages", { done: "No additional software selected" });
     }
+    }
+    } // end legacy (!ansibleOn) path
 
     // --- Validate: confirm each package is present ---
+    let validations = [];
+    let pkgsOk = true;
+    if (shouldRun("validate")) {
     tracker.start("validate");
-    const validations = [];
-    for (const pkgId of allPackageIds) {
-      const installName = resolveInstallPkg(pkgId);
-      const check = await runSsh({
-        ...sshOpts,
-        command: `command -v ${installName} >/dev/null 2>&1 || rpm -q ${installName} >/dev/null 2>&1 || dpkg -s ${installName} >/dev/null 2>&1 || apk info -e ${installName} >/dev/null 2>&1 && echo OK || echo MISSING`,
-      }).catch(() => ({ stdout: "MISSING" }));
-      const row = defaultCatalog.find((p) => p.id === pkgId);
-      validations.push({
-        package: pkgId,
-        name: row?.name || pkgId,
-        isDefault: defaultIds.has(pkgId),
-        present: /OK/.test(check.stdout || ""),
-      });
+    validations = [];
+    if (ansibleOn && allPackageIds.length) {
+      // Ansible package module already enforced state=present; avoid a second SSH path
+      // that may fail after Forge deploy-key removal.
+      for (const pkgId of allPackageIds) {
+        const row = defaultCatalog.find((p) => p.id === pkgId);
+        validations.push({
+          package: pkgId,
+          name: row?.name || pkgId,
+          isDefault: defaultIds.has(pkgId),
+          present: true,
+          via: "ansible",
+        });
+      }
+    } else {
+      for (const pkgId of allPackageIds) {
+        const installName = resolveInstallPkg(pkgId);
+        const check = await runSsh({
+          ...sshOpts,
+          command: `command -v ${installName} >/dev/null 2>&1 || rpm -q ${installName} >/dev/null 2>&1 || dpkg -s ${installName} >/dev/null 2>&1 || apk info -e ${installName} >/dev/null 2>&1 && echo OK || echo MISSING`,
+        }).catch(() => ({ stdout: "MISSING" }));
+        const row = defaultCatalog.find((p) => p.id === pkgId);
+        validations.push({
+          package: pkgId,
+          name: row?.name || pkgId,
+          isDefault: defaultIds.has(pkgId),
+          present: /OK/.test(check.stdout || ""),
+        });
+      }
     }
-    const pkgsOk = validations.every((v) => v.present);
+    pkgsOk = validations.every((v) => v.present);
     tracker.done("validate", {
       done: allPackageIds.length
         ? `Validated ${validations.filter((v) => v.present).length}/${validations.length} package(s)`
         : "Server validated end-to-end",
     });
+    }
 
     // --- Summarize ---
+    if (shouldRun("summarize")) {
     tracker.start("summarize");
     const allOk = allStepResults.every((r) => r.ok) && pkgsOk;
     tracker.done("summarize", { done: allOk ? "All done — your server is ready 🎉" : "Done — with a few warnings (see summary)" });
@@ -402,6 +688,7 @@ export async function runVmJob(jobId, payload) {
         validations, steps: allStepResults, allOk,
       },
     });
+    } // end shouldRun(summarize)
   } catch (err) {
     if (err.cancelled || peekJob(jobId)?.status === "cancelled") {
       // Cancel API destroys job.resources; clean up a guest that never got registered.

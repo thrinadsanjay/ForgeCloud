@@ -1,0 +1,43 @@
+---
+- name: Apt repositories (Debian / Ubuntu)
+  ansible.builtin.apt_repository:
+    repo: "{{ item.uri | default(item.repo) }}"
+    filename: "{{ item.name | default(omit) }}"
+    state: present
+    update_cache: false
+  loop: "{{ repositories }}"
+  when: ansible_os_family == "Debian"
+  loop_control:
+    label: "{{ item.name | default(item.uri | default(item.repo)) }}"
+
+- name: Yum/DNF repositories (RHEL / Rocky / Alma / CentOS)
+  ansible.builtin.yum_repository:
+    name: "{{ item.name }}"
+    description: "{{ item.description | default(item.name) }}"
+    baseurl: "{{ item.uri | default(item.baseurl) }}"
+    enabled: true
+    gpgcheck: "{{ item.gpgcheck | default(false) }}"
+    gpgkey: "{{ item.gpgkey | default(omit) }}"
+    state: present
+  loop: "{{ repositories }}"
+  when: ansible_os_family == "RedHat"
+  loop_control:
+    label: "{{ item.name }}"
+
+# Prefer zypper CLI so we do not require community.general on the Forge image.
+- name: Zypper repositories (SUSE / openSUSE)
+  ansible.builtin.command:
+    cmd: >-
+      zypper --non-interactive addrepo --refresh
+      --name {{ item.name | quote }}
+      {{ (item.uri | default(item.repo)) | quote }}
+      {{ item.name | quote }}
+  args:
+    creates: "/etc/zypp/repos.d/{{ item.name }}.repo"
+  loop: "{{ repositories }}"
+  when: ansible_os_family == "Suse"
+  register: _zypper_addrepo
+  changed_when: _zypper_addrepo.rc == 0
+  failed_when: false
+  loop_control:
+    label: "{{ item.name }}"

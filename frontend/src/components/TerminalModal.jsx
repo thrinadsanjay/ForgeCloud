@@ -81,7 +81,8 @@ function SshTerminal({ vmid, ip, hostname, credentials, onClose }) {
     // The proxy resolves the IP from the VMID server-side and authorizes the
     // connection against the JWT — the browser never dictates the target host.
     const token = localStorage.getItem("forge_token") || localStorage.getItem("ssp_token") || "";
-    const wsUrl = `ws://${window.location.host}/ws/ssh?vmid=${encodeURIComponent(vmid)}&token=${encodeURIComponent(token)}&cols=${cols}&rows=${rows}`;
+    const wsProto = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${wsProto}//${window.location.host}/ws/ssh?vmid=${encodeURIComponent(vmid)}&token=${encodeURIComponent(token)}&cols=${cols}&rows=${rows}`;
     const ws = new WebSocket(wsUrl);
     ws.binaryType = "arraybuffer";
 
@@ -90,9 +91,12 @@ function SshTerminal({ vmid, ip, hostname, credentials, onClose }) {
     // "closed before the connection is established" warning and aborts the handshake.
     // Track disposal and, if we're torn down mid-connect, close cleanly on open instead.
     let disposed = false;
+    let sawOpen = false;
+    let sawServerText = false;
 
     ws.onopen = () => {
       if (disposed) { ws.close(); return; }
+      sawOpen = true;
       // Send credentials as first message before any input
       ws.send(JSON.stringify({
         type: "auth",
@@ -106,6 +110,7 @@ function SshTerminal({ vmid, ip, hostname, credentials, onClose }) {
     };
 
     ws.onmessage = (e) => {
+      sawServerText = true;
       if (e.data instanceof ArrayBuffer) {
         term.write(new Uint8Array(e.data));
       } else {
@@ -114,11 +119,20 @@ function SshTerminal({ vmid, ip, hostname, credentials, onClose }) {
     };
 
     ws.onerror = () => {
-      term.writeln("\r\n\x1b[1;31mWebSocket error — check backend logs.\x1b[0m");
+      if (disposed) return;
+      term.writeln("\r\n\x1b[1;31mWebSocket error — could not reach /ws/ssh.\x1b[0m");
+      term.writeln("\x1b[33mOpen Forge at the backend URL (e.g. http://localhost:4100), not a stale Vite tab.\x1b[0m");
     };
 
-    ws.onclose = () => {
-      term.writeln("\r\n\x1b[1;33mConnection closed.\x1b[0m");
+    ws.onclose = (ev) => {
+      if (disposed) return;
+      if (!sawOpen) {
+        term.writeln("\r\n\x1b[1;31mWebSocket handshake failed (backend unreachable or path not proxied).\x1b[0m");
+      } else if (!sawServerText && ev.code !== 1000) {
+        term.writeln(`\r\n\x1b[1;31mConnection closed before SSH started (code ${ev.code}).\x1b[0m`);
+      } else {
+        term.writeln("\r\n\x1b[1;33mConnection closed.\x1b[0m");
+      }
     };
 
     const resizeObserver = new ResizeObserver(() => {

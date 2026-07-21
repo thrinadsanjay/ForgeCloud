@@ -4,6 +4,9 @@ import {
   adminListPackages,
   adminUpsertPackage,
   adminDeletePackage,
+  adminListApplicationRoles,
+  adminUpsertApplicationRole,
+  adminDeleteApplicationRole,
   adminListBaselines,
   adminUpsertBaseline,
   adminDeleteBaseline,
@@ -48,6 +51,28 @@ router.put("/admin/packages/:id", async (req, res) => {
 });
 router.delete("/admin/packages/:id", async (req, res) => {
   await adminDeletePackage(req.params.id);
+  res.json({ ok: true });
+});
+
+router.get("/admin/application-roles", async (req, res) => {
+  res.json(await adminListApplicationRoles());
+});
+router.post("/admin/application-roles", async (req, res) => {
+  try {
+    res.json(await adminUpsertApplicationRole(req.body || {}));
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+router.put("/admin/application-roles/:id", async (req, res) => {
+  try {
+    res.json(await adminUpsertApplicationRole({ ...req.body, id: req.params.id }));
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+router.delete("/admin/application-roles/:id", async (req, res) => {
+  await adminDeleteApplicationRole(req.params.id);
   res.json({ ok: true });
 });
 

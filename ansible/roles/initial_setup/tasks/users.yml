@@ -1,0 +1,56 @@
+---
+# Privilege group differs by family: Debian/Ubuntu → sudo; RHEL/SUSE → wheel.
+- name: Resolve privilege group for this OS
+  ansible.builtin.set_fact:
+    _forge_priv_group: "{{ 'sudo' if ansible_os_family == 'Debian' else 'wheel' }}"
+
+- name: Ensure sudo package is present when creating privileged users
+  ansible.builtin.package:
+    name: sudo
+    state: present
+  when: create_users | selectattr('sudo', 'defined') | selectattr('sudo') | list | length > 0
+
+- name: Create local users
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    shell: "{{ item.shell | default('/bin/bash') }}"
+    groups: >-
+      {{
+        (
+          (item.groups | default([]) | difference(['sudo', 'wheel']))
+          + ([_forge_priv_group] if (item.sudo | default(false) | bool) else [])
+        ) | unique | list
+      }}
+    append: true
+    password: "{{ item.password | password_hash('sha512') if item.password is defined and item.password | length > 0 else omit }}"
+    update_password: "{{ 'always' if item.password is defined and item.password | length > 0 else 'on_create' }}"
+    create_home: true
+    state: present
+  loop: "{{ create_users }}"
+  loop_control:
+    label: "{{ item.name }}"
+  no_log: "{{ item.password is defined and item.password | length > 0 }}"
+
+- name: Grant passwordless sudo
+  ansible.builtin.copy:
+    dest: "/etc/sudoers.d/90-forge-{{ item.name }}"
+    content: "{{ item.name }} ALL=(ALL) NOPASSWD:ALL\n"
+    owner: root
+    group: root
+    mode: "0440"
+    validate: "visudo -cf %s"
+  loop: "{{ create_users }}"
+  when: item.sudo | default(false) | bool
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Install user SSH public keys
+  ansible.builtin.authorized_key:
+    user: "{{ item.name }}"
+    key: "{{ item.pubkey }}"
+    state: present
+    exclusive: false
+  loop: "{{ create_users }}"
+  when: item.pubkey is defined and item.pubkey | length > 0
+  loop_control:
+    label: "{{ item.name }}"

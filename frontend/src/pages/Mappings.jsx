@@ -257,72 +257,114 @@ export default function Mappings({ embedded = false }) {
     ? `Last sync ${lastSyncedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}`
     : "Not synced yet";
 
+  const mappedTemplates = data.templates.filter((t) => t.osName).length;
+  const activeNets = data.networks.filter((n) => n.active).length;
+
   return (
-    <div className={embedded ? "" : "page"}>
+    <div className={embedded ? "adm-board" : "page adm-board"}>
       <AdminPageHeader
         title="Mappings"
-        description="Templates and networks are auto-detected from Proxmox on every load. Map OS names, cloud-init snippets, credentials and connectivity here — they feed the provisioning form."
+        description="Templates and networks auto-detected from Proxmox. Map OS, cloud-init, credentials, and connectivity for provisioning."
       />
 
       <datalist id="pkg-mgrs">{PKG_MANAGERS.map((p) => <option key={p} value={p} />)}</datalist>
 
-      <div className="toolbar toolbar-panel" style={{ marginBottom: 14 }}>
+      <div className="adm-stat-grid">
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-brand" aria-hidden="true">VM</span>
+          <div>
+            <div className="adm-stat-label">Templates</div>
+            <div className="adm-stat-value">{data.templates.length}</div>
+            <div className="adm-stat-hint">{mappedTemplates} mapped</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-blue" aria-hidden="true">Net</span>
+          <div>
+            <div className="adm-stat-label">Networks</div>
+            <div className="adm-stat-value">{data.networks.length}</div>
+            <div className="adm-stat-hint">{activeNets} active</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-purple" aria-hidden="true">CI</span>
+          <div>
+            <div className="adm-stat-label">Snippets</div>
+            <div className="adm-stat-value">{data.snippets.length}</div>
+            <div className="adm-stat-hint">{data.snippetStorage || "local"}</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className={`adm-stat-icon ${syncHealth.tone === "ok" ? "is-ok" : syncHealth.tone === "danger" ? "is-danger" : "is-amber"}`} aria-hidden="true">↻</span>
+          <div>
+            <div className="adm-stat-label">Sync</div>
+            <div className="adm-stat-value adm-stat-sm">{syncHealth.label}</div>
+            <div className="adm-stat-hint">{lastSyncedAt ? lastSyncedAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="adm-board-toolbar">
         <button className="btn btn-ghost btn-sm" onClick={load} disabled={loading}>
           {loading ? "Detecting…" : "↻ Re-detect from Proxmox"}
         </button>
-        <span
-          className={`map-sync-chip map-sync-${syncHealth.tone}`}
-          title={error || syncLabel}
-        >
+        <span className={`map-sync-chip map-sync-${syncHealth.tone}`} title={error || syncLabel}>
           <span className="map-sync-dot" aria-hidden="true" />
           {syncHealth.label}
           {lastSyncedAt && !error ? <span className="map-sync-when">· {syncLabel}</span> : null}
         </span>
-        <span className="muted" style={{ marginLeft: "auto", fontSize: 13 }}>
-          Snippets in <span className="mono">/var/lib/vz/snippets</span> ({data.snippetStorage}): {data.snippets.length}
-        </span>
       </div>
 
-      {error && <div className="login-error" style={{ marginBottom: 14 }}>{error}</div>}
+      {error && <div className="login-error">{error}</div>}
 
-      <div className="section-title" style={{ marginTop: 0 }}>Templates → OS mapping</div>
-      <div className="card" style={{ overflow: "auto", marginBottom: 26 }}>
-        <table className="table map-table">
-          <thead>
-            <tr>
-              <th>Template</th><th>OS name</th><th>Cloud-init</th><th>User</th>
-              <th>Password</th><th>Connectivity</th><th>Port</th><th>Pkg mgr</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.templates.map((row) => (
-              <TemplateRow key={row.vmid} row={row} snippets={data.snippets} onSaved={load} onError={setError} />
-            ))}
-            {data.templates.length === 0 && (
-              <tr><td colSpan={9} className="empty">No Proxmox templates detected.</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="adm-table-wrap">
+        <div className="adm-table-head">
+          <h3 className="adm-table-title">Templates → OS</h3>
+          <span className="muted adm-table-count">{data.templates.length} templates</span>
+        </div>
+        <div className="adm-scroll">
+          <table className="table map-table table-dense">
+            <thead>
+              <tr>
+                <th>Template</th><th>OS name</th><th>Cloud-init</th><th>User</th>
+                <th>Password</th><th>Connectivity</th><th>Port</th><th>Pkg mgr</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.templates.map((row) => (
+                <TemplateRow key={row.vmid} row={row} snippets={data.snippets} onSaved={load} onError={setError} />
+              ))}
+              {data.templates.length === 0 && (
+                <tr><td colSpan={9} className="empty">No Proxmox templates detected.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      <div className="section-title">Networks (VLAN / bridge)</div>
-      <div className="card" style={{ overflow: "auto" }}>
-        <table className="table map-table">
-          <thead>
-            <tr>
-              <th>Interface</th><th>Detected</th><th>Type</th><th>Label</th>
-              <th>State</th><th>Address</th><th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.networks.map((row) => (
-              <NetworkRow key={row.iface} row={row} onSaved={load} onError={setError} />
-            ))}
-            {data.networks.length === 0 && (
-              <tr><td colSpan={7} className="empty">No bridges or VLANs detected.</td></tr>
-            )}
-          </tbody>
-        </table>
+      <div className="adm-table-wrap">
+        <div className="adm-table-head">
+          <h3 className="adm-table-title">Networks</h3>
+          <span className="muted adm-table-count">VLAN / bridge</span>
+        </div>
+        <div className="adm-scroll">
+          <table className="table map-table table-dense">
+            <thead>
+              <tr>
+                <th>Interface</th><th>Detected</th><th>Type</th><th>Label</th>
+                <th>State</th><th>Address</th><th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.networks.map((row) => (
+                <NetworkRow key={row.iface} row={row} onSaved={load} onError={setError} />
+              ))}
+              {data.networks.length === 0 && (
+                <tr><td colSpan={7} className="empty">No bridges or VLANs detected.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

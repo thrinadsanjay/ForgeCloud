@@ -56,6 +56,7 @@ export const getVmTemplates = () => api.get("/catalog/vm-templates").then((r) =>
 export const getContainerTemplates = () => api.get("/catalog/container-templates").then((r) => r.data);
 export const getStacks = () => api.get("/catalog/stacks").then((r) => r.data);
 export const getPackages = () => api.get("/catalog/packages").then((r) => r.data);
+export const getApplicationRoles = () => api.get("/catalog/application-roles").then((r) => r.data);
 export const getInstanceSizes = () => api.get("/catalog/instance-sizes").then((r) => r.data);
 export const getBaselines = () => api.get("/catalog/baselines").then((r) => r.data);
 export const getTemplateDefaults = () => api.get("/catalog/template-defaults").then((r) => r.data);
@@ -286,6 +287,10 @@ export const removeGroupMember = (name, username) =>
 export const adminListPackages = () => api.get("/admin/packages").then((r) => r.data);
 export const adminUpsertPackage = (data) => api.post("/admin/packages", data).then((r) => r.data);
 export const adminDeletePackage = (id) => api.delete(`/admin/packages/${encodeURIComponent(id)}`).then((r) => r.data);
+export const adminListApplicationRoles = () => api.get("/admin/application-roles").then((r) => r.data);
+export const adminUpsertApplicationRole = (data) => api.post("/admin/application-roles", data).then((r) => r.data);
+export const adminDeleteApplicationRole = (id) =>
+  api.delete(`/admin/application-roles/${encodeURIComponent(id)}`).then((r) => r.data);
 export const adminListBaselines = () => api.get("/admin/baselines").then((r) => r.data);
 export const adminUpsertBaseline = (data) => api.post("/admin/baselines", data).then((r) => r.data);
 export const adminDeleteBaseline = (id) => api.delete(`/admin/baselines/${encodeURIComponent(id)}`).then((r) => r.data);

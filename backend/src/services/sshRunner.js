@@ -3,7 +3,7 @@ import { Client } from "ssh2";
 // Run a single command over SSH and resolve { code, stdout, stderr }.
 // Used post-boot to configure the VM as root (credentials come from the
 // template mapping). Never used with the end-user's account.
-export function runSsh({ host, port = 22, username, password, command, timeoutMs = 180000 }) {
+export function runSsh({ host, port = 22, username, password, privateKey, command, timeoutMs = 180000 }) {
   return new Promise((resolve, reject) => {
     const conn = new Client();
     let stdout = "";
@@ -37,10 +37,14 @@ export function runSsh({ host, port = 22, username, password, command, timeoutMs
 
     conn.on("error", (err) => finish(reject, err));
 
-    conn.connect({
-      host, port, username, password,
+    const connectOpts = {
+      host, port, username,
       readyTimeout: 20000,
       hostVerifier: () => true, // internal hosts; host keys rotate on clone
-    });
+    };
+    if (privateKey) connectOpts.privateKey = privateKey;
+    else connectOpts.password = password;
+
+    conn.connect(connectOpts);
   });
 }

@@ -53,7 +53,33 @@ export const SETTING_GROUPS = [
     live: true,
     fields: [
       { key: "VM_SSH_PASSWORD", label: "Default cloud-init SSH password", type: "text", secret: true },
-      { key: "SNIPPET_STORAGE", label: "Cloud-init snippet storage", type: "text", placeholder: "local" },
+      { key: "SNIPPET_STORAGE", label: "Cloud-init snippet storage", type: "text", placeholder: "local",
+        note: "Must allow content type Snippets in Proxmox (Datacenter → Storage → Edit)." },
+    ],
+  },
+  {
+    id: "ansible",
+    title: "Ansible (Forge controller)",
+    note: "When enabled, Forge runs the in-image Ansible initial_setup role over SSH after the guest gets an IP. Windows guests are not supported yet.",
+    live: true,
+    fields: [
+      { key: "ANSIBLE_ENABLED", label: "Enable Ansible guest setup", type: "bool", default: "false" },
+      { key: "ANSIBLE_BOOTSTRAP_CLOUDINIT", label: "Bootstrap service account via minimal cloud-init", type: "bool", default: "true",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_SERVICE_USER", label: "Service account username", type: "text", placeholder: "forge", default: "forge",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_SERVICE_PASSWORD", label: "Service account password (optional)", type: "text", secret: true,
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_ADMIN_PUBKEY", label: "Admin / org SSH public key", type: "text",
+        placeholder: "ssh-ed25519 AAAA…",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_FORGE_PUBLIC_KEY", label: "Forge deploy public key", type: "text",
+        placeholder: "ssh-ed25519 AAAA…",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_FORGE_PRIVATE_KEY", label: "Forge deploy private key", type: "text", secret: true,
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_REMOVE_FORGE_KEY", label: "Remove Forge deploy key after successful setup", type: "bool", default: "true",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
     ],
   },
   {
@@ -164,7 +190,7 @@ export const SETTING_GROUPS = [
   {
     id: "ipam",
     title: "IPAM (IP Address Management)",
-    note: "Applies immediately. Link an IPAM system so the portal can reserve and release IPs.",
+    note: "Optional. When configured, Forge can reserve static IPs later. Until then (and whenever IPAM is not linked), guests use DHCP on the selected network.",
     live: true,
     fields: [
       { key: "IPAM_URL", label: "API base URL", type: "text", placeholder: "https://ipam.internal/api/v2" },

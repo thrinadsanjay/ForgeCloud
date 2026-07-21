@@ -1,0 +1,40 @@
+---
+# `packages` may be strings or maps { name: "..." }.
+- name: Normalize package names (strings)
+  ansible.builtin.set_fact:
+    _pkg_names: "{{ packages }}"
+  when: packages | length > 0 and (packages[0] is not mapping)
+
+- name: Normalize package names (maps)
+  ansible.builtin.set_fact:
+    _pkg_names: "{{ packages | map(attribute='name') | list }}"
+  when: packages | length > 0 and (packages[0] is mapping)
+
+- name: Default empty package list
+  ansible.builtin.set_fact:
+    _pkg_names: []
+  when: packages | length == 0
+
+# Install one-by-one so a missing vendor agent (mdatp, omi, …) does not
+# abort the whole playbook. Unavailable packages are reported, not fatal.
+- name: Install packages individually
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ _pkg_names }}"
+  when: _pkg_names | length > 0
+  register: _pkg_install
+  ignore_errors: true
+
+- name: Collect package install failures
+  ansible.builtin.set_fact:
+    _pkg_failed: "{{ _pkg_install.results | default([]) | selectattr('failed') | map(attribute='item') | list }}"
+  when: _pkg_names | length > 0
+
+- name: Warn about packages not available in this OS's repos
+  ansible.builtin.debug:
+    msg: >-
+      Skipped unavailable package(s): {{ _pkg_failed | join(', ') }}.
+      These usually need a vendor repo or a custom install script — configure
+      installCmd in Catalog, or add the repo before provisioning.
+  when: (_pkg_failed | default([])) | length > 0

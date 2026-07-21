@@ -89,53 +89,92 @@ export default function Users({ embedded = false }) {
   const approvers = users.filter((u) => u.role === "approver").length;
 
   return (
-    <div className={embedded ? "" : "page"}>
+    <div className={embedded ? "adm-board" : "page adm-board"}>
       <AdminPageHeader
         title="Users"
         description="Local accounts and roles. OIDC users appear after first sign-in."
         actions={(
-          <button className="btn btn-primary" onClick={() => setShowForm((s) => !s)}>
-            {showForm ? "Cancel" : "Add user"}
+          <button className="btn btn-primary btn-sm" onClick={() => setShowForm((s) => !s)}>
+            {showForm ? "Cancel" : "+ Add user"}
           </button>
         )}
-      >
-        <div className="adm-toolbar">
-          <input
-            className="control-input"
-            placeholder="Search users…"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+      />
+
+      <div className="adm-stat-grid">
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-brand" aria-hidden="true">👤</span>
+          <div>
+            <div className="adm-stat-label">Total users</div>
+            <div className="adm-stat-value">{users.length}</div>
+            <div className="adm-stat-hint">{filtered.length} showing</div>
+          </div>
         </div>
-      </AdminPageHeader>
-
-      {error && <div className="login-error" style={{ marginBottom: 14 }}>{error}</div>}
-
-      <div className="adm-kpi-row">
-        <div className="adm-kpi"><span className="adm-kpi-label">Total Users</span><strong>{users.length}</strong></div>
-        <div className="adm-kpi"><span className="adm-kpi-label">Admins</span><strong>{admins}</strong></div>
-        <div className="adm-kpi"><span className="adm-kpi-label">Approvers</span><strong>{approvers}</strong></div>
-        <div className="adm-kpi"><span className="adm-kpi-label">Showing</span><strong>{filtered.length}</strong></div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-amber" aria-hidden="true">Ad</span>
+          <div>
+            <div className="adm-stat-label">Admins</div>
+            <div className="adm-stat-value">{admins}</div>
+            <div className="adm-stat-hint">Full access</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-ok" aria-hidden="true">Ap</span>
+          <div>
+            <div className="adm-stat-label">Approvers</div>
+            <div className="adm-stat-value">{approvers}</div>
+            <div className="adm-stat-hint">Can approve holds</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-blue" aria-hidden="true">Us</span>
+          <div>
+            <div className="adm-stat-label">Standard</div>
+            <div className="adm-stat-value">{users.length - admins - approvers}</div>
+            <div className="adm-stat-hint">Provision own resources</div>
+          </div>
+        </div>
       </div>
 
+      <div className="adm-board-toolbar">
+        <input
+          className="control-input adm-board-search"
+          placeholder="Search users…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search users"
+        />
+      </div>
+
+      {error && <div className="login-error">{error}</div>}
+
       {showForm && (
-        <div className="adm-card" style={{ marginBottom: 16, maxWidth: 520 }}>
-          <form onSubmit={submit}>
-            <div className="field"><label>Username</label><input required value={form.username} onChange={upd("username")} /></div>
-            <div className="field"><label>Password</label><input type="password" required value={form.password} onChange={upd("password")} /></div>
-            <div className="field"><label>Display name</label><input value={form.displayName} onChange={upd("displayName")} /></div>
-            <div className="field"><label>Email</label><input type="email" value={form.email} onChange={upd("email")} /></div>
-            <div className="field">
-              <label>Role</label>
-              <select value={form.role} onChange={upd("role")}>
-                <option value="user">{ROLE_LABELS.user}</option>
-                <option value="approver">{ROLE_LABELS.approver}</option>
-                <option value="admin">{ROLE_LABELS.admin}</option>
-              </select>
-            </div>
-            <button className="btn btn-primary" disabled={busy}>{busy ? "Creating…" : "Create user"}</button>
-          </form>
-        </div>
+        <form className="adm-add-form users-add-form" onSubmit={submit}>
+          <label className="adm-add-field">
+            <span>Username</span>
+            <input className="control-input" required value={form.username} onChange={upd("username")} />
+          </label>
+          <label className="adm-add-field">
+            <span>Password</span>
+            <input className="control-input" type="password" required value={form.password} onChange={upd("password")} />
+          </label>
+          <label className="adm-add-field">
+            <span>Display name</span>
+            <input className="control-input" value={form.displayName} onChange={upd("displayName")} />
+          </label>
+          <label className="adm-add-field">
+            <span>Email</span>
+            <input className="control-input" type="email" value={form.email} onChange={upd("email")} />
+          </label>
+          <label className="adm-add-field">
+            <span>Role</span>
+            <select className="control-input" value={form.role} onChange={upd("role")}>
+              <option value="user">{ROLE_LABELS.user}</option>
+              <option value="approver">{ROLE_LABELS.approver}</option>
+              <option value="admin">{ROLE_LABELS.admin}</option>
+            </select>
+          </label>
+          <button className="btn btn-primary btn-sm" disabled={busy}>{busy ? "…" : "Create"}</button>
+        </form>
       )}
 
       {filtered.length === 0 ? (
@@ -147,62 +186,79 @@ export default function Users({ embedded = false }) {
           onAction={() => setShowForm(true)}
         />
       ) : (
-        <div className="adm-card" style={{ padding: 0, overflow: "hidden" }}>
-          <table className="table">
-            <thead>
-              <tr><th>User</th><th>Email</th><th>Source</th><th>Role</th><th>Actions</th></tr>
-            </thead>
-            <tbody>
-              {filtered.map((u) => (
-                <tr key={u.id}>
-                  <td>
-                    <div style={{ fontWeight: 600 }}>{u.displayName || u.username}</div>
-                    <div className="muted mono" style={{ fontSize: 12 }}>{u.username}</div>
-                  </td>
-                  <td>{u.email || "—"}</td>
-                  <td><span className="badge badge-user">{u.source}</span></td>
-                  <td>
-                    <span className={`badge ${u.role === "admin" ? "badge-admin" : u.role === "approver" ? "badge-approver" : "badge-user"}`}>
-                      {roleLabel(u.role)}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="actions-cell">
-                      <select
-                        className="control-select"
-                        style={{ maxWidth: 160 }}
-                        value={u.role || "user"}
-                        onChange={(e) => changeRole(u, e.target.value)}
-                        aria-label={`Role for ${u.username}`}
-                      >
-                        {ALL_ROLES.map((r) => (
-                          <option key={r} value={r}>{ROLE_LABELS[r]}</option>
-                        ))}
-                      </select>
-                      <div className="grp-overflow">
-                        <button
-                          type="button"
-                          className="btn btn-ghost btn-sm grp-more"
-                          ref={(el) => { menuBtnRefs.current[u.id] = el; }}
-                          aria-label={`More actions for ${u.username}`}
-                          aria-expanded={menuFor === u.id}
-                          onClick={() => setMenuFor((cur) => (cur === u.id ? null : u.id))}
+        <div className="adm-table-wrap">
+          <div className="adm-table-head">
+            <h3 className="adm-table-title">Accounts</h3>
+            <span className="muted adm-table-count">{filtered.length} shown</span>
+          </div>
+          <div className="adm-scroll">
+            <table className="table table-dense">
+              <thead>
+                <tr><th>User</th><th>Email</th><th>Source</th><th>Role</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                {filtered.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <div className="adm-dense-entity">
+                        <span
+                          className="adm-entity-icon"
+                          style={{ background: u.role === "admin" ? "#ea580c" : u.role === "approver" ? "#059669" : "#2563eb" }}
+                          aria-hidden="true"
                         >
-                          ⋯
-                        </button>
-                        <OverflowMenu
-                          open={menuFor === u.id}
-                          anchorRef={{ current: menuBtnRefs.current[u.id] }}
-                          onClose={() => setMenuFor(null)}
-                          onDelete={() => remove(u)}
-                        />
+                          {(u.displayName || u.username || "?").slice(0, 2).toUpperCase()}
+                        </span>
+                        <div>
+                          <div className="adm-entity-id">{u.displayName || u.username}</div>
+                          <div className="adm-entity-name mono">{u.username}</div>
+                        </div>
                       </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    </td>
+                    <td>{u.email || "—"}</td>
+                    <td><span className="badge badge-user">{u.source}</span></td>
+                    <td>
+                      <span className={`badge ${u.role === "admin" ? "badge-admin" : u.role === "approver" ? "badge-approver" : "badge-user"}`}>
+                        {roleLabel(u.role)}
+                      </span>
+                    </td>
+                    <td>
+                      <div className="actions-cell">
+                        <select
+                          className="control-select"
+                          style={{ maxWidth: 140 }}
+                          value={u.role || "user"}
+                          onChange={(e) => changeRole(u, e.target.value)}
+                          aria-label={`Role for ${u.username}`}
+                        >
+                          {ALL_ROLES.map((r) => (
+                            <option key={r} value={r}>{ROLE_LABELS[r]}</option>
+                          ))}
+                        </select>
+                        <div className="grp-overflow">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm grp-more"
+                            ref={(el) => { menuBtnRefs.current[u.id] = el; }}
+                            aria-label={`More actions for ${u.username}`}
+                            aria-expanded={menuFor === u.id}
+                            onClick={() => setMenuFor((cur) => (cur === u.id ? null : u.id))}
+                          >
+                            ⋯
+                          </button>
+                          <OverflowMenu
+                            open={menuFor === u.id}
+                            anchorRef={{ current: menuBtnRefs.current[u.id] }}
+                            onClose={() => setMenuFor(null)}
+                            onDelete={() => remove(u)}
+                          />
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

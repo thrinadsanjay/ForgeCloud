@@ -92,6 +92,54 @@ export function buildUserData({
   return `${base}\n---\n${generated}`;
 }
 
+/**
+ * Minimal cloud-init for Ansible bootstrap only: service account + keys + sudo.
+ * No packages — Ansible owns post-install.
+ */
+export function buildBootstrapUserData({
+  hostname,
+  serviceUser = "forge",
+  servicePassword = "",
+  forgePublicKey = "",
+  adminPublicKey = "",
+  baseYaml = "",
+}) {
+  const lines = ["#cloud-config"];
+  if (hostname) {
+    lines.push(`hostname: ${yamlString(hostname)}`);
+    lines.push("manage_etc_hosts: true");
+    lines.push("preserve_hostname: false");
+  }
+
+  const keys = [forgePublicKey, adminPublicKey].map((k) => String(k || "").trim()).filter(Boolean);
+
+  lines.push("users:");
+  lines.push("  - default");
+  lines.push(`  - name: ${yamlString(serviceUser)}`);
+  lines.push("    shell: /bin/bash");
+  lines.push("    lock_passwd: false");
+  lines.push("    sudo: ALL=(ALL) NOPASSWD:ALL");
+  lines.push("    groups: [sudo, wheel]");
+  if (servicePassword) {
+    lines.push(`    plain_text_passwd: ${yamlString(servicePassword)}`);
+  }
+  if (keys.length) {
+    lines.push("    ssh_authorized_keys:");
+    for (const k of keys) lines.push(`      - ${yamlString(k)}`);
+  }
+
+  lines.push("ssh_pwauth: true");
+  lines.push("chpasswd:");
+  lines.push("  expire: false");
+  lines.push("package_update: false");
+  lines.push("package_upgrade: false");
+
+  const generated = `${lines.join("\n")}\n`;
+  const base = (baseYaml || "").trim();
+  if (!base) return generated;
+  return `${base}\n---\n${generated}`;
+}
+
 export function snippetFilename(vmid) {
   return `forge-${vmid}.yaml`;
 }

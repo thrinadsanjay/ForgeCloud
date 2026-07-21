@@ -20,12 +20,58 @@ const TYPE_ICON = {
   rejected: "🚫",
   resize_approved: "🔧",
   resize_failed: "⚠",
+  provision_complete: "✅",
+  provision_failed: "⚠",
   info: "🔔",
 };
 
+/** Deep-link for a notification — prefer stored link, else derive from type/meta. */
+function resolveNotificationLink(n) {
+  if (n?.link) return n.link;
+  const m = n?.meta || {};
+  const rid = m.requestId ? encodeURIComponent(m.requestId) : null;
+  const jid = m.jobId ? encodeURIComponent(m.jobId) : null;
+  switch (n?.type) {
+    case "approval":
+      return rid ? `/deployments?tab=hold&request=${rid}` : "/deployments?tab=hold";
+    case "approved":
+      return jid
+        ? `/deployments?tab=running&job=${jid}`
+        : rid
+          ? `/deployments?tab=running&request=${rid}`
+          : "/deployments?tab=running";
+    case "provision_complete":
+      return jid
+        ? `/deployments?tab=completed&job=${jid}`
+        : "/deployments?tab=completed";
+    case "provision_failed":
+    case "rejected":
+    case "resize_failed":
+      return jid
+        ? `/deployments?tab=failed&job=${jid}`
+        : rid
+          ? `/deployments?tab=failed&request=${rid}`
+          : "/deployments?tab=failed";
+    case "resize_approved":
+      return m.vmid
+        ? `/resources?reboot=${encodeURIComponent(m.vmid)}${rid ? `&request=${rid}` : ""}`
+        : "/resources";
+    case "renew_approved":
+      return m.vmid
+        ? `/resources?vmid=${encodeURIComponent(m.vmid)}`
+        : "/resources";
+    case "renew_failed":
+      return rid
+        ? `/deployments?tab=failed&request=${rid}`
+        : "/deployments?tab=failed";
+    default:
+      return "/deployments";
+  }
+}
+
 // Bell in the top nav: polls the inbox, shows an unread badge, and a dropdown of
 // notifications. Clicking one marks it read and navigates to its linked page
-// (an approval to review, or the reboot prompt for an approved resize).
+// (approval review, deployment log, or resize reboot prompt).
 export default function NotificationBell() {
   const [items, setItems] = useState([]);
   const [unread, setUnread] = useState(0);
@@ -55,7 +101,8 @@ export default function NotificationBell() {
       try { await markNotificationRead(n.id); } catch { /* ignore */ }
       load();
     }
-    if (n.link) navigate(n.link);
+    const to = resolveNotificationLink(n);
+    if (to) navigate(to);
   };
 
   const markAll = async () => {

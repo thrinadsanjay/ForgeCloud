@@ -1,0 +1,24 @@
+---
+- name: Remove Forge deploy key from root
+  ansible.builtin.authorized_key:
+    user: root
+    key: "{{ forge_pubkey }}"
+    state: absent
+  failed_when: false
+
+- name: Remove Forge deploy key from created users
+  ansible.builtin.authorized_key:
+    user: "{{ item }}"
+    key: "{{ forge_pubkey }}"
+    state: absent
+  loop: "{{ create_users | map(attribute='name') | list }}"
+  when: create_users | length > 0
+  failed_when: false
+
+- name: Remove Forge deploy key from service account if present
+  ansible.builtin.authorized_key:
+    user: "{{ service_account | default('forge') }}"
+    key: "{{ forge_pubkey }}"
+    state: absent
+  when: (service_account | default('forge')) | length > 0
+  failed_when: false

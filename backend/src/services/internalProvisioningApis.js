@@ -125,13 +125,14 @@ function simulate(step, ctx) {
       return { reference: template, detail: `Using build template ${template}`, fields: { template } };
     }
     case "ip": {
-      const octet2 = rand(20, 60);
-      const octet3 = rand(10, 240);
-      const ip = `10.${octet2}.${octet3}.${rand(20, 240)}`;
-      const gateway = `10.${octet2}.${octet3}.1`;
-      const subnet = `10.${octet2}.${octet3}.0/24`;
+      // Without a real IPAM integration, do not invent a static reservation —
+      // downstream systems should expect DHCP.
       const vlan = `VLAN${rand(100, 199)}`;
-      return { reference: ip, detail: `Reserved ${ip}/24 (gw ${gateway}, ${vlan})`, fields: { ip, gateway, subnet, vlan } };
+      return {
+        reference: "dhcp",
+        detail: `IPAM not linked — guest will obtain an address via DHCP (${vlan})`,
+        fields: { ip: null, gateway: null, subnet: null, vlan, dhcp: true },
+      };
     }
     case "vm-create": {
       const vmid = rand(10000, 99999);

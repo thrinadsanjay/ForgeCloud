@@ -1,0 +1,19 @@
+---
+# Defaults — Forge overrides via --extra-vars / vars file.
+hostname: ""
+packages: []
+repositories: []
+# repositories item shape:
+#   { name, uri, type? }  type: deb|rpm|zypper (optional; inferred from OS)
+mounts: []
+# mounts item shape:
+#   { path, src, fstype, opts? }
+create_users: []
+# create_users item shape:
+#   { name, password?, groups?, sudo?, shell?, pubkey? }
+ssh_pwauth: true
+remove_forge_key: false
+forge_pubkey: ""
+service_account: forge
+manage_hostname: true
+update_package_cache: true

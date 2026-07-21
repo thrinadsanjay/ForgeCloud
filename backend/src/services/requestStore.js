@@ -213,6 +213,18 @@ export function getProvisionRequest(id) {
   return enrichRequest(syncRequestStatus(req));
 }
 
+/** Mark the linked request as provisioning again after an in-place job retry. */
+export function bumpRequestForJobRetry(requestId) {
+  if (!requestId) return null;
+  const request = requests.get(requestId);
+  if (!request) return null;
+  request.status = "provisioning";
+  request.updatedAt = new Date().toISOString();
+  request.error = null;
+  persistRequest(request);
+  return enrichRequest(request);
+}
+
 export async function approveProvisionRequest({ id, approver, source = "portal" } = {}) {
   const request = requests.get(id);
   if (!request) return null;
@@ -249,7 +261,9 @@ export async function approveProvisionRequest({ id, approver, source = "portal" 
     type: "approved",
     title: `Request approved — ${targetOf(request)}`,
     message: `Your ${request.kind} request was approved and is now provisioning.`,
-    link: "/deployments",
+    link: job?.id
+      ? `/deployments?tab=running&job=${encodeURIComponent(job.id)}`
+      : `/deployments?tab=running&request=${encodeURIComponent(request.id)}`,
     meta: { requestId: request.id, jobId: job?.id || null },
   });
   onRequestApproved(request, job);
@@ -364,7 +378,7 @@ export function rejectProvisionRequest({ id, reviewer, reason = "Rejected by adm
     type: "rejected",
     title: `Request rejected — ${targetOf(request)}`,
     message: reason,
-    link: `/deployments?tab=running`,
+    link: `/deployments?tab=failed&request=${encodeURIComponent(request.id)}`,
     meta: { requestId: request.id },
   });
   onRequestRejected(request, reason);

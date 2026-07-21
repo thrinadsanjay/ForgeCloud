@@ -208,7 +208,7 @@ const ACTIONS = {
   },
 };
 
-router.post("/resources/:type/:vmid/:action", async (req, res) => {
+router.post("/resources/:type/:vmid/:action(start|stop|shutdown|reboot|delete|reset)", async (req, res) => {
   const { type, vmid, action } = req.params;
   const fn = ACTIONS[type]?.[action];
   if (!fn) {

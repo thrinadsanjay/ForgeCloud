@@ -152,6 +152,8 @@ function toJobRow(j) {
     error: j.errorUserMessage || j.error || null,
     errorDetail: j.errorDetail || null,
     proxmoxUpid: j.proxmoxUpid || null,
+    failureCount: Number(j.failureCount || 0),
+    retryCount: Number(j.retryCount || 0),
     raw: j,
   };
 }
@@ -262,10 +264,17 @@ export default function Deployments() {
 
   useEffect(() => {
     const rid = params.get("request");
-    if (!rid || !canReviewDeployments || !requests.length) return;
-    const target = requests.find((r) => r.id === rid && r.status === "pending_approval");
-    if (target) setViewTarget(target);
-  }, [params, requests, canReviewDeployments]);
+    if (!rid || !requests.length) return;
+    const target = requests.find((r) => r.id === rid);
+    if (!target) return;
+    // Approvals: open the review modal for reviewers (or the requester viewing their own hold).
+    if (target.status === "pending_approval") {
+      setViewTarget(target);
+      return;
+    }
+    // Otherwise jump to the linked job log when available.
+    if (target.jobId) setLogJobId(target.jobId);
+  }, [params, requests]);
 
   useEffect(() => {
     const jid = params.get("job");
@@ -442,7 +451,7 @@ export default function Deployments() {
 
   const handleRetry = async (row) => {
     if (!window.confirm(
-      `Retry this failed deployment?\n\n${row.title}\n\nA new request will be created with the same settings. Any leftover VMs will be cleaned up first.`
+      `Retry this failed deployment?\n\n${row.title}\n\nIf the VM still exists, Forge will continue from the failed step on the same deployment. Otherwise it cleans up leftovers and rebuilds under the same job id.`
     )) return;
     setRetryingId(row.id);
     setNotice("");
@@ -450,21 +459,19 @@ export default function Deployments() {
       const result = await retryJob(row.id);
       await refreshData();
       const next = new URLSearchParams(params);
-      if (result?.heldForApproval || result?.request?.status === "pending_approval") {
-        next.set("tab", "hold");
-        next.delete("job");
-        if (result?.request?.id) next.set("request", String(result.request.id));
-        setLogJobId(null);
-        setNotice(`Retry created — request ${result.request?.id || ""} is On Hold awaiting approval.`);
-        if (canReviewDeployments) {
-          openApprovalPanel();
-          if (result?.request) setViewTarget(result.request);
-        }
-      } else if (result?.job?.id) {
+      const jobId = result?.job?.id || row.id;
+      if (result?.resumed) {
         next.set("tab", "running");
-        next.set("job", String(result.job.id));
-        setLogJobId(result.job.id);
-        setNotice(`Retry started — job ${result.job.id} is Running.`);
+        next.set("job", String(jobId));
+        setLogJobId(jobId);
+        setNotice(
+          `Resumed from "${result.resumeLabel || result.resumeFrom}" on VM #${result.vmid} (same deployment).`
+        );
+      } else if (result?.sameJob || result?.job?.id) {
+        next.set("tab", "running");
+        next.set("job", String(jobId));
+        setLogJobId(jobId);
+        setNotice(`Retry started on the same deployment — job ${jobId} is Running.`);
       } else {
         next.set("tab", "running");
         next.delete("job");
@@ -656,15 +663,34 @@ export default function Deployments() {
             ) : (
               rows.map((row) => {
                 const badge = statusBadge(row);
+                const priorFails = Number(row.failureCount || 0);
+                const retries = Number(row.retryCount || 0);
+                const showPriorFails = priorFails > 0;
                 return (
                   <tr key={`${row.rowType}-${row.id}`}>
                     <td>
-                      <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                      <div className="deploy-status-cell">
+                        <span className={`badge ${badge.cls}`}>{badge.label}</span>
+                        {showPriorFails && (
+                          <span
+                            className="deploy-prior-fail-badge"
+                            title={
+                              badge.label === "Completed" || row.status === "ready"
+                                ? `Completed after ${priorFails} earlier failure${priorFails === 1 ? "" : "s"}${retries ? ` · ${retries} retry${retries === 1 ? "" : "ies"}` : ""}`
+                                : `Failed ${priorFails} time${priorFails === 1 ? "" : "s"}${retries ? ` · ${retries} retry${retries === 1 ? "" : "ies"}` : ""}`
+                            }
+                          >
+                            <span className="deploy-prior-fail-icon" aria-hidden="true">↻</span>
+                            {priorFails}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td>
                       <div style={{ fontWeight: 600 }}>{row.title}</div>
                       <div className="muted mono" style={{ fontSize: 11 }}>
                         {row.rowType === "request" ? "req" : "job"} #{row.id}
+                        {retries > 0 ? ` · retry ${retries}` : ""}
                       </div>
                       {row.error && (
                         <details className="deploy-row-error-detail">

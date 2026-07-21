@@ -10,10 +10,12 @@ import {
   getTemplateDefaults,
   withTemplateDefaults,
   listCatalogPackages,
+  listApplicationRoles,
   listBaselines,
   listInstanceSizes,
   getHostnameFormatInfo,
   formatHostname,
+  resolveApplicationAppToken,
   findVmTemplate,
 } from "../services/catalogService.js";
 import { getJob, listJobs, peekJob } from "../services/jobStore.js";
@@ -100,19 +102,22 @@ router.get("/catalog/vm-templates", (req, res) => res.json(withTemplateDefaults(
 router.get("/catalog/container-templates", (req, res) => res.json(withTemplateDefaults(listContainerTemplates())));
 router.get("/catalog/stacks", (req, res) => res.json(withTemplateDefaults(listStackTemplates())));
 router.get("/catalog/packages", (req, res) => res.json(listCatalogPackages()));
+router.get("/catalog/application-roles", (req, res) => res.json(listApplicationRoles()));
 router.get("/catalog/instance-sizes", (req, res) => res.json(listInstanceSizes()));
 router.get("/catalog/baselines", (req, res) => res.json(listBaselines()));
 router.get("/catalog/template-defaults", (req, res) => res.json(getTemplateDefaults()));
 router.get("/catalog/hostname-format", (req, res) => res.json(getHostnameFormatInfo()));
 
 /** Suggest a hostname from the admin format (consumes {n}/{rand} tokens). */
-router.post("/catalog/hostname-suggest", (req, res) => {
+router.post("/catalog/hostname-suggest", async (req, res) => {
   const {
     kind = "vm",
     templateId,
     stackId,
     app,
     application,
+    packages: selectedPackages,
+    rolePackages,
     environment,
     os,
   } = req.body || {};
@@ -122,6 +127,24 @@ router.post("/catalog/hostname-suggest", (req, res) => {
   else if (kind === "stack") template = findStack(id);
   else template = findVmTemplate(id) || findInternalTemplate(id);
 
+  // Warm AI/cache for long environment labels so {env} uses a smart 3-letter code.
+  if (environment && String(environment).trim().length > 3) {
+    try {
+      const { shortEnvCodeWithAi } = await import("../services/envCode.js");
+      await shortEnvCodeWithAi(environment);
+    } catch {
+      /* sync shortEnvCode still used inside formatHostname */
+    }
+  }
+
+  const roleId = application || app || "";
+  const rolePkgIds = Array.isArray(rolePackages)
+    ? rolePackages
+    : (Array.isArray(selectedPackages) ? selectedPackages : []);
+  const resolvedApp = roleId
+    ? resolveApplicationAppToken(roleId, rolePkgIds)
+    : (app || application || "");
+
   const hostname = formatHostname({
     kind: kind === "container" ? "ct" : kind || "vm",
     os: os || template?.osName || template?.name || id || kind,
@@ -129,10 +152,11 @@ router.post("/catalog/hostname-suggest", (req, res) => {
     templateName: template?.name,
     user: req.user?.username,
     env: environment,
-    app: app || application,
+    app: resolvedApp,
   });
   res.json({
     hostname,
+    appToken: resolvedApp,
     ...getHostnameFormatInfo(),
   });
 });
@@ -572,8 +596,8 @@ router.post("/jobs/:id/rollback", async (req, res) => {
 });
 
 /**
- * Retry a failed deployment — cleanup leftovers (if any), then re-submit the
- * same provisioning payload (size policy / approval rules apply again).
+ * Retry a failed deployment — resume from the failed step when the guest still
+ * exists; otherwise clean up leftovers and re-submit the same payload.
  */
 router.post("/jobs/:id/retry", async (req, res) => {
   const job = peekJob(req.params.id);
@@ -598,13 +622,16 @@ router.post("/jobs/:id/retry", async (req, res) => {
       target: `Job ${req.params.id}`,
       detail: {
         sourceJobId: req.params.id,
+        resumed: !!result?.resumed,
+        resumeFrom: result?.resumeFrom || null,
+        vmid: result?.vmid || null,
         newRequestId: result?.request?.id || null,
         newJobId: result?.job?.id || null,
         heldForApproval: !!result?.heldForApproval,
         cleanup: result?.cleanup || null,
       },
     });
-    res.status(result?.job ? 202 : 200).json(result);
+    res.status(result?.job || result?.resumed ? 202 : 200).json(result);
   } catch (err) {
     const code = err.status === 400 ? 400 : 502;
     res.status(code).json({ error: err.message });

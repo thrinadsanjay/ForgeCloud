@@ -1,0 +1,21 @@
+---
+- name: Set system hostname
+  ansible.builtin.hostname:
+    name: "{{ hostname }}"
+
+# Debian/Ubuntu commonly map the short hostname on 127.0.1.1.
+- name: Ensure hostname on 127.0.1.1 (Debian family)
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.1\.1\s+'
+    line: "127.0.1.1 {{ hostname }}"
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Ensure hostname alias on 127.0.0.1
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    regexp: '^127\.0\.0\.1\s+'
+    line: "127.0.0.1 localhost {{ hostname }}"
+    state: present
+  when: ansible_os_family != "Debian"

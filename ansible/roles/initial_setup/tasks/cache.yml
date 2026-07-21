@@ -1,0 +1,18 @@
+---
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: ansible_os_family == "Debian"
+
+- name: Update dnf/yum cache
+  ansible.builtin.command: "{{ ansible_pkg_mgr }} makecache"
+  when: ansible_os_family == "RedHat"
+  changed_when: false
+  failed_when: false
+
+- name: Refresh zypper
+  ansible.builtin.command: zypper --non-interactive refresh
+  when: ansible_os_family == "Suse"
+  changed_when: false
+  failed_when: false

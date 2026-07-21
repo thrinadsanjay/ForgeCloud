@@ -1,5 +1,6 @@
 import { prisma, fireAndForget } from "../db/client.js";
-import { getTemplateMappings } from "./mappingStore.js";
+import { getTemplateMappings, getNetworkMappings } from "./mappingStore.js";
+import { shortEnvCode } from "./envCode.js";
 
 const INTERNAL_STAGES = ["Preparation", "Provisioning", "Post actions"];
 const HOSTNAME_FORMAT_KEY = "HOSTNAME_FORMAT";
@@ -9,6 +10,7 @@ export const DEFAULT_HOSTNAME_FORMAT = "{os}-{app}-{rand4}";
 export const DEFAULT_HOSTNAME_APPLICATIONS = ["web", "db", "docker", "api", "cache", "queue", "app", "worker"];
 
 let packages = [];
+let applicationRoles = [];
 let containerTemplates = [];
 let stackTemplates = [];
 let workflowTemplates = [];
@@ -19,8 +21,9 @@ let hostnameSeq = 1;
 let hostnameApplications = [...DEFAULT_HOSTNAME_APPLICATIONS];
 
 export async function hydrateCatalog() {
-  const [pkgRows, tplRows, wfRows, defRows, sizeRows] = await Promise.all([
+  const [pkgRows, roleRows, tplRows, wfRows, defRows, sizeRows] = await Promise.all([
     prisma.package.findMany({ orderBy: { sortOrder: "asc" } }),
+    prisma.applicationRole.findMany({ orderBy: { sortOrder: "asc" } }),
     prisma.catalogTemplate.findMany({ where: { enabled: true } }),
     prisma.workflowTemplate.findMany({
       where: { enabled: true },
@@ -31,6 +34,7 @@ export async function hydrateCatalog() {
   ]);
 
   packages = pkgRows;
+  applicationRoles = roleRows.map(normalizeRoleRow);
   containerTemplates = tplRows.filter((t) => t.kind === "container");
   stackTemplates = tplRows.filter((t) => t.kind === "stack");
   workflowTemplates = wfRows;
@@ -38,6 +42,22 @@ export async function hydrateCatalog() {
   for (const row of defRows) templateDefaults[row.presetKey] = row.items;
   instanceSizes = sizeRows;
   await hydrateHostnameFormat();
+}
+
+function normalizeRoleRow(row) {
+  const options = Array.isArray(row.options)
+    ? row.options.map(String)
+    : (typeof row.options === "string" ? JSON.parse(row.options || "[]") : []);
+  return {
+    id: row.id,
+    label: row.label,
+    selection: row.selection || "multi",
+    allowMultiOverride: !!row.allowMultiOverride,
+    defaultOptionId: row.defaultOptionId || null,
+    options,
+    enabled: row.enabled !== false,
+    sortOrder: row.sortOrder || 0,
+  };
 }
 
 export function listInstanceSizes() {
@@ -63,10 +83,38 @@ export function listCatalogPackages() {
   return listPackages().map((p) => ({
     id: p.id,
     name: p.name,
-    category: p.category,
+    category: p.category || "Uncategorized",
     installPkg: p.installPkg || p.id,
+    hostnameCode: p.hostnameCode || null,
     isDefault: !!p.isDefault,
   }));
+}
+
+export function listApplicationRoles() {
+  return applicationRoles.filter((r) => r.enabled);
+}
+
+export function getApplicationRole(id) {
+  if (!id) return null;
+  return applicationRoles.find((r) => r.id === id) || null;
+}
+
+/**
+ * Resolve the hostname {app} token from role + selected role packages.
+ * Exactly one selected option with hostnameCode → that code; else role id.
+ */
+export function resolveApplicationAppToken(roleId, selectedPackageIds = []) {
+  const role = getApplicationRole(roleId) || { id: roleId || "", options: [] };
+  const roleOpts = new Set(role.options || []);
+  const picked = (Array.isArray(selectedPackageIds) ? selectedPackageIds : [])
+    .map(String)
+    .filter((id) => roleOpts.has(id));
+  if (picked.length === 1) {
+    const pkg = packageById(picked[0]);
+    const code = (pkg?.hostnameCode || "").trim();
+    if (code) return code;
+  }
+  return role.id || roleId || "";
 }
 
 export function getDefaultPackages() {
@@ -236,10 +284,38 @@ export async function adminListPackages() {
 }
 
 export async function adminUpsertPackage(data) {
+  const payload = {
+    id: String(data.id || "").trim(),
+    name: String(data.name || data.id || "").trim(),
+    category: data.category != null ? String(data.category).trim() || null : undefined,
+    installPkg: data.installPkg != null ? (String(data.installPkg).trim() || null) : undefined,
+    installCmd: data.installCmd != null ? (String(data.installCmd).trim() || null) : undefined,
+    hostnameCode: data.hostnameCode != null ? (String(data.hostnameCode).trim().toLowerCase() || null) : undefined,
+    isDefault: data.isDefault != null ? !!data.isDefault : undefined,
+    enabled: data.enabled != null ? !!data.enabled : undefined,
+    sortOrder: data.sortOrder != null ? Number(data.sortOrder) : undefined,
+  };
+  if (!payload.id) throw Object.assign(new Error("Package id is required"), { status: 400 });
+  const create = {
+    id: payload.id,
+    name: payload.name || payload.id,
+    category: payload.category ?? "Uncategorized",
+    installPkg: payload.installPkg ?? null,
+    installCmd: payload.installCmd ?? null,
+    hostnameCode: payload.hostnameCode ?? null,
+    isDefault: payload.isDefault ?? false,
+    enabled: payload.enabled ?? true,
+    sortOrder: Number.isFinite(payload.sortOrder) ? payload.sortOrder : 0,
+  };
+  const update = {};
+  for (const [k, v] of Object.entries(payload)) {
+    if (k === "id") continue;
+    if (v !== undefined) update[k] = v;
+  }
   const row = await prisma.package.upsert({
-    where: { id: data.id },
-    create: data,
-    update: data,
+    where: { id: payload.id },
+    create,
+    update,
   });
   await hydrateCatalog();
   return row;
@@ -247,6 +323,45 @@ export async function adminUpsertPackage(data) {
 
 export async function adminDeletePackage(id) {
   await prisma.package.delete({ where: { id } });
+  await hydrateCatalog();
+}
+
+export async function adminListApplicationRoles() {
+  const rows = await prisma.applicationRole.findMany({ orderBy: { sortOrder: "asc" } });
+  return rows.map(normalizeRoleRow);
+}
+
+export async function adminUpsertApplicationRole(data) {
+  const id = String(data.id || "").trim().toLowerCase();
+  if (!id) throw Object.assign(new Error("Role id is required"), { status: 400 });
+  const selection = String(data.selection || "multi").toLowerCase();
+  if (!["single", "multi", "bundle", "suggest"].includes(selection)) {
+    throw Object.assign(new Error("selection must be single, multi, bundle, or suggest"), { status: 400 });
+  }
+  const options = Array.isArray(data.options)
+    ? data.options.map((x) => String(x).trim()).filter(Boolean)
+    : String(data.options || "").split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean);
+  const payload = {
+    id,
+    label: String(data.label || id).trim(),
+    selection,
+    allowMultiOverride: !!data.allowMultiOverride,
+    defaultOptionId: data.defaultOptionId ? String(data.defaultOptionId).trim() : null,
+    options,
+    enabled: data.enabled !== false,
+    sortOrder: Number.isFinite(Number(data.sortOrder)) ? Number(data.sortOrder) : 0,
+  };
+  const row = await prisma.applicationRole.upsert({
+    where: { id },
+    create: payload,
+    update: payload,
+  });
+  await hydrateCatalog();
+  return normalizeRoleRow(row);
+}
+
+export async function adminDeleteApplicationRole(id) {
+  await prisma.applicationRole.delete({ where: { id: String(id) } });
   await hydrateCatalog();
 }
 
@@ -418,7 +533,8 @@ export function getHostnameFormatInfo() {
       { token: "{app}", meaning: "Application role (web, db, docker, …)" },
       { token: "{kind}", meaning: "vm, ct, or stack" },
       { token: "{user}", meaning: "Requester username" },
-      { token: "{env}", meaning: "Environment / network name" },
+      { token: "{env}", meaning: "Short environment code (≤3 chars: production→prd, staging→stg, …)" },
+      { token: "{envFull}", meaning: "Full environment / network label (slug)" },
       { token: "{rand}", meaning: "Random 4-char suffix" },
       { token: "{rand4}", meaning: "Random 4-char suffix" },
       { token: "{rand6}", meaning: "Random 6-char suffix" },
@@ -490,6 +606,20 @@ function takeHostnameSeq(width) {
   return String(n).padStart(width, "0");
 }
 
+function resolveEnvLabel(env) {
+  const raw = String(env || "").trim();
+  if (!raw) return "dev";
+  try {
+    const nets = getNetworkMappings() || {};
+    if (nets[raw]?.label) return String(nets[raw].label).trim() || raw;
+    const hit = Object.values(nets).find((m) => String(m.label || "").toLowerCase() === raw.toLowerCase());
+    if (hit?.label) return String(hit.label).trim();
+  } catch {
+    /* mappings not hydrated yet */
+  }
+  return raw;
+}
+
 /**
  * Build a hostname from the admin format.
  * ctx: { os, kind, user, env, app, templateId, templateName }
@@ -498,7 +628,9 @@ export function formatHostname(ctx = {}, format = getHostnameFormat()) {
   const kind = slugPart(ctx.kind || "vm", "vm");
   const os = slugPart(ctx.os || ctx.templateName || ctx.templateId || kind, kind);
   const user = slugPart(ctx.user || "user", "user");
-  const env = slugPart(ctx.env || "dev", "dev");
+  const envRaw = resolveEnvLabel(ctx.env || ctx.environment || "dev");
+  const envFull = slugPart(envRaw, "dev");
+  const env = shortEnvCode(envRaw);
   const app = slugPart(ctx.app || ctx.application || "", "");
   let out = String(format || DEFAULT_HOSTNAME_FORMAT);
   out = out.replace(/\{rand6\}/gi, () => randomChars(6));
@@ -512,6 +644,7 @@ export function formatHostname(ctx = {}, format = getHostnameFormat()) {
   out = out.replace(/\{application\}/gi, app);
   out = out.replace(/\{kind\}/gi, kind === "container" ? "ct" : kind);
   out = out.replace(/\{user\}/gi, user);
+  out = out.replace(/\{envFull\}/gi, envFull);
   out = out.replace(/\{env\}/gi, env);
   out = out.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "");
   return out.slice(0, 63) || `${os}-${app || "host"}-${randomChars(4)}`;
@@ -522,7 +655,9 @@ export function previewHostname(format, ctx = {}) {
   const kind = slugPart(ctx.kind || "vm", "vm");
   const os = slugPart(ctx.os || "ubuntu", "ubuntu");
   const user = slugPart(ctx.user || "admin", "admin");
-  const env = slugPart(ctx.env || "dev", "dev");
+  const envRaw = resolveEnvLabel(ctx.env || ctx.environment || "dev");
+  const envFull = slugPart(envRaw, "dev");
+  const env = shortEnvCode(envRaw);
   const app = slugPart(ctx.app || ctx.application || "", "");
   let out = String(format || DEFAULT_HOSTNAME_FORMAT);
   out = out.replace(/\{rand6\}/gi, "x7k2p9");
@@ -536,6 +671,7 @@ export function previewHostname(format, ctx = {}) {
   out = out.replace(/\{application\}/gi, app);
   out = out.replace(/\{kind\}/gi, kind === "container" ? "ct" : kind);
   out = out.replace(/\{user\}/gi, user);
+  out = out.replace(/\{envFull\}/gi, envFull);
   out = out.replace(/\{env\}/gi, env);
   return out.toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/-+/g, "-").replace(/^-+|-+$/g, "").slice(0, 63);
 }
