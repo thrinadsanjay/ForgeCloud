@@ -1,0 +1,6 @@
+# ports: [3000, 8086]
+# health: http:3000/api/health
+# url: http://{ip}:3000
+category: Monitoring
+GRAFANA_ADMIN_PASSWORD: changeme
+INFLUX_ADMIN_PASSWORD: changeme12

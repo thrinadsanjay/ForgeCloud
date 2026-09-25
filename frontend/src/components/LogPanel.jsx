@@ -51,10 +51,17 @@ function stepDotClass(status) {
 }
 
 function jobTitle(job) {
-  return job.resources?.[0]?.hostname
-    || job.payload?.hostname
-    || job.payload?.hostnamePrefix
-    || `job ${job.id}`;
+  if (job.resources?.[0]?.hostname) return job.resources[0].hostname;
+  if (job.payload?.hostname) return job.payload.hostname;
+  if (job.payload?.hostnamePrefix) return job.payload.hostnamePrefix;
+  if (job.type === "k8s" && job.payload?.namespace) {
+    const action = job.payload.action === "delete"
+      ? (job.payload.force ? "force-terminate" : "terminate")
+      : (job.payload.action || "apply");
+    const target = job.payload.target?.name;
+    return target ? `${job.payload.namespace}/${target} · ${action}` : `${job.payload.namespace} · ${action}`;
+  }
+  return `job ${job.id}`;
 }
 
 // Runtime line for a workflow step — names the team/API being called and its
@@ -112,8 +119,12 @@ function StepList({ job }) {
               : "";
             return (
               <li key={s.key || i} className={`wf-track-step wf-track-${state}`}>
-                <span className="wf-track-dot">
-                  {state === "done" ? "✓" : state === "failed" ? "✕" : state === "skipped" ? "–" : i + 1}
+                <span className="wf-track-dot" aria-hidden="true">
+                  {state === "done" ? "✓"
+                    : state === "failed" ? "✕"
+                    : state === "skipped" ? "–"
+                    : state === "active" ? <span className="wf-track-spinner" />
+                    : i + 1}
                 </span>
                 <span className="wf-track-body">
                   <span className="wf-track-label">{statement || s.label}</span>

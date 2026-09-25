@@ -1,0 +1,19 @@
+---
+lemp_packages_debian:
+  - nginx
+  - php-fpm
+  - php-mysql
+  - php-cli
+  - php-curl
+  - php-xml
+  - mariadb-server
+  - mariadb-client
+lemp_packages_redhat:
+  - nginx
+  - php-fpm
+  - php-mysqlnd
+  - php-cli
+  - mariadb-server
+  - mariadb
+lemp_php_fpm_service_debian: php*-fpm
+lemp_enable_firewall: false

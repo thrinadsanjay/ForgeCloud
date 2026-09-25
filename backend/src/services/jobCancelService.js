@@ -4,7 +4,8 @@ import { removeOwner } from "./ownershipStore.js";
 import { removeExpiry } from "./expiryStore.js";
 import { onProvisioningCancelled, onProvisioningRolledBack } from "./snowLifecycle.js";
 import { bumpRequestForJobRetry } from "./requestStore.js";
-import { runVmJob, runContainerJob, runStackJob, runInternalJob } from "./provisioner.js";
+import { runVmJob, runContainerJob, runStackJob, runInternalJob, runComposeJob } from "./provisioner.js";
+import { runK8sApplyJob, runK8sDeleteJob } from "./k8sJobService.js";
 import { VM_STEP_DEFS, vmStepIndex } from "./deploymentSteps.js";
 
 const JOB_PAYLOAD_META = new Set([
@@ -163,6 +164,10 @@ export async function rollbackFailedJob(jobId, { actor, reason } = {}) {
   const rollbackReason = reason
     || `Rolled back by ${actor || "user"}`;
 
+  // Drop successfully destroyed guests so UI cannot offer rollback again after a reload.
+  const destroyedSet = new Set(destroyed.map((v) => Number(v)));
+  const remainingResources = resources.filter((r) => !destroyedSet.has(Number(r.vmid)));
+
   updateJob(jobId, {
     status: "rolled_back",
     message: orphans.length
@@ -171,6 +176,9 @@ export async function rollbackFailedJob(jobId, { actor, reason } = {}) {
     rolledBackBy: actor || null,
     rolledBackAt: new Date().toISOString(),
     rollbackCleanup: destroyResults,
+    resources: remainingResources,
+    error: null,
+    errorUserMessage: null,
   });
 
   try {
@@ -198,6 +206,31 @@ function startRunnerForJob(job) {
     runVmJob(job.id, payload);
   } else if (job.type === "container") {
     runContainerJob(job.id, payload);
+  } else if (job.type === "compose") {
+    runComposeJob(job.id, payload);
+  } else if (job.type === "k8s") {
+    if (payload.action === "delete") {
+      runK8sDeleteJob(job.id, {
+        namespace: payload.namespace,
+        target: payload.target,
+        force: !!payload.force,
+      });
+    } else {
+      // Apply retries need yamlText on the job payload (persisted at create time).
+      if (!payload.yamlText) {
+        updateJob(job.id, {
+          status: "failed",
+          message: "Cannot retry Kubernetes apply — manifest was not persisted",
+          error: "yamlText missing from job payload",
+          errorUserMessage: "This apply job has no saved manifest. Re-apply from the deploy panel.",
+        });
+        return;
+      }
+      runK8sApplyJob(job.id, {
+        namespace: payload.namespace,
+        yamlText: payload.yamlText,
+      });
+    }
   } else {
     runStackJob(job.id, payload);
   }
@@ -347,4 +380,118 @@ export async function retryFailedJob(jobId, { actor, reason } = {}) {
     cleanup,
     heldForApproval: false,
   };
+}
+
+/**
+ * Retry only application blueprints on an existing guest (VM must still exist).
+ */
+export async function retryFailedApps(jobId, { actor, appIds } = {}) {
+  const job = peekJob(jobId);
+  if (!job) return null;
+  if (job.type !== "vm") {
+    const err = new Error("App retry is only available for VM deployments");
+    err.status = 400;
+    throw err;
+  }
+  if (!["failed", "ready"].includes(job.status)) {
+    const err = new Error("App retry requires a failed or ready deployment with a guest");
+    err.status = 400;
+    throw err;
+  }
+
+  const resource = (job.resources || []).find((r) => Number.isFinite(Number(r.vmid)) && r.ip);
+  if (!resource?.ip) {
+    const err = new Error("Guest IP not available — full retry required");
+    err.status = 400;
+    throw err;
+  }
+
+  const wanted = Array.isArray(appIds) && appIds.length
+    ? appIds
+    : (job.result?.failedApps?.length
+      ? job.result.failedApps
+      : (job.payload?.apps || []));
+  if (!wanted.length && !job.payload?.customCompose?.yaml) {
+    const err = new Error("No apps to retry");
+    err.status = 400;
+    throw err;
+  }
+
+  const { installAppsOnGuest } = await import("./appInstallService.js");
+  const { resolveAppDependencies } = await import("./appCatalogService.js");
+  const { ansibleServiceConfig } = await import("./ansibleService.js");
+  const { runSsh } = await import("./sshRunner.js");
+
+  let resolved = [];
+  try {
+    resolved = wanted.length ? resolveAppDependencies(wanted.filter((id) => !String(id).startsWith("custom:"))) : [];
+  } catch (e) {
+    const err = new Error(e.message);
+    err.status = 400;
+    throw err;
+  }
+
+  updateJob(jobId, {
+    status: "configuring",
+    message: `Retrying apps: ${resolved.join(", ") || "custom"}…`,
+    error: null,
+    errorUserMessage: null,
+  });
+
+  const ansibleCfg = ansibleServiceConfig();
+  // Blueprints use Ansible settings service account, never the portal form user.
+  if (!ansibleCfg.forgePrivateKey && !(ansibleCfg.serviceUser && ansibleCfg.servicePassword)) {
+    throw new Error(
+      "No Ansible SSH credentials for blueprints. Set the service user and Forge deploy key under Admin → Automation → Ansible.",
+    );
+  }
+  const sshOpts = {
+    host: resource.ip,
+    port: 22,
+    username: ansibleCfg.serviceUser,
+    ...(ansibleCfg.forgePrivateKey
+      ? {
+          privateKey: ansibleCfg.forgePrivateKey,
+          ...(ansibleCfg.servicePassword ? { password: ansibleCfg.servicePassword } : {}),
+        }
+      : { password: ansibleCfg.servicePassword }),
+  };
+
+  setImmediate(async () => {
+    try {
+      const installed = await installAppsOnGuest({
+        resolvedAppIds: resolved,
+        ip: resource.ip,
+        sshOpts,
+        customCompose: job.payload?.customCompose || null,
+        onOutput: (line) => updateJob(jobId, { message: String(line).slice(0, 180) }),
+      });
+      const prev = peekJob(jobId)?.result || {};
+      updateJob(jobId, {
+        status: "ready",
+        message: "Application retry finished",
+        result: {
+          ...prev,
+          endpoints: [...(prev.endpoints || []).filter((e) => !resolved.includes(e.id)), ...(installed.endpoints || [])],
+          appSecrets: { ...(prev.appSecrets || {}), ...(installed.secrets || {}) },
+          failedApps: installed.failedApps || [],
+          canRetryApps: (installed.failedApps || []).length > 0,
+        },
+      });
+    } catch (err) {
+      updateJob(jobId, {
+        status: "failed",
+        message: "Application retry failed",
+        error: err.message,
+        errorUserMessage: err.message,
+        result: {
+          ...(peekJob(jobId)?.result || {}),
+          failedApps: resolved,
+          canRetryApps: true,
+        },
+      });
+    }
+  });
+
+  return { job: peekJob(jobId), apps: resolved, actor: actor || null };
 }

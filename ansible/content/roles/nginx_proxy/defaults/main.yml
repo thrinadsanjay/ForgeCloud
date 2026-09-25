@@ -1,0 +1,12 @@
+---
+nginx_proxy_packages_debian:
+  - nginx
+  - certbot
+  - python3-certbot-nginx
+nginx_proxy_packages_redhat:
+  - nginx
+  - certbot
+  - python3-certbot-nginx
+nginx_proxy_server_name: "_"
+nginx_proxy_upstream: "http://127.0.0.1:8080"
+nginx_proxy_enable_firewall: false

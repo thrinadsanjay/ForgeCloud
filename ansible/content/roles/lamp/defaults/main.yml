@@ -1,0 +1,20 @@
+---
+lamp_packages_debian:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - php-mysql
+  - php-cli
+  - php-curl
+  - php-xml
+  - mariadb-server
+  - mariadb-client
+lamp_packages_redhat:
+  - httpd
+  - php
+  - php-mysqlnd
+  - php-cli
+  - php-json
+  - mariadb-server
+  - mariadb
+lamp_enable_firewall: false

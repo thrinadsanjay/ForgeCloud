@@ -1,0 +1,7 @@
+---
+- name: NGINX reverse proxy blueprint
+  hosts: guests
+  become: true
+  gather_facts: true
+  roles:
+    - role: nginx_proxy

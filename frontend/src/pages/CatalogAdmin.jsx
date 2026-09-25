@@ -6,6 +6,10 @@ import {
   adminListApplicationRoles,
   adminUpsertApplicationRole,
   adminDeleteApplicationRole,
+  adminListAppBlueprints,
+  adminUpsertAppBlueprint,
+  adminDeleteAppBlueprint,
+  adminGetCatalogValidation,
   adminListWorkflows,
   adminListInstanceSizes,
   adminUpsertInstanceSize,
@@ -13,9 +17,12 @@ import {
   adminGetHostnameFormat,
   adminSetHostnameFormat,
   adminPreviewHostnameFormat,
+  adminSyncHostnameFromRoles,
 } from "../api/client.js";
 import { useDialog } from "../components/DialogProvider.jsx";
 import AdminPageHeader from "../components/AdminPageHeader.jsx";
+import Toggle from "../components/Toggle.jsx";
+import AnchoredPopover from "../components/AnchoredPopover.jsx";
 
 const PACKAGE_CATEGORY_OPTIONS = [
   "Languages & runtimes",
@@ -77,6 +84,44 @@ function packageIcon(id) {
   return { label, bg: `hsl(${hues[hash % hues.length]} 48% 42%)` };
 }
 
+function CatalogValidationBanner() {
+  const [report, setReport] = useState(null);
+
+  const refresh = () => {
+    adminGetCatalogValidation()
+      .then(setReport)
+      .catch(() => setReport(null));
+  };
+  useEffect(() => { refresh(); }, []);
+
+  if (!report?.issues?.length) return null;
+  const errors = report.issues.filter((i) => i.severity === "error");
+  const warns = report.issues.filter((i) => i.severity === "warn");
+  return (
+    <div className={`catalog-validation ${errors.length ? "is-error" : "is-warn"}`} role="status">
+      <div className="catalog-validation-head">
+        <strong>{errors.length ? "Catalog issues" : "Catalog warnings"}</strong>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={refresh}>Refresh</button>
+      </div>
+      <ul>
+        {report.issues.slice(0, 8).map((i, idx) => (
+          <li key={`${i.code}-${idx}`}>{i.message}</li>
+        ))}
+      </ul>
+      {report.issues.length > 8 && (
+        <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>
+          +{report.issues.length - 8} more — fix Packages / App roles, then refresh.
+        </p>
+      )}
+      {warns.length > 0 && errors.length === 0 && (
+        <p className="muted" style={{ margin: "6px 0 0", fontSize: 12 }}>
+          Warnings do not block saves; errors do.
+        </p>
+      )}
+    </div>
+  );
+}
+
 const SECTIONS = [
   {
     id: "packages",
@@ -84,6 +129,13 @@ const SECTIONS = [
     icon: "📦",
     title: "Software packages",
     summary: "What users can pick at provision time. Mark org-standard items as Default — they stay checked and cannot be removed.",
+  },
+  {
+    id: "blueprints",
+    label: "Blueprints",
+    icon: "🚀",
+    title: "Application blueprints",
+    summary: "Create, edit, enable, and delete Ansible / Compose apps users pick at provision time.",
   },
   {
     id: "app-roles",
@@ -115,6 +167,79 @@ const SECTIONS = [
   },
 ];
 
+const APP_CATEGORY_OPTIONS = [
+  "Containers",
+  "Kubernetes",
+  "Monitoring",
+  "Web",
+  "Developer",
+  "General",
+];
+
+const APP_STRATEGY_OPTIONS = [
+  { value: "ansible", label: "Ansible" },
+  { value: "compose", label: "Compose" },
+  { value: "ansible+compose", label: "Ansible + Compose" },
+];
+
+function emptyAppForm() {
+  return {
+    id: "",
+    name: "",
+    description: "",
+    category: "General",
+    strategy: "ansible",
+    dependsOn: "",
+    ansiblePlaybook: "",
+    composePath: "",
+    ports: "",
+    urlTemplate: "",
+    components: "",
+    eta: "",
+    enabled: true,
+    healthType: "",
+    healthPort: "",
+    healthPath: "",
+    healthTimeoutSec: "90",
+    sortOrder: 0,
+  };
+}
+
+function formFromApp(row) {
+  const hc = row.healthcheck && typeof row.healthcheck === "object" ? row.healthcheck : {};
+  const vars = row.defaultVars && typeof row.defaultVars === "object" ? row.defaultVars : {};
+  const comps = Array.isArray(row.components)
+    ? row.components
+    : (Array.isArray(vars.components) ? vars.components : []);
+  return {
+    id: row.id || "",
+    name: row.name || "",
+    description: row.description || "",
+    category: row.category || vars.category || "General",
+    strategy: row.strategy || "ansible",
+    dependsOn: Array.isArray(row.dependsOn) ? row.dependsOn.join(", ") : "",
+    ansiblePlaybook: row.ansiblePlaybook || "",
+    composePath: row.composePath || "",
+    ports: Array.isArray(row.ports) ? row.ports.join(", ") : "",
+    urlTemplate: row.urlTemplate || "",
+    components: comps.join(", "),
+    eta: row.eta || vars.eta || "",
+    enabled: row.enabled !== false,
+    healthType: hc.type || "",
+    healthPort: hc.port != null ? String(hc.port) : "",
+    healthPath: hc.path || "",
+    healthTimeoutSec: hc.timeoutSec != null ? String(hc.timeoutSec) : "90",
+    sortOrder: row.sortOrder ?? 0,
+  };
+}
+
+function parseCsvList(value) {
+  return String(value || "")
+    .split(/[,;\n]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 function PackagesPanel({ section }) {
   const { confirm } = useDialog();
   const [rows, setRows] = useState([]);
@@ -123,6 +248,7 @@ function PackagesPanel({ section }) {
   const [installPkg, setInstallPkg] = useState("");
   const [category, setCategory] = useState("Uncategorized");
   const [hostnameCode, setHostnameCode] = useState("");
+  const [description, setDescription] = useState("");
   const [isDefault, setIsDefault] = useState(false);
   const [query, setQuery] = useState("");
   const [error, setError] = useState("");
@@ -130,6 +256,7 @@ function PackagesPanel({ section }) {
   const [showAdd, setShowAdd] = useState(false);
   const [collapsed, setCollapsed] = useState({});
   const [menuId, setMenuId] = useState(null);
+  const menuBtnRefs = useRef({});
   const committedRef = useRef({});
 
   const load = () => adminListPackages().then((data) => {
@@ -138,16 +265,11 @@ function PackagesPanel({ section }) {
       data.map((r) => [r.id, {
         hostnameCode: r.hostnameCode || null,
         installPkg: r.installPkg || null,
+        description: r.description || null,
       }]),
     );
   }).catch((e) => setError(e.message));
   useEffect(() => { load(); }, []);
-  useEffect(() => {
-    if (!menuId) return undefined;
-    const close = () => setMenuId(null);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, [menuId]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -157,7 +279,8 @@ function PackagesPanel({ section }) {
       || (r.name || "").toLowerCase().includes(q)
       || (r.installPkg || "").toLowerCase().includes(q)
       || (r.category || "").toLowerCase().includes(q)
-      || (r.hostnameCode || "").toLowerCase().includes(q),
+      || (r.hostnameCode || "").toLowerCase().includes(q)
+      || (r.description || "").toLowerCase().includes(q),
     );
   }, [rows, query]);
 
@@ -218,6 +341,7 @@ function PackagesPanel({ section }) {
         installPkg: installPkg.trim() || null,
         category: category || "Uncategorized",
         hostnameCode: hostnameCode.trim() || null,
+        description: description.trim() || null,
         isDefault,
         enabled: true,
         sortOrder: rows.length,
@@ -227,6 +351,7 @@ function PackagesPanel({ section }) {
       setInstallPkg("");
       setCategory("Uncategorized");
       setHostnameCode("");
+      setDescription("");
       setIsDefault(false);
       setShowAdd(false);
       await load();
@@ -273,6 +398,7 @@ function PackagesPanel({ section }) {
 
   return (
     <div className="pkg-board">
+      <CatalogValidationBanner />
       <div className="pkg-board-toolbar">
         <div className="pkg-board-metrics" aria-label="Package counts">
           <span><strong>{rows.length}</strong> total</span>
@@ -334,6 +460,10 @@ function PackagesPanel({ section }) {
             <span>Hostname code</span>
             <input className="control-input" placeholder="e.g. psql" value={hostnameCode} onChange={(e) => setHostnameCode(e.target.value)} />
           </label>
+          <label className="pkg-board-add-field pkg-board-add-field-wide">
+            <span>Description</span>
+            <input className="control-input" placeholder="Short blurb (optional)" value={description} onChange={(e) => setDescription(e.target.value)} />
+          </label>
           <button
             type="button"
             className={`pkg-chip pkg-board-add-default ${isDefault ? "is-default" : "is-optional"}`}
@@ -374,6 +504,7 @@ function PackagesPanel({ section }) {
                       const icon = packageIcon(r.id);
                       const osPkg = r.installPkg && r.installPkg !== r.id ? r.installPkg : null;
                       const metaBits = [
+                        r.description || null,
                         osPkg ? `OS: ${osPkg}` : null,
                         r.hostnameCode ? `{app}=${r.hostnameCode}` : null,
                       ].filter(Boolean);
@@ -391,49 +522,71 @@ function PackagesPanel({ section }) {
                               <button
                                 type="button"
                                 className="pkg-card-menu-btn"
+                                ref={(el) => { menuBtnRefs.current[r.id] = el; }}
                                 aria-label={`Actions for ${title}`}
                                 aria-expanded={menuId === r.id}
                                 onClick={() => setMenuId((cur) => (cur === r.id ? null : r.id))}
                               >
                                 ⋮
                               </button>
-                              {menuId === r.id && (
-                                <div className="pkg-card-menu-pop" role="menu">
-                                  <label className="pkg-card-menu-field">
-                                    <span>Hostname code</span>
-                                    <input
-                                      className="control-input pkg-card-code"
-                                      value={r.hostnameCode || ""}
-                                      placeholder="—"
-                                      onBlur={(e) => commitMetaField(r, "hostnameCode", e.target.value, (raw) => {
-                                        const v = String(raw || "").trim().toLowerCase();
-                                        return v || null;
-                                      })}
-                                      onChange={(e) => {
-                                        setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, hostnameCode: e.target.value } : x)));
-                                      }}
-                                    />
-                                  </label>
-                                  <label className="pkg-card-menu-field" title="apt/yum name when different from ID">
-                                    <span>OS package</span>
-                                    <input
-                                      className="control-input pkg-card-code"
-                                      value={r.installPkg || ""}
-                                      placeholder={r.id}
-                                      onBlur={(e) => commitMetaField(r, "installPkg", e.target.value, (raw) => {
-                                        const v = String(raw || "").trim();
-                                        return (!v || v === r.id) ? null : v;
-                                      })}
-                                      onChange={(e) => {
-                                        setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, installPkg: e.target.value } : x)));
-                                      }}
-                                    />
-                                  </label>
-                                  <button type="button" className="pkg-card-menu-danger" onClick={() => { setMenuId(null); remove(r.id); }}>
-                                    Remove package
-                                  </button>
-                                </div>
-                              )}
+                              <AnchoredPopover
+                                open={menuId === r.id}
+                                onClose={() => setMenuId(null)}
+                                anchorRef={{ current: menuBtnRefs.current[r.id] }}
+                                className="pkg-card-menu-pop"
+                                estimatedHeight={220}
+                                estimatedWidth={200}
+                                closeOnScroll={false}
+                              >
+                                <label className="pkg-card-menu-field">
+                                  <span>Hostname code</span>
+                                  <input
+                                    className="control-input pkg-card-code"
+                                    value={r.hostnameCode || ""}
+                                    placeholder="—"
+                                    onBlur={(e) => commitMetaField(r, "hostnameCode", e.target.value, (raw) => {
+                                      const v = String(raw || "").trim().toLowerCase();
+                                      return v || null;
+                                    })}
+                                    onChange={(e) => {
+                                      setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, hostnameCode: e.target.value } : x)));
+                                    }}
+                                  />
+                                </label>
+                                <label className="pkg-card-menu-field" title="apt/yum name when different from ID">
+                                  <span>OS package</span>
+                                  <input
+                                    className="control-input pkg-card-code"
+                                    value={r.installPkg || ""}
+                                    placeholder={r.id}
+                                    onBlur={(e) => commitMetaField(r, "installPkg", e.target.value, (raw) => {
+                                      const v = String(raw || "").trim();
+                                      return (!v || v === r.id) ? null : v;
+                                    })}
+                                    onChange={(e) => {
+                                      setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, installPkg: e.target.value } : x)));
+                                    }}
+                                  />
+                                </label>
+                                <label className="pkg-card-menu-field">
+                                  <span>Description</span>
+                                  <input
+                                    className="control-input pkg-card-code"
+                                    value={r.description || ""}
+                                    placeholder="Short blurb"
+                                    onBlur={(e) => commitMetaField(r, "description", e.target.value, (raw) => {
+                                      const v = String(raw || "").trim();
+                                      return v || null;
+                                    })}
+                                    onChange={(e) => {
+                                      setRows((prev) => prev.map((x) => (x.id === r.id ? { ...x, description: e.target.value } : x)));
+                                    }}
+                                  />
+                                </label>
+                                <button type="button" className="pkg-card-menu-danger" onClick={() => { setMenuId(null); remove(r.id); }}>
+                                  Remove package
+                                </button>
+                              </AnchoredPopover>
                             </div>
                           </div>
                           <p className="pkg-card-desc">
@@ -486,6 +639,7 @@ function AppRolesPanel() {
   const [query, setQuery] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [menuId, setMenuId] = useState(null);
+  const menuBtnRefs = useRef({});
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -495,12 +649,6 @@ function AppRolesPanel() {
     setPackages(pkgs);
   };
   useEffect(() => { load().catch((e) => setError(e.message)); }, []);
-  useEffect(() => {
-    if (!menuId) return undefined;
-    const close = () => setMenuId(null);
-    window.addEventListener("click", close);
-    return () => window.removeEventListener("click", close);
-  }, [menuId]);
 
   const enabledPkgs = useMemo(
     () => packages.filter((p) => p.enabled).map((p) => p.id).sort(),
@@ -588,8 +736,13 @@ function AppRolesPanel() {
   };
 
   const updateRole = async (row, patch) => {
-    await adminUpsertApplicationRole({ ...row, ...patch });
-    await load();
+    try {
+      await adminUpsertApplicationRole({ ...row, ...patch });
+      setError("");
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    }
   };
 
   const remove = async (roleId) => {
@@ -607,6 +760,7 @@ function AppRolesPanel() {
 
   return (
     <div className="role-board">
+      <CatalogValidationBanner />
       <div className="role-stat-grid" aria-label="Role summary">
         <div className="role-stat-card">
           <span className="role-stat-icon is-total" aria-hidden="true">▦</span>
@@ -723,10 +877,16 @@ function AppRolesPanel() {
                 {optionList().map((o) => <option key={o} value={o} />)}
               </datalist>
             </label>
-            <label className="role-form-check">
-              <input type="checkbox" checked={allowMulti} onChange={(e) => setAllowMulti(e.target.checked)} />
+            <div className="role-form-check">
+              <Toggle
+                variant="square"
+                size="sm"
+                checked={allowMulti}
+                onChange={setAllowMulti}
+                title="Allow multi override"
+              />
               <span>Allow multi override</span>
-            </label>
+            </div>
             <div className="role-form-actions">
               <button className="btn btn-primary btn-sm" type="submit" disabled={busy || !id.trim()}>
                 {busy ? "…" : "Save"}
@@ -835,20 +995,26 @@ function AppRolesPanel() {
                       <button
                         type="button"
                         className="role-action-btn"
+                        ref={(el) => { menuBtnRefs.current[r.id] = el; }}
                         aria-label={`More for ${r.id}`}
                         aria-expanded={menuId === r.id}
                         onClick={() => setMenuId((cur) => (cur === r.id ? null : r.id))}
                       >
                         ⋮
                       </button>
-                      {menuId === r.id && (
-                        <div className="role-menu-pop" role="menu">
-                          <button type="button" onClick={() => beginEdit(r)}>Edit in form</button>
-                          <button type="button" className="is-danger" onClick={() => { setMenuId(null); remove(r.id); }}>
-                            Remove
-                          </button>
-                        </div>
-                      )}
+                      <AnchoredPopover
+                        open={menuId === r.id}
+                        onClose={() => setMenuId(null)}
+                        anchorRef={{ current: menuBtnRefs.current[r.id] }}
+                        className="role-menu-pop"
+                        estimatedHeight={88}
+                        estimatedWidth={140}
+                      >
+                        <button type="button" onClick={() => beginEdit(r)}>Edit in form</button>
+                        <button type="button" className="is-danger" onClick={() => { setMenuId(null); remove(r.id); }}>
+                          Remove
+                        </button>
+                      </AnchoredPopover>
                     </div>
                   </div>
                 </div>
@@ -879,6 +1045,389 @@ function roleIcon(id) {
   for (let i = 0; i < String(id).length; i++) hash = (hash * 31 + String(id).charCodeAt(i)) >>> 0;
   const hues = [210, 265, 152, 24, 34, 190];
   return { label, bg: `hsl(${hues[hash % hues.length]} 52% 42%)` };
+}
+
+function AppsPanel() {
+  const { confirm } = useDialog();
+  const [rows, setRows] = useState([]);
+  const [form, setForm] = useState(() => emptyAppForm());
+  const [editingId, setEditingId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [query, setQuery] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const load = () => adminListAppBlueprints().then(setRows).catch((e) => setError(e.response?.data?.error || e.message));
+  useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter((r) =>
+      r.id.toLowerCase().includes(q)
+      || (r.name || "").toLowerCase().includes(q)
+      || (r.description || "").toLowerCase().includes(q)
+      || (r.category || "").toLowerCase().includes(q)
+      || (r.strategy || "").toLowerCase().includes(q)
+      || (r.ansiblePlaybook || "").toLowerCase().includes(q)
+      || (r.composePath || "").toLowerCase().includes(q),
+    );
+  }, [rows, query]);
+
+  const enabledCount = rows.filter((r) => r.enabled).length;
+
+  const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
+
+  const openAdd = () => {
+    setEditingId(null);
+    setForm(emptyAppForm());
+    setError("");
+    setShowForm(true);
+  };
+
+  const openEdit = (row) => {
+    setEditingId(row.id);
+    setForm(formFromApp(row));
+    setError("");
+    setShowForm(true);
+  };
+
+  const cancelForm = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm(emptyAppForm());
+    setError("");
+  };
+
+  const save = async (e) => {
+    e?.preventDefault();
+    setError("");
+    setBusy(true);
+    try {
+      const existing = editingId ? rows.find((r) => r.id === editingId) : null;
+      const components = parseCsvList(form.components);
+      const eta = form.eta.trim();
+      await adminUpsertAppBlueprint({
+        id: form.id.trim(),
+        name: form.name.trim() || form.id.trim(),
+        description: form.description.trim(),
+        category: form.category || "General",
+        strategy: form.strategy,
+        dependsOn: form.dependsOn,
+        ansiblePlaybook: form.ansiblePlaybook.trim(),
+        composePath: form.composePath.trim(),
+        ports: form.ports,
+        urlTemplate: form.urlTemplate.trim(),
+        healthType: form.healthType,
+        healthPort: form.healthPort,
+        healthPath: form.healthPath.trim(),
+        healthTimeoutSec: form.healthTimeoutSec,
+        sortOrder: Number.isFinite(Number(form.sortOrder)) ? Number(form.sortOrder) : (existing?.sortOrder ?? rows.length * 10),
+        enabled: form.enabled !== false,
+        defaultVars: {
+          ...(existing?.defaultVars || {}),
+          category: form.category || "General",
+          components,
+          ...(eta ? { eta } : {}),
+        },
+      });
+      cancelForm();
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const toggleEnabled = async (row) => {
+    try {
+      await adminUpsertAppBlueprint({
+        ...row,
+        category: row.category || row.defaultVars?.category || "General",
+        dependsOn: row.dependsOn || [],
+        ports: row.ports || [],
+        healthcheck: row.healthcheck || {},
+        defaultVars: row.defaultVars || {},
+        enabled: !row.enabled,
+      });
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    }
+  };
+
+  const remove = async (appId) => {
+    const ok = await confirm({
+      title: "Delete blueprint?",
+      message: `“${appId}” will be removed from the catalog and the provision picker. This cannot be undone.`,
+      confirmLabel: "Delete",
+      tone: "danger",
+    });
+    if (!ok) return;
+    try {
+      await adminDeleteAppBlueprint(appId);
+      if (editingId === appId) cancelForm();
+      await load();
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    }
+  };
+
+  const needsAnsible = form.strategy === "ansible" || form.strategy === "ansible+compose";
+  const needsCompose = form.strategy === "compose" || form.strategy === "ansible+compose";
+  const otherBlueprintIds = rows.filter((r) => r.id !== editingId).map((r) => r.id);
+
+  return (
+    <div className="adm-board">
+      <div className="adm-stat-grid">
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-brand" aria-hidden="true">◆</span>
+          <div>
+            <div className="adm-stat-label">Blueprints</div>
+            <div className="adm-stat-value">{rows.length}</div>
+            <div className="adm-stat-hint">Create · edit · delete</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-ok" aria-hidden="true">✓</span>
+          <div>
+            <div className="adm-stat-label">Enabled</div>
+            <div className="adm-stat-value">{enabledCount}</div>
+            <div className="adm-stat-hint">Shown at provision</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-blue" aria-hidden="true">deps</span>
+          <div>
+            <div className="adm-stat-label">With deps</div>
+            <div className="adm-stat-value">{rows.filter((r) => (r.dependsOn || []).length).length}</div>
+            <div className="adm-stat-hint">Auto-include parents</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="adm-board-toolbar">
+        <input
+          className="control-input adm-board-search"
+          placeholder="Search blueprints…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search blueprints"
+        />
+        <button
+          type="button"
+          className={`btn btn-sm ${showForm && !editingId ? "btn-ghost" : "btn-primary"}`}
+          onClick={() => (showForm && !editingId ? cancelForm() : openAdd())}
+        >
+          {showForm && !editingId ? "Cancel" : "+ Create blueprint"}
+        </button>
+      </div>
+
+      {showForm && (
+        <form className="adm-add-form apps-blueprint-form" onSubmit={save}>
+          <div className="apps-blueprint-form-head">
+            <strong>{editingId ? `Edit blueprint · ${editingId}` : "Create blueprint"}</strong>
+            <p className="muted" style={{ margin: 0, fontSize: 12.5 }}>
+              Metadata only — playbooks and compose files live in the Ansible content repo.
+            </p>
+          </div>
+          {error && <div className="login-error adm-add-error">{error}</div>}
+          <label className="adm-add-field">
+            <span>ID</span>
+            <input
+              className="control-input"
+              placeholder="e.g. grafana-influx"
+              value={form.id}
+              onChange={(e) => setField("id", e.target.value)}
+              required
+              disabled={Boolean(editingId)}
+            />
+          </label>
+          <label className="adm-add-field">
+            <span>Name</span>
+            <input className="control-input" placeholder="Display name" value={form.name} onChange={(e) => setField("name", e.target.value)} required />
+          </label>
+          <label className="adm-add-field">
+            <span>Category</span>
+            <select className="control-input" value={form.category} onChange={(e) => setField("category", e.target.value)}>
+              {APP_CATEGORY_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </label>
+          <label className="adm-add-field">
+            <span>Strategy</span>
+            <select className="control-input" value={form.strategy} onChange={(e) => setField("strategy", e.target.value)}>
+              {APP_STRATEGY_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </label>
+          <label className="adm-add-field adm-add-field-grow">
+            <span>Description</span>
+            <input className="control-input" value={form.description} onChange={(e) => setField("description", e.target.value)} />
+          </label>
+          <label className="adm-add-field adm-add-field-grow">
+            <span>Components (shown on cards)</span>
+            <input
+              className="control-input"
+              placeholder="Docker Engine, Compose, Portainer"
+              value={form.components}
+              onChange={(e) => setField("components", e.target.value)}
+            />
+          </label>
+          <label className="adm-add-field">
+            <span>ETA label</span>
+            <input className="control-input" placeholder="5–8 min" value={form.eta} onChange={(e) => setField("eta", e.target.value)} />
+          </label>
+          <label className="adm-add-field">
+            <span>Depends on</span>
+            <input
+              className="control-input"
+              placeholder={otherBlueprintIds.length ? otherBlueprintIds.slice(0, 4).join(", ") : "docker, …"}
+              value={form.dependsOn}
+              onChange={(e) => setField("dependsOn", e.target.value)}
+              list="blueprint-dep-suggestions"
+            />
+            <datalist id="blueprint-dep-suggestions">
+              {otherBlueprintIds.map((id) => <option key={id} value={id} />)}
+            </datalist>
+          </label>
+          <label className="adm-add-field">
+            <span>Ports</span>
+            <input className="control-input" placeholder="3000, 8086" value={form.ports} onChange={(e) => setField("ports", e.target.value)} />
+          </label>
+          {needsAnsible && (
+            <label className="adm-add-field adm-add-field-grow">
+              <span>Ansible playbook</span>
+              <input className="control-input" placeholder="playbooks/docker.yml" value={form.ansiblePlaybook} onChange={(e) => setField("ansiblePlaybook", e.target.value)} required={needsAnsible} />
+            </label>
+          )}
+          {needsCompose && (
+            <label className="adm-add-field adm-add-field-grow">
+              <span>Compose path</span>
+              <input className="control-input" placeholder="apps/portainer/compose.yml" value={form.composePath} onChange={(e) => setField("composePath", e.target.value)} required={needsCompose} />
+            </label>
+          )}
+          <label className="adm-add-field adm-add-field-grow">
+            <span>URL template</span>
+            <input className="control-input" placeholder="http://{ip}:3000" value={form.urlTemplate} onChange={(e) => setField("urlTemplate", e.target.value)} />
+          </label>
+          <label className="adm-add-field adm-add-field-sm">
+            <span>Health</span>
+            <select className="control-input" value={form.healthType} onChange={(e) => setField("healthType", e.target.value)}>
+              <option value="">None</option>
+              <option value="tcp">TCP</option>
+              <option value="http">HTTP</option>
+            </select>
+          </label>
+          <label className="adm-add-field adm-add-field-sm">
+            <span>HC port</span>
+            <input className="control-input" type="number" min="1" max="65535" value={form.healthPort} onChange={(e) => setField("healthPort", e.target.value)} />
+          </label>
+          <label className="adm-add-field">
+            <span>HC path</span>
+            <input className="control-input" placeholder="/api/health" value={form.healthPath} onChange={(e) => setField("healthPath", e.target.value)} />
+          </label>
+          <label className="adm-add-field adm-add-field-sm">
+            <span>Timeout s</span>
+            <input className="control-input" type="number" min="10" value={form.healthTimeoutSec} onChange={(e) => setField("healthTimeoutSec", e.target.value)} />
+          </label>
+          <label className="adm-add-field adm-add-field-sm">
+            <span>Sort</span>
+            <input className="control-input" type="number" value={form.sortOrder} onChange={(e) => setField("sortOrder", e.target.value)} />
+          </label>
+          <div className="adm-add-field adm-add-field-sm apps-blueprint-enabled">
+            <span>Enabled</span>
+            <Toggle
+              variant="square"
+              size="sm"
+              checked={form.enabled !== false}
+              onChange={(on) => setField("enabled", on)}
+              title="Show in provision picker"
+            />
+          </div>
+          <div className="adm-add-actions">
+            <button className="btn btn-primary btn-sm" type="submit" disabled={busy || !form.id.trim()}>
+              {busy ? "Saving…" : editingId ? "Save changes" : "Create blueprint"}
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={cancelForm}>Cancel</button>
+            {editingId && (
+              <button type="button" className="btn btn-ghost btn-sm" style={{ color: "var(--danger, #b91c1c)" }} onClick={() => remove(editingId)}>
+                Delete
+              </button>
+            )}
+          </div>
+        </form>
+      )}
+
+      {!showForm && error && <div className="login-error" style={{ marginBottom: "0.75rem" }}>{error}</div>}
+
+      <div className="adm-table-wrap">
+        <div className="adm-table-head">
+          <h3 className="adm-table-title">Application blueprints</h3>
+          <span className="muted adm-table-count">{filtered.length} shown · Paths are relative to the Ansible content repo</span>
+        </div>
+        {filtered.length === 0 ? (
+          <div className="catalog-empty">
+            <p className="muted" style={{ margin: "0 0 12px" }}>
+              {rows.length ? "No matches." : "No blueprints yet. Create one to offer Ansible / Compose apps at provision time."}
+            </p>
+            {!rows.length && (
+              <button type="button" className="btn btn-primary btn-sm" onClick={openAdd}>+ Create blueprint</button>
+            )}
+          </div>
+        ) : (
+          <div className="adm-dense-table apps-blueprint-table">
+            <div className="adm-dense-tr adm-dense-head apps-blueprint-row">
+              <div>Blueprint</div>
+              <div>Strategy</div>
+              <div>Paths / deps</div>
+              <div>Status</div>
+              <div>Manage</div>
+            </div>
+            {filtered.map((r) => (
+              <div key={r.id} className={`adm-dense-tr apps-blueprint-row ${r.enabled ? "" : "is-off"}`}>
+                <div className="adm-dense-entity">
+                  <span className="adm-entity-icon" style={{ background: "#0f766e" }} aria-hidden="true">
+                    {(r.name || r.id || "?").slice(0, 2).toUpperCase()}
+                  </span>
+                  <div>
+                    <code className="adm-entity-id">{r.id}</code>
+                    <div className="adm-entity-name">{r.name}</div>
+                    <div className="muted" style={{ fontSize: "0.78rem" }}>
+                      {r.category || "General"}
+                      {(r.ports || []).length ? ` · ${(r.ports || []).join(", ")}` : ""}
+                      {(r.components || r.defaultVars?.components || []).length
+                        ? ` · ${(r.components || r.defaultVars.components).slice(0, 3).join(", ")}`
+                        : ""}
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <span className="pkg-chip is-optional">{r.strategy}</span>
+                </div>
+                <div className="apps-blueprint-paths muted">
+                  {r.ansiblePlaybook ? <div><code>{r.ansiblePlaybook}</code></div> : null}
+                  {r.composePath ? <div><code>{r.composePath}</code></div> : null}
+                  {(r.dependsOn || []).length ? <div>depends: {(r.dependsOn || []).join(", ")}</div> : null}
+                  {!r.ansiblePlaybook && !r.composePath && !(r.dependsOn || []).length ? "—" : null}
+                </div>
+                <Toggle
+                  variant="square"
+                  size="sm"
+                  checked={r.enabled !== false}
+                  onChange={() => toggleEnabled(r)}
+                  title={r.enabled !== false ? "Disable blueprint" : "Enable blueprint"}
+                />
+                <div className="apps-blueprint-actions">
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => openEdit(r)}>Edit</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => remove(r.id)}>Delete</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function SizesPanel() {
@@ -1120,6 +1669,7 @@ function HostnamePanel() {
   const [tokens, setTokens] = useState([]);
   const [defaultFormat, setDefaultFormat] = useState("{os}-{app}-{rand4}");
   const [defaultApplications, setDefaultApplications] = useState("web, db, docker, api, cache, queue, app, worker");
+  const [roleApplications, setRoleApplications] = useState([]);
   const [preview, setPreview] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -1133,6 +1683,7 @@ function HostnamePanel() {
         setDefaultFormat(info.defaultFormat || "{os}-{app}-{rand4}");
         const apps = Array.isArray(info.applications) ? info.applications.join(", ") : applicationsText;
         setApplicationsText(apps);
+        setRoleApplications(Array.isArray(info.roleApplications) ? info.roleApplications : []);
         if (Array.isArray(info.defaultApplications)) {
           setDefaultApplications(info.defaultApplications.join(", "));
         }
@@ -1161,6 +1712,9 @@ function HostnamePanel() {
   }, [format, applicationsText]);
 
   const appList = applicationsText.split(/[,;\n]+/).map((s) => s.trim()).filter(Boolean);
+  const rolesCsv = roleApplications.join(", ");
+  const outOfSync = roleApplications.length > 0
+    && rolesCsv !== appList.map((a) => a.toLowerCase()).join(", ");
 
   const save = async (e) => {
     e.preventDefault();
@@ -1171,7 +1725,23 @@ function HostnamePanel() {
       const info = await adminSetHostnameFormat({ format, applications: applicationsText });
       setFormat(info.format);
       if (Array.isArray(info.applications)) setApplicationsText(info.applications.join(", "));
+      if (Array.isArray(info.roleApplications)) setRoleApplications(info.roleApplications);
       setPreview(info.preview || "");
+      setSaved(true);
+    } catch (err) {
+      setError(err.response?.data?.error || err.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const syncFromRoles = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const info = await adminSyncHostnameFromRoles();
+      if (Array.isArray(info.applications)) setApplicationsText(info.applications.join(", "));
+      if (Array.isArray(info.roleApplications)) setRoleApplications(info.roleApplications);
       setSaved(true);
     } catch (err) {
       setError(err.response?.data?.error || err.message);
@@ -1249,6 +1819,22 @@ function HostnamePanel() {
             aria-label="Hostname applications"
           />
         </label>
+        <div className="adm-host-sync-row">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            disabled={busy || !roleApplications.length}
+            onClick={syncFromRoles}
+            title="Replace application options with enabled App role ids"
+          >
+            Sync from App roles
+          </button>
+          {outOfSync ? (
+            <span className="adm-host-sync-warn">Out of sync with App roles ({roleApplications.join(", ")})</span>
+          ) : roleApplications.length > 0 ? (
+            <span className="muted" style={{ fontSize: 12 }}>Aligned with App roles</span>
+          ) : null}
+        </div>
         {appList.length > 0 && (
           <div className="adm-chip-row">
             {appList.map((a) => (
@@ -1449,6 +2035,7 @@ export default function CatalogAdmin({ section = "packages", embedded = false } 
         )}
         <div className="catalog-content" key={section}>
           {section === "packages" && <PackagesPanel section={active} />}
+          {(section === "blueprints" || section === "apps") && <AppsPanel />}
           {section === "app-roles" && <AppRolesPanel />}
           {section === "sizes" && <SizesPanel />}
           {section === "hostname" && <HostnamePanel />}

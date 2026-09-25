@@ -1,0 +1,73 @@
+---
+- name: Install Nginx + Certbot (Debian)
+  when: ansible_os_family == "Debian"
+  ansible.builtin.apt:
+    name: "{{ nginx_proxy_packages_debian }}"
+    state: present
+    update_cache: true
+
+- name: Install Nginx + Certbot (RedHat)
+  when: ansible_os_family == "RedHat"
+  ansible.builtin.yum:
+    name: "{{ nginx_proxy_packages_redhat }}"
+    state: present
+
+- name: Create Forge proxy site
+  ansible.builtin.copy:
+    dest: "{{ '/etc/nginx/sites-available/forge-proxy' if ansible_os_family == 'Debian' else '/etc/nginx/conf.d/forge-proxy.conf' }}"
+    mode: "0644"
+    content: |
+      # Forge NGINX reverse proxy blueprint
+      # Change proxy_pass to your backend, then: certbot --nginx -d your.domain
+      server {
+        listen 80 default_server;
+        listen [::]:80 default_server;
+        server_name {{ nginx_proxy_server_name }};
+
+        location / {
+          proxy_pass {{ nginx_proxy_upstream }};
+          proxy_http_version 1.1;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+        }
+
+        location = /forge-proxy-ready {
+          default_type text/plain;
+          return 200 'Forge NGINX proxy ready\n';
+        }
+      }
+  notify: Reload nginx
+
+- name: Enable site on Debian
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Disable default site if present
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload nginx
+
+    - name: Link forge-proxy site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/forge-proxy
+        dest: /etc/nginx/sites-enabled/forge-proxy
+        state: link
+      notify: Reload nginx
+
+- name: Enable and start Nginx
+  ansible.builtin.service:
+    name: nginx
+    state: started
+    enabled: true
+
+- name: Validate nginx config
+  ansible.builtin.command: nginx -t
+  changed_when: false
+
+- name: Certbot note
+  ansible.builtin.debug:
+    msg: >-
+      Certbot is installed. After DNS points here, run:
+      certbot --nginx -d your.domain.example

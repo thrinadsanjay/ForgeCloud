@@ -1,0 +1,20 @@
+---
+- name: Install yum-utils
+  ansible.builtin.yum:
+    name: yum-utils
+    state: present
+
+- name: Add Docker CE yum repository
+  ansible.builtin.get_url:
+    url: https://download.docker.com/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo
+    mode: "0644"
+
+- name: Install Docker Engine packages (RedHat)
+  ansible.builtin.yum:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present

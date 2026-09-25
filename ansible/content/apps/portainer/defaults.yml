@@ -1,0 +1,5 @@
+# ports: [9000]
+# health: tcp:9000
+# url: http://{ip}:9000
+# strategy: ansible+compose (docker role + this compose)
+category: Containers

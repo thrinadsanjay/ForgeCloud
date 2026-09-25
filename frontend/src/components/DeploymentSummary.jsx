@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ServiceNowPanel from "./ServiceNowPanel.jsx";
+import { retryJobApps } from "../api/client.js";
 
 // Small inline icons (stroke-based, inherit currentColor).
 function Icon({ name }) {
@@ -156,7 +157,9 @@ export function RequestDetailsBlock({ job, compact = false }) {
   );
 }
 
-export default function DeploymentSummary({ job, onClose }) {
+export default function DeploymentSummary({ job, onClose, onJobUpdated }) {
+  const [retryBusy, setRetryBusy] = useState(false);
+  const [retryError, setRetryError] = useState("");
   if (!job) return null;
 
   const resources = job.resources || [];
@@ -164,6 +167,9 @@ export default function DeploymentSummary({ job, onClose }) {
   const failed = job.status === "failed";
   const hasLogin = !!(result.username && result.generatedPassword);
   const workflow = Array.isArray(result.workflow) ? result.workflow : [];
+  const appSecrets = result.appSecrets && typeof result.appSecrets === "object" ? result.appSecrets : {};
+  const secretEntries = Object.entries(appSecrets).filter(([, v]) => v);
+  const canRetryApps = !!(result.canRetryApps || (failed && (result.failedApps?.length || job.payload?.apps?.length)));
   const hasSnow = !!(
     job.servicenow?.ritmNumber
     || job.servicenow?.requestNumber
@@ -171,6 +177,19 @@ export default function DeploymentSummary({ job, onClose }) {
     || job.servicenow?.incidentNumber
     || (Array.isArray(job.servicenow?.cmdbItems) && job.servicenow.cmdbItems.length)
   );
+
+  const onRetryApps = async () => {
+    setRetryBusy(true);
+    setRetryError("");
+    try {
+      await retryJobApps(job.id, result.failedApps);
+      onJobUpdated?.();
+    } catch (e) {
+      setRetryError(e.response?.data?.error || e.message);
+    } finally {
+      setRetryBusy(false);
+    }
+  };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -189,15 +208,37 @@ export default function DeploymentSummary({ job, onClose }) {
 
               {resources.length > 0 && (
                 <div className="ds-section">
-                  <div className="ds-section-title">{resources.length > 1 ? "Machines" : "Machine details"}</div>
+                  <div className="ds-section-title">
+                    {resources.some((r) => r.type === "k8s")
+                      ? "Workload details"
+                      : resources.length > 1 ? "Machines" : "Machine details"}
+                  </div>
                   {resources.map((r) => (
                     <div className="ds-detail-grid" key={r.vmid || r.hostname}>
                       <div><span>Name</span><b>{r.hostname}</b></div>
                       <div><span>ID</span><b className="mono">{r.vmid || "—"}</b></div>
                       <div><span>Type</span><b>{(r.type || "vm").toUpperCase()}</b></div>
-                      <div><span>IP address</span><b className="mono">{r.ip || "—"}</b></div>
+                      <div>
+                        <span>{r.type === "k8s" ? "Ingress / URL" : "IP address"}</span>
+                        <b className="mono">
+                          {(Array.isArray(r.urls) && r.urls[0]) || r.ip || "—"}
+                        </b>
+                      </div>
                       {r.environment && <div><span>Network</span><b>{r.environment}</b></div>}
                       {r.role && <div><span>Role</span><b>{r.role}</b></div>}
+                      {r.type === "k8s" && Array.isArray(r.urls) && r.urls.length > 0 && (
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <span>Access</span>
+                          <b>
+                            {r.urls.map((u) => (
+                              <a key={u} href={u} target="_blank" rel="noreferrer" style={{ display: "block" }}>{u}</a>
+                            ))}
+                          </b>
+                          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>
+                            Point DNS (or /etc/hosts) for these hostnames at your Traefik entrypoint IP, then open with http:// (unless TLS is configured).
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -235,7 +276,58 @@ export default function DeploymentSummary({ job, onClose }) {
                 </div>
               )}
 
-              {!hasLogin && !failed && workflow.length === 0 && (
+              {secretEntries.length > 0 && (
+                <div className="ds-section">
+                  <div className="ds-section-title">Application secrets</div>
+                  <div className="ds-creds">
+                    {secretEntries.map(([key, value]) => (
+                      <CredRow
+                        key={key}
+                        label={key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase())}
+                        value={String(value)}
+                        secret
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {Array.isArray(result.endpoints) && result.endpoints.length > 0 && (
+                <div className="ds-section">
+                  <div className="ds-section-title">Applications</div>
+                  <div className="ds-creds">
+                    {result.endpoints.map((ep) => (
+                      <div key={ep.id || ep.url || ep.name} style={{ marginBottom: 10 }}>
+                        {ep.url ? (
+                          <a className="btn btn-primary btn-sm" href={ep.url} target="_blank" rel="noreferrer">
+                            Open {ep.name}
+                          </a>
+                        ) : (
+                          <strong>{ep.name}</strong>
+                        )}
+                        {ep.url && <div className="mono muted" style={{ fontSize: 12, marginTop: 4 }}>{ep.url}</div>}
+                        {ep.notes && <div className="muted" style={{ fontSize: 12.5, marginTop: 2 }}>{ep.notes}</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {canRetryApps && (
+                <div className="ds-section">
+                  <div className="ds-section-title">Retry applications</div>
+                  <p className="ds-note">
+                    Re-run blueprint install on the existing guest without recloning the VM.
+                    {result.failedApps?.length ? ` Failed: ${result.failedApps.join(", ")}.` : ""}
+                  </p>
+                  {retryError && <p className="ds-error-user">{retryError}</p>}
+                  <button type="button" className="btn btn-primary btn-sm" disabled={retryBusy} onClick={onRetryApps}>
+                    {retryBusy ? "Retrying…" : "Retry apps"}
+                  </button>
+                </div>
+              )}
+
+              {!hasLogin && !failed && workflow.length === 0 && secretEntries.length === 0 && (
                 <p className="ds-note">No login account was created for this deployment.</p>
               )}
 

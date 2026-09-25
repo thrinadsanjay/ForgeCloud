@@ -1,0 +1,95 @@
+---
+- name: Install LEMP (Debian)
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Install Nginx, PHP-FPM, MariaDB
+      ansible.builtin.apt:
+        name: "{{ lemp_packages_debian }}"
+        state: present
+        update_cache: true
+
+    - name: Discover php-fpm service name
+      ansible.builtin.shell: systemctl list-unit-files --type=service | awk '/php.*-fpm\.service/ {print $1; exit}' | sed 's/\.service$//'
+      register: php_fpm_svc
+      changed_when: false
+
+    - name: Set php-fpm service fact
+      ansible.builtin.set_fact:
+        lemp_php_fpm_service: "{{ php_fpm_svc.stdout | default('php-fpm', true) }}"
+
+    - name: Place default site
+      ansible.builtin.copy:
+        dest: /var/www/html/index.php
+        mode: "0644"
+        content: |
+          <?php
+          header('Content-Type: text/plain');
+          echo "Forge LEMP blueprint ready\n";
+          echo "PHP " . PHP_VERSION . "\n";
+
+    - name: Configure Nginx default site for PHP-FPM
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/default
+        mode: "0644"
+        content: |
+          server {
+            listen 80 default_server;
+            listen [::]:80 default_server;
+            root /var/www/html;
+            index index.php index.html;
+            server_name _;
+            location / {
+              try_files $uri $uri/ =404;
+            }
+            location ~ \.php$ {
+              include snippets/fastcgi-php.conf;
+              fastcgi_pass unix:/run/php/{{ lemp_php_fpm_service }}.sock;
+            }
+          }
+      notify: Restart nginx
+
+    - name: Enable and start Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    - name: Enable and start PHP-FPM
+      ansible.builtin.service:
+        name: "{{ lemp_php_fpm_service }}"
+        state: started
+        enabled: true
+
+    - name: Enable and start MariaDB
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+        enabled: true
+
+- name: Install LEMP (RedHat)
+  when: ansible_os_family == "RedHat"
+  block:
+    - name: Install Nginx, PHP-FPM, MariaDB
+      ansible.builtin.yum:
+        name: "{{ lemp_packages_redhat }}"
+        state: present
+
+    - name: Place default site
+      ansible.builtin.copy:
+        dest: /usr/share/nginx/html/index.php
+        mode: "0644"
+        content: |
+          <?php
+          header('Content-Type: text/plain');
+          echo "Forge LEMP blueprint ready\n";
+          echo "PHP " . PHP_VERSION . "\n";
+
+    - name: Enable services
+      ansible.builtin.service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - nginx
+        - php-fpm
+        - mariadb

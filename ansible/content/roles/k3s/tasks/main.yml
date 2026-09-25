@@ -1,0 +1,138 @@
+---
+# K3s server install (RHEL/Rocky-friendly)
+
+- name: Detect SELinux mode
+  ansible.builtin.command: getenforce
+  register: k3s_getenforce
+  changed_when: false
+  failed_when: false
+
+- name: Disable nm-cloud-setup (conflicts with K3s on RHEL/cloud images)
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop:
+    - nm-cloud-setup.service
+    - nm-cloud-setup.timer
+  failed_when: false
+
+- name: Ensure container-selinux is present when SELinux is active
+  when: k3s_getenforce.stdout is defined and k3s_getenforce.stdout | lower in ["enforcing", "permissive"]
+  ansible.builtin.package:
+    name: container-selinux
+    state: present
+  failed_when: false
+
+- name: Install K3s
+  ansible.builtin.shell: |
+    set -euo pipefail
+    selinux_mode="$(getenforce 2>/dev/null || echo Disabled)"
+    case "$(echo "$selinux_mode" | tr '[:upper:]' '[:lower:]')" in
+      enforcing|permissive)
+        # Let the installer pull k3s-selinux; skipping it commonly breaks systemd start.
+        unset INSTALL_K3S_SKIP_SELINUX_RPM || true
+        export INSTALL_K3S_EXEC="${INSTALL_K3S_EXEC:-} --selinux"
+        ;;
+      *)
+        export INSTALL_K3S_SKIP_SELINUX_RPM=true
+        ;;
+    esac
+    {% if k3s_version | length > 0 %}
+    export INSTALL_K3S_VERSION="{{ k3s_version }}"
+    {% endif %}
+    export K3S_KUBECONFIG_MODE="{{ k3s_write_kubeconfig_mode }}"
+    curl -sfL https://get.k3s.io | sh -
+  args:
+    executable: /bin/bash
+  register: k3s_install
+  failed_when: false
+  # Re-run when binary exists but the service never came up (prior partial install).
+  when: not ansible_check_mode
+
+- name: Capture k3s failure diagnostics
+  when: k3s_install is defined and k3s_install.rc is defined and k3s_install.rc != 0
+  ansible.builtin.shell: |
+    set +e
+    echo "=== systemctl status k3s ==="
+    systemctl status k3s.service --no-pager -l 2>&1 | tail -n 80
+    echo "=== journalctl -u k3s ==="
+    journalctl -u k3s.service -n 80 --no-pager 2>&1
+    echo "=== SELinux ==="
+    getenforce 2>&1 || true
+    echo "=== nm-cloud-setup ==="
+    systemctl is-enabled nm-cloud-setup.service 2>&1 || true
+  args:
+    executable: /bin/bash
+  register: k3s_diag
+  changed_when: false
+  failed_when: false
+
+- name: Fail with k3s install diagnostics
+  when: k3s_install is defined and k3s_install.rc is defined and k3s_install.rc != 0
+  ansible.builtin.fail:
+    msg: |
+      K3s install/start failed (rc={{ k3s_install.rc }}).
+      --- install stderr ---
+      {{ k3s_install.stderr | default('') }}
+      --- diagnostics ---
+      {{ k3s_diag.stdout | default('(no diagnostics)') }}
+
+- name: Ensure k3s is started
+  ansible.builtin.systemd:
+    name: k3s
+    state: started
+    enabled: true
+
+- name: Wait for kubeconfig
+  ansible.builtin.wait_for:
+    path: /etc/rancher/k3s/k3s.yaml
+    timeout: 180
+
+- name: Install kubectl wrapper
+  ansible.builtin.copy:
+    dest: /usr/local/bin/kubectl
+    mode: "0755"
+    content: |
+      #!/bin/sh
+      exec /usr/local/bin/k3s kubectl "$@"
+
+- name: Wait for node Ready
+  ansible.builtin.shell: |
+    set -euo pipefail
+    export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+    for i in $(seq 1 60); do
+      if /usr/local/bin/kubectl get nodes --no-headers 2>/dev/null | grep -qi Ready; then
+        exit 0
+      fi
+      sleep 3
+    done
+    exit 1
+  args:
+    executable: /bin/bash
+  changed_when: false
+
+- name: Install Helm
+  when: k3s_install_helm | bool
+  ansible.builtin.shell: |
+    set -euo pipefail
+    # Non-interactive Ansible shells often omit /usr/local/bin; the official
+    # get-helm-3 script installs there then fails its own `helm` PATH check.
+    export PATH="/usr/local/bin:/usr/bin:/bin:${PATH:-}"
+    if [ -x /usr/local/bin/helm ]; then
+      /usr/local/bin/helm version --short
+      exit 0
+    fi
+    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash || true
+    if [ ! -x /usr/local/bin/helm ]; then
+      echo "Helm binary missing after installer" >&2
+      exit 1
+    fi
+    /usr/local/bin/helm version --short
+  args:
+    creates: /usr/local/bin/helm
+    executable: /bin/bash
+
+- name: Publish kubeconfig hint
+  ansible.builtin.debug:
+    msg: "K3s ready. Kubeconfig on guest: /etc/rancher/k3s/k3s.yaml"

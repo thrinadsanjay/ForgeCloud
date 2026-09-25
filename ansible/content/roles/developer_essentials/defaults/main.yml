@@ -1,0 +1,27 @@
+---
+developer_packages_debian:
+  - git
+  - curl
+  - wget
+  - vim
+  - jq
+  - htop
+  - tmux
+  - unzip
+  - ca-certificates
+  - tree
+  - net-tools
+  - dnsutils
+developer_packages_redhat:
+  - git
+  - curl
+  - wget
+  - vim-enhanced
+  - jq
+  - htop
+  - tmux
+  - unzip
+  - ca-certificates
+  - tree
+  - net-tools
+  - bind-utils

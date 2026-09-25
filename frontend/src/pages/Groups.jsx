@@ -11,6 +11,7 @@ import {
 import { useDialog } from "../components/DialogProvider.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import AdminPageHeader from "../components/AdminPageHeader.jsx";
+import AnchoredPopover from "../components/AnchoredPopover.jsx";
 import { roleLabel } from "../lib/roles.js";
 
 const AVATAR_COLORS = [
@@ -174,15 +175,19 @@ function ManageDrawer({ group, users, usersByName, onClose, onChanged }) {
           </div>
           <button type="button" className="close-btn" onClick={onClose} aria-label="Close">×</button>
         </div>
-        <div className="modal-body">
-          <div className="grp-quota-block">
-            <div className="grp-quota-title">Team quotas</div>
-            <p className="muted" style={{ fontSize: 12, margin: "0 0 10px" }}>
-              In use: {usage.vms} VMs · {usage.cpu} CPU · {usage.memoryGB} GB RAM
-            </p>
+        <div className="modal-body grp-manage-body">
+          <section className="grp-quota-block">
+            <div className="grp-section-head">
+              <div>
+                <div className="grp-quota-title">Team quotas</div>
+                <p className="grp-quota-usage muted">
+                  In use: {usage.vms} VMs · {usage.cpu} CPU · {usage.memoryGB} GB RAM
+                </p>
+              </div>
+            </div>
             <div className="grp-quota-grid">
-              <label>
-                Max VMs
+              <label className="grp-quota-field">
+                <span>Max VMs</span>
                 <input
                   className="control-input"
                   type="number"
@@ -192,8 +197,8 @@ function ManageDrawer({ group, users, usersByName, onClose, onChanged }) {
                   onChange={(e) => setQuotas((q) => ({ ...q, maxVms: e.target.value }))}
                 />
               </label>
-              <label>
-                Max CPU
+              <label className="grp-quota-field">
+                <span>Max CPU</span>
                 <input
                   className="control-input"
                   type="number"
@@ -203,8 +208,8 @@ function ManageDrawer({ group, users, usersByName, onClose, onChanged }) {
                   onChange={(e) => setQuotas((q) => ({ ...q, maxCpu: e.target.value }))}
                 />
               </label>
-              <label>
-                Max RAM (GB)
+              <label className="grp-quota-field">
+                <span>Max RAM (GB)</span>
                 <input
                   className="control-input"
                   type="number"
@@ -215,54 +220,62 @@ function ManageDrawer({ group, users, usersByName, onClose, onChanged }) {
                 />
               </label>
             </div>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={saveQuotas} disabled={busy} style={{ marginTop: 8 }}>
-              Save quotas
-            </button>
-          </div>
+            <div className="grp-quota-actions">
+              <button type="button" className="btn btn-primary btn-sm" onClick={saveQuotas} disabled={busy}>
+                Save quotas
+              </button>
+            </div>
+          </section>
 
-          <div className="grp-manage-add">
-            <select
-              className="control-select"
-              value={pick}
-              onChange={(e) => setPick(e.target.value)}
-              disabled={busy || available.length === 0}
-            >
-              <option value="">{available.length ? "Select user…" : "All users already members"}</option>
-              {available.map((u) => (
-                <option key={u.id} value={u.username}>{u.displayName || u.username}</option>
-              ))}
-            </select>
-            <button type="button" className="btn btn-primary" onClick={add} disabled={!pick || busy}>
-              Add
-            </button>
-          </div>
+          <section className="grp-members-block">
+            <div className="grp-quota-title">Members</div>
+            <div className="grp-manage-add">
+              <select
+                className="control-select"
+                value={pick}
+                onChange={(e) => setPick(e.target.value)}
+                disabled={busy || available.length === 0}
+                aria-label="Select user to add"
+              >
+                <option value="">{available.length ? "Select user…" : "All users already members"}</option>
+                {available.map((u) => (
+                  <option key={u.id} value={u.username}>
+                    {u.displayName || u.username} ({u.username})
+                  </option>
+                ))}
+              </select>
+              <button type="button" className="btn btn-primary" onClick={add} disabled={!pick || busy}>
+                Add
+              </button>
+            </div>
 
-          <ul className="grp-manage-list">
-            {group.members.length === 0 && (
-              <li className="muted" style={{ padding: "12px 0" }}>No members in this group.</li>
-            )}
-            {group.members.map((username) => {
-              const u = usersByName.get(String(username).toLowerCase());
-              const label = u?.displayName || username;
-              return (
-                <li key={username}>
-                  <span className="grp-avatar" style={{ background: hashHue(username) }}>{initials(label)}</span>
-                  <div className="grp-manage-user">
-                    <strong>{label}</strong>
-                    <span className="muted mono">{username}</span>
-                  </div>
-                  {u?.role && (
-                    <span className={`grp-perm grp-perm-${ROLE_BADGE[u.role]?.tone || "gray"}`}>
-                      {roleLabel(u.role)}
-                    </span>
-                  )}
-                  <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => remove(username)}>
-                    Remove
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
+            <ul className="grp-manage-list">
+              {group.members.length === 0 && (
+                <li className="grp-manage-empty muted">No members in this group.</li>
+              )}
+              {group.members.map((username) => {
+                const u = usersByName.get(String(username).toLowerCase());
+                const label = u?.displayName || username;
+                return (
+                  <li key={username}>
+                    <span className="grp-avatar" style={{ background: hashHue(username) }}>{initials(label)}</span>
+                    <div className="grp-manage-user">
+                      <strong>{label}</strong>
+                      <span className="muted mono">{username}</span>
+                    </div>
+                    {u?.role && (
+                      <span className={`grp-perm grp-perm-${ROLE_BADGE[u.role]?.tone || "gray"}`}>
+                        {roleLabel(u.role)}
+                      </span>
+                    )}
+                    <button type="button" className="btn btn-ghost btn-sm" disabled={busy} onClick={() => remove(username)}>
+                      Remove
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
         </div>
       </div>
     </div>
@@ -270,29 +283,19 @@ function ManageDrawer({ group, users, usersByName, onClose, onChanged }) {
 }
 
 function OverflowMenu({ open, onClose, onDelete, anchorRef }) {
-  const menuRef = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDoc = (e) => {
-      if (menuRef.current?.contains(e.target) || anchorRef.current?.contains(e.target)) return;
-      onClose();
-    };
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("pointerdown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose, anchorRef]);
-
-  if (!open) return null;
   return (
-    <div className="grp-menu" ref={menuRef} role="menu">
+    <AnchoredPopover
+      open={open}
+      onClose={onClose}
+      anchorRef={anchorRef}
+      className="grp-menu"
+      estimatedHeight={52}
+      estimatedWidth={160}
+    >
       <button type="button" role="menuitem" className="grp-menu-danger" onClick={onDelete}>
         Delete group
       </button>
-    </div>
+    </AnchoredPopover>
   );
 }
 

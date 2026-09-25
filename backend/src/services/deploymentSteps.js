@@ -13,9 +13,9 @@ export const VM_STEP_DEFS = [
   { key: "assign_ip",          label: "Attaching network",     active: "Connecting the NIC — IP via DHCP…",                                   done: "Network attached · DHCP",                      eta: 12, group: "build" },
   { key: "power_on",           label: "Powering on",           active: "Powering on your virtual machine…",                                   done: "Powered on",                                   eta: 10, group: "boot" },
   { key: "system_startup",     label: "System startup",        active: "Waiting for the system to come alive…",                               done: "System is online",                             eta: 90, group: "boot" },
-  { key: "initial_setup",      label: "Initial setup",         active: "Running first-boot initialization and creating your account…",        done: "Initial setup complete",                       eta: 25, group: "config" },
+  { key: "initial_setup",      label: "Initial setup",         active: "Running first-boot initialization and creating your account…",        done: "Initial setup complete",                       eta: 90, group: "config" },
   { key: "default_packages", label: "Default packages", active: "Installing default packages via cloud-init…", done: "Default packages installed", eta: 45, group: "config" },
-  { key: "requested_packages", label: "Requested software",    active: "Installing your requested software…",                                 done: "Requested software installed",                 eta: 35, group: "config" },
+  { key: "requested_packages", label: "Requested software",    active: "Installing your requested software…",                                 done: "Requested software installed",                 eta: 120, group: "config" },
   { key: "validate",           label: "Validation",            active: "Running final health checks on your server…",                         done: "Server validated end-to-end",                  eta: 15, group: "config" },
   { key: "summarize",          label: "Summary",               active: "Wrapping up and preparing your summary…",                             done: "All done — your server is ready",              eta: 3,  group: "done" },
 ];

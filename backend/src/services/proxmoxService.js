@@ -55,6 +55,9 @@ function ensureClient() {
     client = axios.create({
       baseURL: `https://${cfg.host}:${cfg.port}/api2/json`,
       httpsAgent: new https.Agent({ rejectUnauthorized: cfg.verifySsl }),
+      // Fail fast when the host is down — default axios has no timeout and
+      // can stall the whole portal for minutes on TCP hang.
+      timeout: Number(process.env.PROXMOX_HTTP_TIMEOUT_MS) || 5000,
     });
     clientSig = sig;
     ticket = null;
@@ -419,6 +422,9 @@ export async function setCloudInit({ node = process.env.PROXMOX_NODE, vmid, host
  * Forge can SSH in with the deploy key even when PasswordAuthentication is off.
  * Note: QEMU config has no `hostname` property — guest hostname comes from the
  * VM name (set at clone) and/or richer cloud-init user-data.
+ *
+ * Clears inherited `cicustom` from the template first — RHEL golden images often
+ * ship vendor user-data that ignores ciuser and never creates the forge account.
  */
 export async function setAnsibleBootstrapCi({
   node = process.env.PROXMOX_NODE,
@@ -427,11 +433,20 @@ export async function setAnsibleBootstrapCi({
   serviceUser = "forge",
   servicePassword = "",
   sshPublicKeys = [],
+  clearCicustom = true,
 }) {
   const keys = (sshPublicKeys || [])
     .map((k) => String(k || "").trim())
     .filter(Boolean)
     .join("\n");
+
+  // Drop template cicustom so Proxmox-generated NoCloud data (ciuser/sshkeys) applies.
+  // Skip when caller already attached a Forge bootstrap snippet via cicustom.
+  if (clearCicustom) {
+    await pveMutate("put", `/nodes/${node}/qemu/${vmid}/config`, { delete: "cicustom" }, { node }).catch((err) => {
+      console.warn(`[proxmox] could not clear cicustom on ${vmid}: ${err.userMessage || err.message}`);
+    });
+  }
 
   const payload = {
     ciuser: String(serviceUser || "forge").trim() || "forge",
@@ -1101,7 +1116,7 @@ export const getPveNode = () => process.env.PROXMOX_NODE || autoDetectedNode || 
 // Lightweight connectivity check for the admin Settings tab. Forces a fresh
 // auth against the current config and reads node status; returns node info or
 // throws with the Proxmox error message.
-export async function testConnection() {
+export async function testConnection({ light = false } = {}) {
   const cfg = pveConfig();
   if (usesTokenAuth(cfg)) {
     if (!cfg.tokenId?.trim() || !cfg.tokenSecret) {
@@ -1110,11 +1125,23 @@ export async function testConnection() {
   } else if (!cfg.username || !cfg.password) {
     throw new Error("Proxmox username and password are required");
   }
+  if (!cfg.host?.trim()) {
+    throw new Error("Proxmox host is not configured");
+  }
   ticket = null;
   ticketExpiry = 0;
   clearPveNodeCache();
   const node = await resolvePveNode();
   const status = await getNodeStatus({ node });
+  if (light) {
+    return {
+      node,
+      host: process.env.PROXMOX_HOST,
+      auth: usesTokenAuth(cfg) ? "api-token" : "password",
+      uptime: status?.uptime ?? null,
+      pveversion: status?.pveversion ?? null,
+    };
+  }
   const [vms, containers, templates] = await Promise.all([
     listAllVms({ node }).catch(() => []),
     listAllContainers({ node }).catch(() => []),

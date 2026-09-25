@@ -9,7 +9,9 @@ import {
 } from "../services/mappingStore.js";
 
 const router = Router();
-router.use(requireAuth, requireAdmin);
+// Per-route guards only — blanket requireAdmin on a /api-mounted router
+// would block every later /api route (infra status, k3s, docker, …) for users.
+const admin = [requireAuth, requireAdmin];
 
 const CONNECTIVITY = ["ssh", "winrm"];
 
@@ -30,7 +32,7 @@ function isNetworkCandidate(iface) {
 
 // GET /mappings — auto-detect templates + networks from Proxmox on every call,
 // then merge the admin's saved mappings on top.
-router.get("/mappings", async (req, res) => {
+router.get("/mappings", ...admin, async (req, res) => {
   try {
     // Ensure PROXMOX_NODE is set (auto-detect when Settings left it blank).
     await pve.resolvePveNode();
@@ -104,10 +106,14 @@ router.get("/mappings", async (req, res) => {
 });
 
 // PUT /mappings/templates/:vmid — save a template mapping.
-router.put("/mappings/templates/:vmid", async (req, res) => {
+router.put("/mappings/templates/:vmid", ...admin, async (req, res) => {
   const { vmid } = req.params;
   const b = req.body || {};
+  const osName = typeof b.osName === "string" ? b.osName.trim() : "";
 
+  if (!osName) {
+    return res.status(400).json({ error: "OS name is required" });
+  }
   if (b.connectivity && !CONNECTIVITY.includes(b.connectivity)) {
     return res.status(400).json({ error: `connectivity must be one of ${CONNECTIVITY.join(", ")}` });
   }
@@ -126,7 +132,7 @@ router.put("/mappings/templates/:vmid", async (req, res) => {
   }
 
   const saved = upsertTemplateMapping(vmid, {
-    osName: b.osName,
+    osName,
     cloudInitFile: b.cloudInitFile,
     cloudInitSource: "snippet",
     credUser: b.credUser,
@@ -136,28 +142,32 @@ router.put("/mappings/templates/:vmid", async (req, res) => {
     packageManager: b.packageManager,
   });
 
-  logAudit({ actor: req.user, action: "mapping.template.save", target: `VMID ${vmid}`, detail: { osName: b.osName } });
+  logAudit({ actor: req.user, action: "mapping.template.save", target: `VMID ${vmid}`, detail: { osName } });
   res.json({ ok: true, mapping: { ...saved, credPassword: undefined, hasPassword: !!saved.credPassword } });
 });
 
-router.delete("/mappings/templates/:vmid", (req, res) => {
+router.delete("/mappings/templates/:vmid", ...admin, (req, res) => {
   deleteTemplateMapping(req.params.vmid);
   logAudit({ actor: req.user, action: "mapping.template.delete", target: `VMID ${req.params.vmid}` });
   res.json({ ok: true });
 });
 
 // PUT /mappings/networks/:iface — save a network mapping (type override + label).
-router.put("/mappings/networks/:iface", (req, res) => {
+router.put("/mappings/networks/:iface", ...admin, (req, res) => {
   const b = req.body || {};
+  const label = typeof b.label === "string" ? b.label.trim() : "";
+  if (!label) {
+    return res.status(400).json({ error: "Name is required" });
+  }
   if (b.type && !["bridge", "vlan"].includes(b.type)) {
     return res.status(400).json({ error: "type must be 'bridge' or 'vlan'" });
   }
-  const saved = upsertNetworkMapping(req.params.iface, { type: b.type, label: b.label });
-  logAudit({ actor: req.user, action: "mapping.network.save", target: req.params.iface, detail: { type: b.type } });
+  const saved = upsertNetworkMapping(req.params.iface, { type: b.type, label });
+  logAudit({ actor: req.user, action: "mapping.network.save", target: req.params.iface, detail: { type: b.type, label } });
   res.json({ ok: true, mapping: saved });
 });
 
-router.delete("/mappings/networks/:iface", (req, res) => {
+router.delete("/mappings/networks/:iface", ...admin, (req, res) => {
   deleteNetworkMapping(req.params.iface);
   logAudit({ actor: req.user, action: "mapping.network.delete", target: req.params.iface });
   res.json({ ok: true });

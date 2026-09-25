@@ -16,7 +16,7 @@ import {
   ticketSummary,
 } from "./servicenowTicketStore.js";
 import { findByUsername } from "./userStore.js";
-import { notifyUser } from "./notificationStore.js";
+import { notifyUser, upsertDigest } from "./notificationStore.js";
 import { fireWebhook } from "./n8nWebhookService.js";
 import { logAudit } from "./auditService.js";
 import { createCmdbForJob } from "./cmdbService.js";
@@ -248,14 +248,18 @@ export async function onProvisioningComplete(job) {
 
   const owner = job.payload?.requestedBy;
   if (owner) {
-    notifyUser(owner, {
+    const day = new Date().toISOString().slice(0, 10);
+    upsertDigest({
+      recipient: owner,
+      digestKey: `provision-ok:${owner}:${day}`,
       type: "provision_complete",
-      title: `Server ready — ${host}`,
-      message: job.result?.allOk === false
-        ? `Your server "${host}" is up at ${ip}, but some setup steps had warnings. Open Deployments for details.`
-        : `Your server "${host}" is ready at ${ip}.`,
+      level: job.result?.allOk === false ? "warn" : "success",
+      title: "Servers ready",
+      itemTitle: ip ? `${host} @ ${ip}` : host,
+      itemMessage: job.result?.allOk === false
+        ? `"${host}" is up but some setup steps had warnings.`
+        : `"${host}" is ready${ip ? ` at ${ip}` : ""}.`,
       link: `/deployments?tab=completed&job=${encodeURIComponent(job.id)}`,
-      meta: { requestId: ticket.requestId, jobId: job.id, ritmNumber: ticket.ritmNumber, ciNumber: cmdbItems[0]?.ciNumber },
     });
   }
 
@@ -323,6 +327,7 @@ export async function onProvisioningFailed(job) {
   if (owner) {
     notifyUser(owner, {
       type: "provision_failed",
+      level: "error",
       title: `Provisioning failed — ${host}`,
       message: errorText,
       link: `/deployments?tab=failed&job=${encodeURIComponent(job.id)}`,
@@ -331,6 +336,7 @@ export async function onProvisioningFailed(job) {
         jobId: job.id,
         incidentNumber: incident?.number,
         ritmNumber: ticket?.ritmNumber,
+        level: "error",
       },
     });
   }

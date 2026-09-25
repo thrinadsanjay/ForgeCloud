@@ -1,10 +1,10 @@
-import { WebSocketServer } from "ws";
 import { Client } from "ssh2";
 import { verifyToken } from "../services/authService.js";
 import { getOwner } from "../services/ownershipStore.js";
 import { getGuestAgentIp, getResourceTags } from "../services/proxmoxService.js";
 import { canSeeTags } from "../services/visibility.js";
 import { logAudit } from "../services/auditService.js";
+import { createPathWebSocketServer } from "./wsRouter.js";
 
 /** Wait for the first WebSocket text/binary message, or use one already buffered. */
 function waitForFirstMessage(ws, buffered) {
@@ -28,7 +28,7 @@ function waitForFirstMessage(ws, buffered) {
 }
 
 export function attachTerminalWs(httpServer) {
-  const wss = new WebSocketServer({ server: httpServer, path: "/ws/ssh" });
+  const wss = createPathWebSocketServer(httpServer, "/ws/ssh");
 
   wss.on("connection", (ws, req) => {
     const url = new URL(req.url, "http://localhost");

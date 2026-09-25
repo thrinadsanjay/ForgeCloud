@@ -1,0 +1,4 @@
+# ports: [80, 443, 2222]
+# health: tcp:80
+# url: http://{ip}
+category: Git

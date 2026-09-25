@@ -18,6 +18,9 @@ function cloneMessages(messages) {
     if (Array.isArray(m.suggestedReplies) && m.suggestedReplies.length) {
       out.suggestedReplies = m.suggestedReplies.slice(0, 8);
     }
+    if (m.guidedDraft && typeof m.guidedDraft === "object") {
+      out.guidedDraft = m.guidedDraft;
+    }
     return out;
   });
 }

@@ -1,0 +1,93 @@
+---
+- name: Install LAMP (Debian)
+  when: ansible_os_family == "Debian"
+  block:
+    - name: Install Apache, PHP, MariaDB
+      ansible.builtin.apt:
+        name: "{{ lamp_packages_debian }}"
+        state: present
+        update_cache: true
+
+    - name: Enable Apache modules
+      ansible.builtin.command: a2enmod rewrite
+      args:
+        creates: /etc/apache2/mods-enabled/rewrite.load
+      notify: Restart apache
+
+    - name: Place default PHP info page
+      ansible.builtin.copy:
+        dest: /var/www/html/index.php
+        mode: "0644"
+        content: |
+          <?php
+          header('Content-Type: text/plain');
+          echo "Forge LAMP blueprint ready\n";
+          echo "PHP " . PHP_VERSION . "\n";
+      when: not ansible_check_mode
+
+    - name: Prefer index.php
+      ansible.builtin.copy:
+        dest: /etc/apache2/conf-available/forge-lamp.conf
+        mode: "0644"
+        content: |
+          <IfModule dir_module>
+            DirectoryIndex index.php index.html
+          </IfModule>
+      notify: Restart apache
+
+    - name: Enable forge-lamp conf
+      ansible.builtin.command: a2enconf forge-lamp
+      args:
+        creates: /etc/apache2/conf-enabled/forge-lamp.conf
+      notify: Restart apache
+
+    - name: Enable and start Apache
+      ansible.builtin.service:
+        name: apache2
+        state: started
+        enabled: true
+
+    - name: Enable and start MariaDB
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+        enabled: true
+
+- name: Install LAMP (RedHat)
+  when: ansible_os_family == "RedHat"
+  block:
+    - name: Install httpd, PHP, MariaDB
+      ansible.builtin.yum:
+        name: "{{ lamp_packages_redhat }}"
+        state: present
+
+    - name: Place default PHP info page
+      ansible.builtin.copy:
+        dest: /var/www/html/index.php
+        mode: "0644"
+        content: |
+          <?php
+          header('Content-Type: text/plain');
+          echo "Forge LAMP blueprint ready\n";
+          echo "PHP " . PHP_VERSION . "\n";
+
+    - name: Enable and start httpd
+      ansible.builtin.service:
+        name: httpd
+        state: started
+        enabled: true
+
+    - name: Enable and start MariaDB
+      ansible.builtin.service:
+        name: mariadb
+        state: started
+        enabled: true
+
+- name: Open HTTP in firewalld
+  when: lamp_enable_firewall | bool
+  ansible.posix.firewalld:
+    service: http
+    permanent: true
+    state: enabled
+    immediate: true
+  failed_when: false

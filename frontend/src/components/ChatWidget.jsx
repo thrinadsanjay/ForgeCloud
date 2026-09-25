@@ -19,11 +19,12 @@ import {
   provisionContainer,
   provisionStack,
   provisionInternal,
+  resourceAction,
 } from "../api/client.js";
 import TerminalModal from "./TerminalModal.jsx";
 import ChatMarkdown from "./ChatMarkdown.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useFloatingPanel } from "../hooks/useFloatingPanel.js";
 import ProvisionForm, {
   DEFAULT_COST_RATES,
@@ -31,6 +32,13 @@ import ProvisionForm, {
   buildPackageCategories,
   formatMoney,
 } from "./ProvisionForm.jsx";
+import {
+  QUICK_ACTIONS,
+  matchOfflineIntent,
+  runOfflineIntent,
+  renewExpiringItem,
+  retryFailedJob,
+} from "../lib/chatOffline.js";
 
 const OPEN_GREETING_TEXT = "How may I help you today?";
 
@@ -38,7 +46,7 @@ function personalizedGreeting(firstName) {
   const name = firstName ? ` ${firstName}` : "";
   return {
     role: "assistant",
-    text: `Hi${name} — ${OPEN_GREETING_TEXT.toLowerCase()} Describe what you want to run and I'll ask questions if needed, then recommend a plan to Approve or Modify.`,
+    text: `Hi${name} — ${OPEN_GREETING_TEXT.toLowerCase()} Use the shortcuts below for list / status / reboot / renew / failed jobs (works without AI), or describe a new workload for a plan to Approve or Modify.`,
   };
 }
 
@@ -494,6 +502,7 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
   const prevCountRef = useRef(1);
   const sessionIdRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
@@ -880,6 +889,16 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
             msg.resources = withIp.length ? withIp : (job.resources || []);
             msg.suggestedReplies = [...POST_BUILD_CHIPS];
           }
+          if (job.status === "failed") {
+            msg.jobList = [{
+              id: job.id,
+              name: job.payload?.hostname || job.payload?.name || job.id,
+              kind: job.kind || job.payload?.kind || "job",
+              status: job.status,
+              error: job.error || job.message || "",
+            }];
+            msg.suggestedReplies = ["Show failed deployments", "Show my resources"];
+          }
           setMessages((m) => [...m, msg]);
         }
 
@@ -922,6 +941,40 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
     setInput("");
     setSending(true);
 
+    // Offline intents first — no AI required (list / reboot / expiry / failed jobs).
+    const offlineIntent = matchOfflineIntent(text);
+    if (offlineIntent && offlineIntent.type !== "extend_ready") {
+      setMessages((m) => [...m, { role: "assistant", text: "Working…", streaming: true, statusOnly: true }]);
+      try {
+        const reply = await runOfflineIntent(offlineIntent);
+        setMessages((m) => {
+          const copy = [...m];
+          const last = copy[copy.length - 1];
+          if (last?.streaming) copy[copy.length - 1] = reply || { role: "assistant", text: "Done.", offline: true };
+          else copy.push(reply || { role: "assistant", text: "Done.", offline: true });
+          return copy;
+        });
+      } catch (err) {
+        const errText = err.response?.data?.error || err.message;
+        setMessages((m) => {
+          const copy = [...m];
+          const last = copy[copy.length - 1];
+          const errMsg = {
+            role: "assistant",
+            text: `Couldn't complete that: ${errText}`,
+            isError: true,
+            suggestedReplies: QUICK_ACTIONS.map((a) => a.text),
+          };
+          if (last?.streaming) copy[copy.length - 1] = errMsg;
+          else copy.push(errMsg);
+          return copy;
+        });
+      } finally {
+        setSending(false);
+      }
+      return;
+    }
+
     // Placeholder assistant bubble for status / progressive text.
     setMessages((m) => [...m, { role: "assistant", text: "", streaming: true }]);
 
@@ -934,10 +987,13 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
 
       // The most recent proposal, so a follow-up ("make it 16 GB") refines it.
       const lastProposal = [...base].reverse().find((m) => m.proposal)?.proposal || null;
+      // Only continue guided clarify when the latest assistant turn left an active draft.
+      const lastAssist = [...base].reverse().find((m) => m.role === "assistant" && !m.statusOnly);
+      const activeGuided = lastAssist?.guidedDraft?.active ? lastAssist.guidedDraft : null;
 
       let streamed = "";
       const res = await streamChatMessage(
-        { message: text, history, lastProposal },
+        { message: text, history, lastProposal, guidedDraft: activeGuided },
         {
           onStatus: (data) => {
             const statusText = data?.text || "Thinking…";
@@ -974,6 +1030,7 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
           proposal: res.proposal ? ensureProposalShape(res.proposal, catalogs) : null,
           resourceList: res.resourceList || null,
           suggestedReplies: Array.isArray(res.suggestedReplies) ? res.suggestedReplies : [],
+          guidedDraft: res.guidedDraft || null,
         };
         if (last?.streaming) copy[copy.length - 1] = finalMsg;
         else copy.push(finalMsg);
@@ -989,7 +1046,12 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
       setMessages((m) => {
         const copy = [...m];
         const last = copy[copy.length - 1];
-        const errMsg = { role: "assistant", text: `Error: ${errText}`, isError: true };
+        const errMsg = {
+          role: "assistant",
+          text: `Error: ${errText}\n\nYou can still use quick actions below — they work without AI.`,
+          isError: true,
+          suggestedReplies: QUICK_ACTIONS.map((a) => a.text),
+        };
         if (last?.streaming) copy[copy.length - 1] = errMsg;
         else copy.push(errMsg);
         return copy;
@@ -1136,12 +1198,118 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
     send(chip);
   };
 
+  const runQuickAction = (action) => {
+    if (!action || sending) return;
+    send(action.text);
+  };
+
+  const renewFromChat = async (item) => {
+    if (!item || sending) return;
+    setMessages((m) => [...m, { role: "user", text: `Renew ${item.name || item.vmid}` }]);
+    setSending(true);
+    try {
+      await renewExpiringItem(item, 7);
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: `Extended **${item.name || `VMID ${item.vmid}`}** by 7 days.`, offline: true },
+      ]);
+    } catch (err) {
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text: `Could not renew: ${err.response?.data?.error || err.message}`,
+          isError: true,
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const rebootFromChat = async (r) => {
+    if (!r || sending) return;
+    setMessages((m) => [...m, { role: "user", text: `Reboot ${r.name || r.vmid}` }]);
+    setSending(true);
+    try {
+      await resourceAction(r.type || "vm", r.vmid, "reboot");
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: `Reboot started for **${r.name || `VMID ${r.vmid}`}**.`, offline: true },
+      ]);
+    } catch (err) {
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text: `Reboot failed: ${err.response?.data?.error || err.message}`,
+          isError: true,
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const retryFromChat = async (job) => {
+    if (!job?.id || sending) return;
+    setMessages((m) => [...m, { role: "user", text: `Retry ${job.id}` }]);
+    setSending(true);
+    try {
+      const res = await retryFailedJob(job.id);
+      const newId = res?.job?.id || res?.id;
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text: newId
+            ? `Retry started — tracking job **${newId}**.`
+            : `Retry submitted for **${job.id}**.`,
+          offline: true,
+        },
+      ]);
+      if (newId) pollJobInChat(newId);
+    } catch (err) {
+      setMessages((m) => [
+        ...m,
+        {
+          role: "assistant",
+          text: `Retry failed: ${err.response?.data?.error || err.message}`,
+          isError: true,
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const openJobLog = (jobId) => {
+    if (!jobId) return;
+    closePanel();
+    navigate(`/deployments?tab=failed&job=${encodeURIComponent(jobId)}`);
+  };
+
   const handleKeyDown = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       send();
     }
   };
+
+  // Support page / dashboards can open Copilot with an optional prompt.
+  useEffect(() => {
+    const onOpen = (e) => {
+      dismissWelcome();
+      openPanel();
+      const prompt = e?.detail?.prompt;
+      if (prompt) {
+        setInput(String(prompt));
+        requestAnimationFrame(() => inputRef.current?.focus());
+      }
+    };
+    window.addEventListener("forge:open-chat", onOpen);
+    return () => window.removeEventListener("forge:open-chat", onOpen);
+  }, [openPanel]);
 
   // Ctrl/Cmd+N = new chat; Esc closes History panel.
   useEffect(() => {
@@ -1368,9 +1536,85 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
                           <span className={`chat-resource-type chat-resource-type-${r.type}`}>{r.type === "container" ? "CT" : "VM"}</span>
                           <span className="chat-resource-id">#{r.vmid}</span>
                           <span className={`chat-resource-status${running ? " is-running" : ""}`}>{r.status || "unknown"}</span>
+                          {m.listActions && running && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm chat-resource-act"
+                              disabled={sending}
+                              onClick={() => rebootFromChat(r)}
+                            >
+                              Reboot
+                            </button>
+                          )}
+                          {m.listActions && (r.expiresAt || r.expired) && (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm chat-resource-act"
+                              disabled={sending}
+                              onClick={() => renewFromChat(r)}
+                            >
+                              Renew
+                            </button>
+                          )}
                         </div>
                       );
                     })}
+                  </div>
+                )}
+                {m.expiringList?.length > 0 && (
+                  <div className="chat-assist-list" role="list">
+                    {m.expiringList.map((r) => (
+                      <div key={`${r.type}-${r.vmid}`} className="chat-assist-row" role="listitem">
+                        <div className="chat-assist-main">
+                          <strong className="mono">{r.name || `VMID ${r.vmid}`}</strong>
+                          <span className="muted">
+                            {r.expired ? "Expired" : `${r.daysLeft}d left`}
+                            {r.expiresAt ? ` · ${new Date(r.expiresAt).toLocaleDateString()}` : ""}
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          className="btn btn-primary btn-sm"
+                          disabled={sending}
+                          onClick={() => renewFromChat(r)}
+                        >
+                          Renew +7d
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {m.jobList?.length > 0 && (
+                  <div className="chat-assist-list" role="list">
+                    {m.jobList.map((j) => (
+                      <div key={j.id} className="chat-assist-row" role="listitem">
+                        <div className="chat-assist-main">
+                          <strong className="mono">{j.name || j.id}</strong>
+                          <span className="muted">
+                            {j.kind} · {j.id}
+                            {j.error ? ` — ${String(j.error).slice(0, 80)}` : ""}
+                          </span>
+                        </div>
+                        <div className="chat-assist-acts">
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            disabled={sending}
+                            onClick={() => openJobLog(j.id)}
+                          >
+                            Open log
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            disabled={sending}
+                            onClick={() => retryFromChat(j)}
+                          >
+                            Retry
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
                 {m.resources?.length > 0 && (
@@ -1400,7 +1644,7 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
                     ))}
                   </div>
                 )}
-                {i === lastAssistantIdx && canRegenerate && (
+                {i === lastAssistantIdx && canRegenerate && !m.offline && (
                   <div className="chat-msg-actions">
                     <button
                       type="button"
@@ -1436,11 +1680,26 @@ export default function ChatWidget({ onJobCreated = () => {} }) {
             )}
           </div>
 
+          <div className="chat-quick-actions" role="toolbar" aria-label="Quick actions">
+            {QUICK_ACTIONS.map((action) => (
+              <button
+                key={action.id}
+                type="button"
+                className="chat-quick-action"
+                disabled={sending}
+                title={action.text}
+                onClick={() => runQuickAction(action)}
+              >
+                {action.label}
+              </button>
+            ))}
+          </div>
+
           <div className="chat-panel-input">
             <textarea
               ref={inputRef}
               rows={2}
-              placeholder="e.g. create a redhat vm with 1 cpu 1gb ram 50gb disk"
+              placeholder="Try: show my resources · what's expiring · reboot lab05"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}

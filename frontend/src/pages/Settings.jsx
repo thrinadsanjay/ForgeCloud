@@ -4,8 +4,14 @@ import {
   getSettings, updateSettings,
   testProxmoxConnection, testK3sConnection,
   testServiceNowConnection, testIpamConnection, testN8nWebhook, testAiConnection,
+  syncAnsibleContent,
+  getAnsibleContentStatus,
+  downloadAnsibleContentTemplate,
 } from "../api/client.js";
 import AdminPageHeader from "../components/AdminPageHeader.jsx";
+import Toggle from "../components/Toggle.jsx";
+import TextFileInput from "../components/TextFileInput.jsx";
+import { useToast } from "../components/ToastProvider.jsx";
 
 const TESTERS = {
   proxmox: { label: "Test connection", run: testProxmoxConnection },
@@ -14,6 +20,7 @@ const TESTERS = {
   ipam: { label: "Test connection", run: testIpamConnection },
   n8n: { label: "Send test event", run: testN8nWebhook },
   ai: { label: "Test AI", run: testAiConnection },
+  ansible: { label: "Sync / onboard content", run: syncAnsibleContent },
 };
 
 const NAV_CATEGORIES = [
@@ -63,7 +70,7 @@ const SECTION_META = {
   },
   k3s: {
     title: "Kubernetes",
-    summary: "Used by Container hosting for namespaces and workloads.",
+    summary: "Used by Provisioning → Kubernetes for namespaces and workloads.",
     docs: "Cluster API URL and service-account token.",
   },
   vm: {
@@ -74,7 +81,7 @@ const SECTION_META = {
   ansible: {
     title: "Ansible",
     summary: "Forge runs initial_setup on Linux guests over SSH after boot.",
-    docs: "Enable Ansible, set the service account, and paste Forge deploy keys. Windows guests are not supported yet.",
+    docs: "Enable Ansible, set the service account, and upload or paste Forge deploy keys. Windows guests are not supported yet.",
   },
   internal: {
     title: "Internal Provisioning",
@@ -187,6 +194,25 @@ function formFromGroups(groups) {
     }
   }
   return state;
+}
+
+/** Only send keys the admin actually changed (secrets only if newly typed). */
+function buildSettingsPatch(form, baseline, groups) {
+  const secretKeys = new Set();
+  for (const group of groups || []) {
+    for (const field of group.fields || []) {
+      if (field.secret && field.key) secretKeys.add(field.key);
+    }
+  }
+  const patch = {};
+  for (const [key, value] of Object.entries(form || {})) {
+    if (secretKeys.has(key)) {
+      if (String(value || "").trim() !== "") patch[key] = value;
+      continue;
+    }
+    if (String(value ?? "") !== String(baseline?.[key] ?? "")) patch[key] = value;
+  }
+  return patch;
 }
 
 function isTruthy(v) {
@@ -318,20 +344,6 @@ function NavIcon({ name }) {
   );
 }
 
-function Toggle({ checked, onChange }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      className={`switch ${checked ? "on" : ""}`}
-      onClick={() => onChange(!checked)}
-    >
-      <span className="switch-knob" />
-    </button>
-  );
-}
-
 function Field({ field, value, onChange, layout = "row" }) {
   if (field.type === "bool" || field.type === "boolNegated") {
     return (
@@ -340,7 +352,7 @@ function Field({ field, value, onChange, layout = "row" }) {
           <label>{field.label}</label>
           {field.hint && <p className="pc-help">{field.hint}</p>}
         </div>
-        <Toggle checked={!!value} onChange={(v) => onChange(field.key, v)} />
+        <Toggle variant="rail" checked={!!value} onChange={(v) => onChange(field.key, v)} />
       </div>
     );
   }
@@ -366,6 +378,37 @@ function Field({ field, value, onChange, layout = "row" }) {
     );
   }
 
+  if (field.type === "textarea") {
+    return (
+      <div className={`pc-field pc-field-stack`}>
+        <div className="pc-field-label">
+          <label htmlFor={`set-${field.key}`}>{field.label}</label>
+          {field.secret && (
+            <span className={`set-tag ${field.isSet ? "on" : ""}`}>{field.isSet ? "configured" : "not set"}</span>
+          )}
+          {field.hint && <p className="pc-help">{field.hint}</p>}
+        </div>
+        <textarea
+          id={`set-${field.key}`}
+          className="control-input control-textarea"
+          rows={8}
+          value={value ?? ""}
+          placeholder={field.secret && field.isSet ? "•••••••• (leave blank to keep)" : field.placeholder}
+          autoComplete={field.secret ? "new-password" : "off"}
+          spellCheck={false}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        />
+        {field.fileAccept && (
+          <TextFileInput
+            accept={field.fileAccept}
+            label={field.fileLabel || "Upload file"}
+            onLoad={(text) => onChange(field.key, text)}
+          />
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className={`pc-field ${layout === "stack" ? "pc-field-stack" : ""}`}>
       <div className="pc-field-label">
@@ -384,6 +427,13 @@ function Field({ field, value, onChange, layout = "row" }) {
         autoComplete={field.secret ? "new-password" : "off"}
         onChange={(e) => onChange(field.key, e.target.value)}
       />
+      {field.fileAccept && (
+        <TextFileInput
+          accept={field.fileAccept}
+          label={field.fileLabel || "Upload file"}
+          onLoad={(text) => onChange(field.key, text)}
+        />
+      )}
     </div>
   );
 }
@@ -512,6 +562,393 @@ function Overview({ groups, onOpen }) {
           <p>Pick a category on the left, or open a card to configure an integration.</p>
         </div>
       </aside>
+    </div>
+  );
+}
+
+function AnsibleContentPanel() {
+  const [status, setStatus] = useState(null);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [dlBusy, setDlBusy] = useState(false);
+
+  const load = () => {
+    getAnsibleContentStatus()
+      .then(setStatus)
+      .catch((e) => setError(e.response?.data?.error || e.message));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const sync = async () => {
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const next = await syncAnsibleContent();
+      setStatus(next);
+      const ob = next.onboard || {};
+      const parts = [];
+      if (ob.onboarded?.length) parts.push(`onboarded ${ob.onboarded.length}`);
+      if (ob.updated?.length) parts.push(`updated ${ob.updated.length}`);
+      if (ob.removed?.length) parts.push(`removed ${ob.removed.length}`);
+      if (ob.warnings?.length) parts.push(`${ob.warnings.length} warning(s)`);
+      setNotice(next.message || (parts.length ? parts.join(" · ") : "Synced"));
+    } catch (e) {
+      setError(e.response?.data?.error || e.message);
+      load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const downloadTemplate = async () => {
+    setDlBusy(true);
+    setError("");
+    try {
+      await downloadAnsibleContentTemplate();
+      setNotice("Downloaded forge-ansible-content-template.tar.gz");
+    } catch (e) {
+      setError(e.response?.data?.error || e.message);
+    } finally {
+      setDlBusy(false);
+    }
+  };
+
+  if (!status && !error) return <p className="muted">Loading content status…</p>;
+
+  const onboard = status?.lastOnboard;
+
+  return (
+    <SectionCard
+      title="Bundled + custom content"
+      description="Bundled stacks always stay available. Git URL or mount path adds a Custom overlay and auto-onboards catalog.yaml. Clearing both offboards Custom blueprints only."
+      footer={(
+        <div className="ans-actions-row">
+          <button type="button" className="btn btn-ghost btn-sm" onClick={downloadTemplate} disabled={dlBusy}>
+            {dlBusy ? "Preparing…" : "Download content template"}
+          </button>
+          <button type="button" className="btn btn-primary btn-sm" onClick={sync} disabled={busy}>
+            {busy ? "Syncing…" : "Sync / onboard now"}
+          </button>
+        </div>
+      )}
+    >
+      {error && <div className="login-error">{error}</div>}
+      {notice && <p className="pc-help" style={{ marginBottom: 12 }}>{notice}</p>}
+      {status && (
+        <dl className="pc-kv">
+          <div>
+            <dt>Ready for apps</dt>
+            <dd>
+              <span className={`pc-badge ${status.readyForApps ? "pc-badge-ok" : "pc-badge-err"}`}>
+                {status.readyForApps ? "Yes" : "No"}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt>Layers</dt>
+            <dd>
+              Bundled
+              {status.hasCustom ? " + Custom overlay" : " only"}
+            </dd>
+          </div>
+          <div><dt>Custom root</dt><dd className="mono">{status.customRoot || "—"}</dd></div>
+          <div><dt>Mount path</dt><dd className="mono">{status.mountPath || "—"}{status.mountOk === false ? " (missing)" : ""}</dd></div>
+          <div><dt>Git pin</dt><dd className="mono">{status.pin || "—"}</dd></div>
+          <div><dt>Branch</dt><dd>{status.branch || "—"}</dd></div>
+          <div><dt>Last sync</dt><dd>{status.lastSyncAt ? new Date(status.lastSyncAt).toLocaleString() : "—"}</dd></div>
+          {status.lastSyncError && (
+            <div><dt>Last error</dt><dd className="pc-badge pc-badge-err">{status.lastSyncError}</dd></div>
+          )}
+          {onboard && (
+            <div>
+              <dt>Last onboard</dt>
+              <dd className="mono" style={{ whiteSpace: "pre-wrap" }}>
+                {[
+                  onboard.onboarded?.length ? `+${onboard.onboarded.join(", ")}` : null,
+                  onboard.updated?.length ? `~${onboard.updated.join(", ")}` : null,
+                  onboard.removed?.length ? `-${Array.isArray(onboard.removed[0]) ? onboard.removed.map((r) => r.id || r).join(", ") : onboard.removed.join(", ")}` : null,
+                  onboard.warnings?.length ? `! ${onboard.warnings.slice(0, 3).join("; ")}` : null,
+                ].filter(Boolean).join("\n") || "—"}
+              </dd>
+            </div>
+          )}
+        </dl>
+      )}
+    </SectionCard>
+  );
+}
+
+function AnsibleToggle({ field, form, onChange }) {
+  if (!field) return null;
+  return (
+    <div className="ans-toggle-item">
+      <div className="ans-toggle-copy">
+        <label htmlFor={`ans-${field.key}`}>{field.label}</label>
+        {field.hint && <p className="pc-help">{field.hint}</p>}
+      </div>
+      <Toggle
+        id={`ans-${field.key}`}
+        variant="rail"
+        checked={!!form[field.key]}
+        onChange={(v) => onChange(field.key, v)}
+      />
+    </div>
+  );
+}
+
+function AnsiblePubkeyField({ field, value, onChange }) {
+  if (!field) return null;
+  return (
+    <div className="ans-key-block">
+      <div className="ans-key-head">
+        <label htmlFor={`set-${field.key}`}>{field.label}</label>
+        {field.hint && <p className="pc-help">{field.hint}</p>}
+      </div>
+      <div className="ans-key-row">
+        <input
+          id={`set-${field.key}`}
+          className="control-input mono"
+          type="text"
+          value={value ?? ""}
+          placeholder={field.placeholder}
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(e) => onChange(field.key, e.target.value)}
+        />
+        <span className="ans-or" aria-hidden="true">OR</span>
+        <TextFileInput
+          variant="inline"
+          accept={field.fileAccept || ".pub,.txt,text/plain"}
+          label={field.fileLabel || "Upload public key"}
+          maxBytes={10 * 1024}
+          onLoad={(text) => onChange(field.key, String(text || "").trim())}
+        />
+      </div>
+      <p className="ans-key-meta">Supports: .pub, .txt · Max size: 10 KB</p>
+    </div>
+  );
+}
+
+function AnsibleView({ group, form, onChange, actions }) {
+  const fmap = fieldMap(group);
+  const enabled = !!form.ANSIBLE_ENABLED;
+  const [showPass, setShowPass] = useState(false);
+  const [showPriv, setShowPriv] = useState(false);
+
+  const f = (key) => fmap[key];
+  const user = f("ANSIBLE_SERVICE_USER");
+  const pass = f("ANSIBLE_SERVICE_PASSWORD");
+  const priv = f("ANSIBLE_FORGE_PRIVATE_KEY");
+
+  const resetDefaults = () => {
+    for (const field of group.fields || []) {
+      if (!field?.key || field.type === "section") continue;
+      if (field.type === "bool" || field.type === "boolNegated") {
+        onChange(field.key, String(field.default ?? "false") === "true");
+      } else if (field.secret) {
+        onChange(field.key, "");
+      } else {
+        onChange(field.key, field.default ?? "");
+      }
+    }
+  };
+
+  return (
+    <div className="pc-stack ans-stack">
+      <AnsibleContentPanel />
+
+      <SectionCard
+        title="Configuration"
+        description="SSH service account and deploy keys used for guest initial_setup."
+        footer={(
+          <div className="ans-foot">
+            <button type="button" className="btn btn-ghost" onClick={resetDefaults}>
+              Reset to defaults
+            </button>
+            <div className="ans-foot-right">{actions}</div>
+          </div>
+        )}
+      >
+        <div className="ans-toggles">
+          <AnsibleToggle field={f("ANSIBLE_ENABLED")} form={form} onChange={onChange} />
+          {enabled && (
+            <AnsibleToggle field={f("ANSIBLE_BOOTSTRAP_CLOUDINIT")} form={form} onChange={onChange} />
+          )}
+        </div>
+
+        {enabled && (
+          <>
+            <div className="ans-creds">
+              {user && (
+                <div className="ans-field ans-field-user">
+                  <label htmlFor={`set-${user.key}`}>
+                    {user.label}<span className="req" aria-hidden="true"> *</span>
+                  </label>
+                  <input
+                    id={`set-${user.key}`}
+                    className="control-input"
+                    value={form[user.key] ?? ""}
+                    placeholder={user.placeholder || "forge"}
+                    autoComplete="off"
+                    onChange={(e) => onChange(user.key, e.target.value)}
+                  />
+                </div>
+              )}
+              {pass && (
+                <div className="ans-field ans-field-pass">
+                  <div className="ans-label-row">
+                    <label htmlFor={`set-${pass.key}`}>{pass.label}</label>
+                    <span className={`set-tag ${pass.isSet ? "on" : ""}`}>
+                      {pass.isSet ? "configured" : "not set"}
+                    </span>
+                  </div>
+                  <div className="ans-secret-input">
+                    <input
+                      id={`set-${pass.key}`}
+                      className="control-input"
+                      type={showPass ? "text" : "password"}
+                      value={form[pass.key] ?? ""}
+                      placeholder={pass.isSet ? "•••••••• (leave blank to keep)" : "Enter password"}
+                      autoComplete="new-password"
+                      onChange={(e) => onChange(pass.key, e.target.value)}
+                    />
+                    <button
+                      type="button"
+                      className="ans-eye"
+                      onClick={() => setShowPass((v) => !v)}
+                      aria-label={showPass ? "Hide password" : "Show password"}
+                    >
+                      {showPass ? "Hide" : "Show"}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <AnsiblePubkeyField
+              field={f("ANSIBLE_ADMIN_PUBKEY")}
+              value={form.ANSIBLE_ADMIN_PUBKEY}
+              onChange={onChange}
+            />
+            <AnsiblePubkeyField
+              field={f("ANSIBLE_FORGE_PUBLIC_KEY")}
+              value={form.ANSIBLE_FORGE_PUBLIC_KEY}
+              onChange={onChange}
+            />
+
+            {priv && (
+              <div className="ans-key-block">
+                <div className="ans-key-head">
+                  <div className="ans-label-row">
+                    <label htmlFor={`set-${priv.key}`}>{priv.label}</label>
+                    <span className={`set-tag ${priv.isSet ? "on" : ""}`}>
+                      {priv.isSet ? "configured" : "not set"}
+                    </span>
+                  </div>
+                  {priv.hint && <p className="pc-help">{priv.hint}</p>}
+                </div>
+                <div className="ans-priv-split">
+                  <TextFileInput
+                    variant="dropzone"
+                    accept={priv.fileAccept || ".pem,.key,text/plain"}
+                    label={priv.fileLabel || "Upload private key"}
+                    maxBytes={50 * 1024}
+                    formatsHint="Supports: .pem, .key · Max size: 50 KB"
+                    onLoad={(text) => onChange(priv.key, String(text || "").trim())}
+                  />
+                  <div className="ans-or-vert" aria-hidden="true"><span>OR</span></div>
+                  <div className="ans-priv-paste">
+                    <div className="ans-priv-paste-head">
+                      <span>Paste private key</span>
+                      <button
+                        type="button"
+                        className="ans-eye"
+                        onClick={() => setShowPriv((v) => !v)}
+                        aria-label={showPriv ? "Hide private key" : "Show private key"}
+                      >
+                        {showPriv ? "Hide" : "Show"}
+                      </button>
+                    </div>
+                    <textarea
+                      id={`set-${priv.key}`}
+                      className={`control-input control-textarea mono ${showPriv ? "" : "ans-priv-masked"}`}
+                      rows={8}
+                      value={form[priv.key] ?? ""}
+                      placeholder={priv.isSet ? "•••••••• (leave blank to keep)" : priv.placeholder}
+                      autoComplete="new-password"
+                      spellCheck={false}
+                      onChange={(e) => onChange(priv.key, e.target.value)}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <AnsibleToggle field={f("ANSIBLE_REMOVE_FORGE_KEY")} form={form} onChange={onChange} />
+          </>
+        )}
+      </SectionCard>
+
+      {enabled && (
+        <SectionCard
+          title="Custom content overlay"
+          description="Git and/or mount path add Custom blueprints on top of bundled stacks. Leave both empty and Sync to offboard Custom only."
+        >
+          <div className="ans-grid-2">
+            {["ANSIBLE_CONTENT_GIT_URL", "ANSIBLE_CONTENT_GIT_BRANCH", "ANSIBLE_CONTENT_MOUNT_PATH"].map((key) => {
+              const field = f(key);
+              if (!field) return null;
+              return (
+                <div key={key} className={`ans-field ${key === "ANSIBLE_CONTENT_GIT_URL" || key === "ANSIBLE_CONTENT_MOUNT_PATH" ? "ans-span-2" : ""}`}>
+                  <label htmlFor={`set-${field.key}`}>{field.label}</label>
+                  {field.hint && <p className="pc-help">{field.hint}</p>}
+                  <input
+                    id={`set-${field.key}`}
+                    className="control-input"
+                    value={form[field.key] ?? ""}
+                    placeholder={field.placeholder}
+                    onChange={(e) => onChange(field.key, e.target.value)}
+                  />
+                </div>
+              );
+            })}
+            {f("ANSIBLE_CONTENT_GIT_TOKEN") && (
+              <div className="ans-field">
+                <div className="ans-label-row">
+                  <label htmlFor="set-ANSIBLE_CONTENT_GIT_TOKEN">{f("ANSIBLE_CONTENT_GIT_TOKEN").label}</label>
+                  <span className={`set-tag ${f("ANSIBLE_CONTENT_GIT_TOKEN").isSet ? "on" : ""}`}>
+                    {f("ANSIBLE_CONTENT_GIT_TOKEN").isSet ? "configured" : "not set"}
+                  </span>
+                </div>
+                <input
+                  id="set-ANSIBLE_CONTENT_GIT_TOKEN"
+                  className="control-input"
+                  type="password"
+                  value={form.ANSIBLE_CONTENT_GIT_TOKEN ?? ""}
+                  placeholder={f("ANSIBLE_CONTENT_GIT_TOKEN").isSet ? "•••••••• (leave blank to keep)" : ""}
+                  autoComplete="new-password"
+                  onChange={(e) => onChange("ANSIBLE_CONTENT_GIT_TOKEN", e.target.value)}
+                />
+              </div>
+            )}
+            {f("ANSIBLE_CONTENT_PIN") && (
+              <div className="ans-field">
+                <label htmlFor="set-ANSIBLE_CONTENT_PIN">{f("ANSIBLE_CONTENT_PIN").label}</label>
+                {f("ANSIBLE_CONTENT_PIN").hint && <p className="pc-help">{f("ANSIBLE_CONTENT_PIN").hint}</p>}
+                <input
+                  id="set-ANSIBLE_CONTENT_PIN"
+                  className="control-input mono"
+                  value={form.ANSIBLE_CONTENT_PIN ?? ""}
+                  onChange={(e) => onChange("ANSIBLE_CONTENT_PIN", e.target.value)}
+                />
+              </div>
+            )}
+          </div>
+        </SectionCard>
+      )}
     </div>
   );
 }
@@ -982,9 +1419,11 @@ function ProxmoxView({ group, form, onChange, actions }) {
 }
 
 export default function Settings({ sectionId = null, embedded = false } = {}) {
+  const { success, error: toastError } = useToast();
   const [params] = useSearchParams();
   const [groups, setGroups] = useState([]);
   const [form, setForm] = useState({});
+  const [baseline, setBaseline] = useState({});
   const resolvedId = sectionId || params.get("section") || "proxmox";
   const [activeId, setActiveId] = useState(resolvedId);
   const [loading, setLoading] = useState(true);
@@ -1001,7 +1440,9 @@ export default function Settings({ sectionId = null, embedded = false } = {}) {
       .then((d) => {
         const gs = d.groups || [];
         setGroups(gs);
-        setForm(formFromGroups(gs));
+        const next = formFromGroups(gs);
+        setForm(next);
+        setBaseline(next);
         setError("");
       })
       .catch((e) => setError(e.response?.data?.error || e.message))
@@ -1026,14 +1467,25 @@ export default function Settings({ sectionId = null, embedded = false } = {}) {
     setSaving(true);
     setError("");
     try {
-      const d = await updateSettings(form);
+      const patch = buildSettingsPatch(form, baseline, groups);
+      if (!Object.keys(patch).length) {
+        flash("No changes to save.");
+        success("No changes", "Nothing new to apply.");
+        return true;
+      }
+      const d = await updateSettings(patch);
       const gs = d.groups || [];
       setGroups(gs);
-      setForm(formFromGroups(gs));
+      const next = formFromGroups(gs);
+      setForm(next);
+      setBaseline(next);
       flash("Settings saved.");
+      success("Settings saved", "Your configuration changes were applied.");
       return true;
     } catch (e) {
-      setError(e.response?.data?.error || e.message);
+      const msg = e.response?.data?.error || e.message;
+      setError(msg);
+      toastError("Couldn't save settings", msg);
       return false;
     } finally {
       setSaving(false);
@@ -1055,6 +1507,7 @@ export default function Settings({ sectionId = null, embedded = false } = {}) {
         detail,
       };
       setTestResults((prev) => ({ ...prev, [activeId]: result }));
+      success("Connection OK", result.text);
     } catch (e) {
       const result = {
         ok: false,
@@ -1062,6 +1515,7 @@ export default function Settings({ sectionId = null, embedded = false } = {}) {
         at: new Date().toISOString(),
       };
       setTestResults((prev) => ({ ...prev, [activeId]: result }));
+      toastError("Connection failed", result.text);
     } finally {
       setTesting(false);
     }
@@ -1129,6 +1583,9 @@ export default function Settings({ sectionId = null, embedded = false } = {}) {
     }
     if (active.id === "oidc") {
       return <OidcView group={active} form={form} onChange={onChange} actions={actions} />;
+    }
+    if (active.id === "ansible") {
+      return <AnsibleView group={active} form={form} onChange={onChange} actions={actions} />;
     }
     return <GenericCards group={active} form={form} onChange={onChange} actions={actions} />;
   };

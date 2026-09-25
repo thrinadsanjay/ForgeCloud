@@ -73,7 +73,7 @@ function requestBucket(r) {
   if (r.archivedAt) return "archived";
   const status = normalizeStatus(r.status);
   if (status === "pending_approval") return "hold";
-  if (status === "rejected" || status === "failed" || status === "cancelled" || status === "canceled") {
+  if (status === "rejected" || status === "failed" || status === "cancelled" || status === "canceled" || status === "rolled_back") {
     return "failed";
   }
   if (status === "completed") return "completed";
@@ -109,6 +109,7 @@ function statusBadge(row) {
     }
     if (s === "rejected") return { label: "Rejected", cls: "badge-failed" };
     if (s === "failed") return { label: "Failed", cls: "badge-failed" };
+    if (s === "rolled_back") return { label: "Rolled back", cls: "badge-failed" };
     if (s === "cancelled" || s === "canceled") return { label: "Cancelled", cls: "badge-failed" };
     return { label: s.replace(/_/g, " ") || "Request", cls: "badge-stopped" };
   }

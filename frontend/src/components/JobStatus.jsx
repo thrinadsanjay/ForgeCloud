@@ -105,9 +105,10 @@ export default function JobStatus({ jobId, onClose }) {
                       const state = job.status === "failed" && s.state === "active" ? "failed" : s.state;
                       return (
                         <li key={s.key} className={`wf-track-step wf-track-${state}`}>
-                          <span className="wf-track-dot">
+                          <span className="wf-track-dot" aria-hidden="true">
                             {state === "done" ? "✓"
                               : state === "failed" || state === "error" ? "✕"
+                              : state === "active" ? <span className="wf-track-spinner" />
                               : s.n}
                           </span>
                           <span className="wf-track-body">
@@ -152,30 +153,41 @@ export default function JobStatus({ jobId, onClose }) {
           <table className="table">
             <thead>
               <tr>
-                <th>Hostname</th><th>VMID</th><th>Type</th><th>IP Address</th>
+                <th>Hostname</th><th>VMID</th><th>Type</th>
+                <th>{job.type === "k8s" ? "Ingress / URL" : "IP Address"}</th>
                 {job.resources[0].role && <th>Role</th>}
                 {job.status === "ready" && <th></th>}
               </tr>
             </thead>
             <tbody>
-              {job.resources.map((r) => (
-                <tr key={r.vmid || r.hostname}>
-                  <td>{r.hostname}</td>
-                  <td className="mono">{r.vmid || "—"}</td>
-                  <td>{r.type}</td>
-                  <td className="mono">{r.ip || "—"}</td>
-                  {r.role && <td>{r.role}</td>}
-                  {job.status === "ready" && (
-                    <td>
-                      {r.ip && job.type !== "internal" ? (
-                        <button className="btn btn-primary btn-sm" onClick={() => setConnectTarget({ vmid: r.vmid, ip: r.ip, hostname: r.hostname })}>
-                          Connect
-                        </button>
-                      ) : "—"}
+              {job.resources.map((r) => {
+                const url = (Array.isArray(r.urls) && r.urls[0]) || null;
+                const ipOrUrl = url || r.ip || "—";
+                return (
+                  <tr key={r.vmid || r.hostname}>
+                    <td>{r.hostname}</td>
+                    <td className="mono">{r.vmid || "—"}</td>
+                    <td>{r.type}</td>
+                    <td className="mono">
+                      {url ? (
+                        <a href={url} target="_blank" rel="noreferrer">{url}</a>
+                      ) : ipOrUrl}
                     </td>
-                  )}
-                </tr>
-              ))}
+                    {r.role && <td>{r.role}</td>}
+                    {job.status === "ready" && (
+                      <td>
+                        {url ? (
+                          <a className="btn btn-primary btn-sm" href={url} target="_blank" rel="noreferrer">Open</a>
+                        ) : r.ip && job.type !== "internal" ? (
+                          <button className="btn btn-primary btn-sm" onClick={() => setConnectTarget({ vmid: r.vmid, ip: r.ip, hostname: r.hostname })}>
+                            Connect
+                          </button>
+                        ) : "—"}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         )}
@@ -190,7 +202,16 @@ export default function JobStatus({ jobId, onClose }) {
         />
       )}
 
-      {showSummary && <DeploymentSummary job={job} onClose={() => setShowSummary(false)} />}
+      {showSummary && (
+        <DeploymentSummary
+          job={job}
+          onClose={() => setShowSummary(false)}
+          onJobUpdated={() => {
+            // Parent poll / refresh will pick up status; close so user reopens when ready.
+            setShowSummary(false);
+          }}
+        />
+      )}
     </>
   );
 }

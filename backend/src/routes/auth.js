@@ -4,6 +4,7 @@ import {
   isOidcConfigured,
   getOidcAuthUrl,
   exchangeOidcCode,
+  getOidcPublicStatus,
 } from "../services/authService.js";
 import {
   findByUsername,
@@ -77,14 +78,14 @@ async function oidcCallbackHandler(req, res) {
 
 // --- OIDC SSO (generic OpenID Connect) ---
 router.get("/auth/oidc/status", (req, res) => {
-  res.json({ enabled: isOidcConfigured() });
+  res.json(getOidcPublicStatus());
 });
 router.get("/auth/oidc/login-url", oidcLoginUrlHandler);
 router.post("/auth/oidc/callback", oidcCallbackHandler);
 
 // Legacy Entra path aliases (same handlers)
 router.get("/auth/entra/status", (req, res) => {
-  res.json({ enabled: isOidcConfigured() });
+  res.json(getOidcPublicStatus());
 });
 router.get("/auth/entra/login-url", oidcLoginUrlHandler);
 router.post("/auth/entra/callback", oidcCallbackHandler);

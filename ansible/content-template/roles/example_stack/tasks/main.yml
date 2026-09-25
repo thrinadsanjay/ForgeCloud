@@ -1,0 +1,8 @@
+---
+- name: Show example message
+  ansible.builtin.debug:
+    msg: "{{ example_message }} (port {{ example_listen_port }}) · service user {{ forge_service_user | default('forge') }}"
+
+- name: Placeholder — replace with real install steps
+  ansible.builtin.command: "true"
+  changed_when: false

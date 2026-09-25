@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconCamera, IconRestore, IconArchive, IconChevronDown } from "./icons.jsx";
+import { positionNearAnchor } from "./AnchoredPopover.jsx";
 
 // A single dropdown button per resource row for snapshot / restore / backup.
 // Positioned via a portal (like PowerMenu) so the table card's overflow and
@@ -26,8 +27,12 @@ export default function SnapshotMenu({ onTake, onRestore, onBackup }) {
 
   const toggle = () => {
     if (open) { setOpen(false); return; }
-    const rect = btnRef.current.getBoundingClientRect();
-    setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    const next = positionNearAnchor(btnRef.current, {
+      estimatedHeight: 140,
+      estimatedWidth: 200,
+      align: "end",
+    });
+    setPos({ top: next.top, right: next.right });
     setOpen(true);
   };
 

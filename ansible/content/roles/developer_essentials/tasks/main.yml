@@ -1,0 +1,27 @@
+---
+- name: Install developer essentials (Debian)
+  when: ansible_os_family == "Debian"
+  ansible.builtin.apt:
+    name: "{{ developer_packages_debian }}"
+    state: present
+    update_cache: true
+
+- name: Install developer essentials (RedHat)
+  when: ansible_os_family == "RedHat"
+  ansible.builtin.yum:
+    name: "{{ developer_packages_redhat }}"
+    state: present
+
+- name: Verify key tools
+  ansible.builtin.command: "{{ item }} --version"
+  loop:
+    - git
+    - curl
+    - jq
+  register: tool_check
+  changed_when: false
+  failed_when: false
+
+- name: Tool status
+  ansible.builtin.debug:
+    msg: "Developer essentials installed on {{ ansible_distribution }} {{ ansible_distribution_version }}"

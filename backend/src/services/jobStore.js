@@ -14,17 +14,39 @@ function rowToJob(row) {
     id: row.id,
     type: row.type,
     status: row.status,
-    createdAt: data.createdAt || row.createdAt.toISOString(),
-    updatedAt: data.updatedAt || row.updatedAt.toISOString(),
+    // Stash JSON status so hydrate can recover rolled_back if the column was overwritten.
+    dataStatus: data.status || null,
+    createdAt: data.createdAt || row.createdAt?.toISOString?.() || row.createdAt,
+    updatedAt: data.updatedAt || row.updatedAt?.toISOString?.() || row.updatedAt,
   };
 }
+
+/** Statuses that must survive process restart (not rewritten as Interrupted). */
+const TERMINAL_ON_HYDRATE = new Set(["ready", "failed", "cancelled", "rolled_back"]);
 
 export async function hydrateJobs() {
   const rows = await prisma.deploymentJob.findMany();
   let changed = false;
   for (const row of rows) {
     const j = rowToJob(row);
-    if (j.status !== "ready" && j.status !== "failed" && j.status !== "cancelled") {
+    // Prefer status embedded in JSON if the column was out of sync (legacy rows).
+    if (j.dataStatus && TERMINAL_ON_HYDRATE.has(j.dataStatus) && j.status !== j.dataStatus) {
+      j.status = j.dataStatus;
+      changed = true;
+    }
+    delete j.dataStatus;
+    // Heal jobs previously corrupted by hydrate rewriting rolled_back → failed.
+    if (j.status === "failed" && j.rolledBackAt) {
+      j.status = "rolled_back";
+      if (j.error && /Interrupted by a server restart/i.test(j.error)) {
+        j.error = null;
+        j.message = j.message && !/Interrupted/i.test(j.message)
+          ? j.message
+          : `Rolled back${j.rolledBackBy ? ` by ${j.rolledBackBy}` : ""}`;
+      }
+      changed = true;
+    }
+    if (!TERMINAL_ON_HYDRATE.has(j.status)) {
       const ts = new Date().toISOString();
       j.status = "failed";
       j.message = "Interrupted";

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getBackupConfig, saveBackupConfig, deleteBackupConfig, runBackupNow } from "../api/client.js";
 import { useDialog } from "./DialogProvider.jsx";
+import Toggle from "./Toggle.jsx";
 
 const DAYS = [
   { id: "mon", label: "Monday" }, { id: "tue", label: "Tuesday" }, { id: "wed", label: "Wednesday" },
@@ -136,11 +137,11 @@ export default function BackupModal({ resource, onClose }) {
                 <div className="set-row-label">
                   <label>Scheduled backups enabled</label>
                 </div>
-                <button type="button" role="switch" aria-checked={form.enabled}
-                  className={`switch ${form.enabled ? "on" : ""}`}
-                  onClick={() => setForm((f) => ({ ...f, enabled: !f.enabled }))}>
-                  <span className="switch-knob" />
-                </button>
+                <Toggle
+                  variant="ok"
+                  checked={form.enabled}
+                  onChange={(v) => setForm((f) => ({ ...f, enabled: v }))}
+                />
               </div>
 
               <div className="field">

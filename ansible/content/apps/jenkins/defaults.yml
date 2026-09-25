@@ -1,0 +1,4 @@
+# ports: [8080]
+# health: tcp:8080
+# url: http://{ip}:8080
+category: CI/CD

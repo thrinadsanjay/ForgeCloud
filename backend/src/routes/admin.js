@@ -7,6 +7,7 @@ import {
   adminListApplicationRoles,
   adminUpsertApplicationRole,
   adminDeleteApplicationRole,
+  validateCatalog,
   adminListBaselines,
   adminUpsertBaseline,
   adminDeleteBaseline,
@@ -26,12 +27,28 @@ import {
   listBaselines,
   getHostnameFormatInfo,
   setHostnameFormat,
+  syncHostnameApplicationsFromRoles,
   previewHostname,
 } from "../services/catalogService.js";
+import {
+  adminListAppBlueprints,
+  adminUpsertAppBlueprint,
+  adminDeleteAppBlueprint,
+} from "../services/appCatalogService.js";
 
 const router = Router();
-router.use(requireAuth);
-router.use(requireAdmin);
+
+// This router is mounted at /api. Skip requests we don't own so a blanket
+// requireAdmin cannot 403 later routers (infra status, integrations, …).
+router.use((req, res, next) => {
+  const p = req.path || "";
+  const owned = p.startsWith("/admin")
+    || p === "/catalog/packages"
+    || p === "/catalog/baselines";
+  if (!owned) return next("router");
+  return next();
+});
+router.use(requireAuth, requireAdmin);
 
 // Public catalog endpoints (also on api.js) — duplicated here for admin namespace clarity
 router.get("/catalog/packages", (req, res) => res.json(listPackages()));
@@ -42,16 +59,65 @@ router.get("/admin/packages", async (req, res) => {
   res.json(await adminListPackages());
 });
 router.post("/admin/packages", async (req, res) => {
-  const row = await adminUpsertPackage(req.body);
-  res.status(201).json(row);
+  try {
+    const row = await adminUpsertPackage(req.body);
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
 });
 router.put("/admin/packages/:id", async (req, res) => {
-  const row = await adminUpsertPackage({ ...req.body, id: req.params.id });
-  res.json(row);
+  try {
+    const row = await adminUpsertPackage({ ...req.body, id: req.params.id });
+    res.json(row);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
 });
 router.delete("/admin/packages/:id", async (req, res) => {
-  await adminDeletePackage(req.params.id);
-  res.json({ ok: true });
+  try {
+    await adminDeletePackage(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+router.get("/admin/catalog/validation", async (req, res) => {
+  try {
+    res.json(await validateCatalog());
+  } catch (err) {
+    res.status(502).json({ error: err.message });
+  }
+});
+
+// Application blueprints (Ansible / Compose apps)
+router.get("/admin/app-blueprints", async (req, res) => {
+  res.json(await adminListAppBlueprints());
+});
+router.post("/admin/app-blueprints", async (req, res) => {
+  try {
+    const row = await adminUpsertAppBlueprint(req.body);
+    res.status(201).json(row);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+router.put("/admin/app-blueprints/:id", async (req, res) => {
+  try {
+    const row = await adminUpsertAppBlueprint({ ...req.body, id: req.params.id });
+    res.json(row);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+router.delete("/admin/app-blueprints/:id", async (req, res) => {
+  try {
+    await adminDeleteAppBlueprint(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
 });
 
 router.get("/admin/application-roles", async (req, res) => {
@@ -183,6 +249,14 @@ router.put("/admin/hostname-format", async (req, res) => {
     });
   } catch (err) {
     res.status(err.status === 400 ? 400 : 502).json({ error: err.message });
+  }
+});
+router.post("/admin/hostname-format/sync-roles", async (req, res) => {
+  try {
+    const info = await syncHostnameApplicationsFromRoles();
+    res.json(info);
+  } catch (err) {
+    res.status(502).json({ error: err.message });
   }
 });
 router.post("/admin/hostname-format/preview", (req, res) => {

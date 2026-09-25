@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import Users from "./Users.jsx";
 import Groups from "./Groups.jsx";
 import Mappings from "./Mappings.jsx";
 import Settings from "./Settings.jsx";
 import CatalogAdmin from "./CatalogAdmin.jsx";
 import ChatAnalytics from "./ChatAnalytics.jsx";
+import DockerHostsAdmin from "./DockerHostsAdmin.jsx";
 import AdminPageHeader from "../components/AdminPageHeader.jsx";
 import { ROLE_LABELS } from "../lib/roles.js";
 
@@ -28,6 +29,7 @@ const NAV = [
     label: "Catalog",
     items: [
       { id: "packages", label: "Packages", icon: "box" },
+      { id: "blueprints", label: "Blueprints", icon: "apps" },
       { id: "app-roles", label: "App roles", icon: "flow" },
       { id: "sizes", label: "Sizes", icon: "size" },
       { id: "hostname", label: "Hostnames", icon: "tag" },
@@ -41,6 +43,7 @@ const NAV = [
     items: [
       { id: "proxmox", label: "Proxmox", icon: "srv" },
       { id: "k3s", label: "Kubernetes", icon: "k8s" },
+      { id: "docker", label: "Docker hosts", icon: "box" },
       { id: "vm", label: "VM Defaults", icon: "vm" },
     ],
   },
@@ -67,6 +70,7 @@ const NAV = [
     id: "policies",
     label: "Policies",
     items: [
+      { id: "usage", label: "Usage", icon: "cost", href: "/usage" },
       { id: "cost", label: "Cost", icon: "cost" },
       { id: "approvals", label: "Approvals", icon: "shield" },
       { id: "assist", label: "Forge Assist", icon: "spark" },
@@ -80,7 +84,7 @@ const ALL_IDS = new Set(ALL_ITEMS.map((i) => i.id));
 const SETTING_TABS = new Set([
   "proxmox", "k3s", "vm", "ansible", "internal", "n8n", "servicenow", "ipam", "oidc", "cost", "approvals", "ai",
 ]);
-const CATALOG_TABS = new Set(["packages", "app-roles", "sizes", "hostname", "workflows"]);
+const CATALOG_TABS = new Set(["packages", "blueprints", "apps", "app-roles", "sizes", "hostname", "workflows"]);
 
 const LEGACY = {
   settings: "proxmox",
@@ -88,6 +92,7 @@ const LEGACY = {
   permissions: "roles",
   general: "users",
   about: "users",
+  apps: "blueprints",
 };
 
 function groupIdForTab(tabId) {
@@ -122,6 +127,8 @@ function NavIcon({ name }) {
       return <svg {...p}><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>;
     case "box":
       return <svg {...p}><path d="M21 8 12 3 3 8v8l9 5 9-5V8z" /><path d="M3 8l9 5 9-5M12 13v10" /></svg>;
+    case "apps":
+      return <svg {...p}><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><path d="M14 17h7M17.5 14v7" /></svg>;
     case "size":
       return <svg {...p}><path d="M4 20V10M4 20h10M4 10h6v10" /><path d="M14 20V4h6v16" /></svg>;
     case "tag":
@@ -238,6 +245,7 @@ function RolesPage() {
 }
 
 export default function Admin() {
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const active = normalizeTab(params.get("tab"), params.get("section"));
   const activeGroup = groupIdForTab(active);
@@ -254,12 +262,20 @@ export default function Admin() {
     const section = params.get("section");
     if (!section && !LEGACY[raw]) return;
     const normalized = normalizeTab(raw, section);
+    if (normalized === "usage") {
+      navigate("/usage", { replace: true });
+      return;
+    }
     const next = new URLSearchParams();
     if (normalized !== "users") next.set("tab", normalized);
     setParams(next, { replace: true });
-  }, [params, setParams]);
+  }, [params, setParams, navigate]);
 
   const selectTab = (item) => {
+    if (item.href) {
+      navigate(item.href);
+      return;
+    }
     const next = new URLSearchParams();
     if (item.id !== "users") next.set("tab", item.id);
     setParams(next, { replace: true });
@@ -312,6 +328,7 @@ export default function Admin() {
         {active === "groups" && <Groups />}
         {active === "roles" && <RolesPage />}
         {active === "mappings" && <Mappings embedded />}
+        {active === "docker" && <DockerHostsAdmin embedded />}
         {CATALOG_TABS.has(active) && <CatalogAdmin section={active} embedded />}
         {SETTING_TABS.has(active) && <Settings sectionId={active} embedded />}
         {active === "assist" && <ChatAnalytics />}

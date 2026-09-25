@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { chatWithAssist, formatAiProviderError } from "../services/aiChatService.js";
+import { chatWithAssist, formatAiProviderError, isAiConfigured } from "../services/aiChatService.js";
 import { requireAuth } from "../middleware/auth.js";
 import { getChat, saveChat, clearChat, listSessions, getSession, createSession, saveSession, deleteSession, clearAllSessions } from "../services/chatStore.js";
 import {
@@ -24,6 +24,7 @@ import { parseTags } from "../services/tags.js";
 import { getCostRates } from "../services/settingsStore.js";
 import { getNetworkMappings } from "../services/mappingStore.js";
 import { checkTeamQuotas } from "../services/quotaService.js";
+import { looksLikeProvisionIntent, runGuidedProvision } from "../services/guidedProvision.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -899,24 +900,168 @@ function resolveResourceTarget(resources, args = {}) {
   return candidates;
 }
 
+/**
+ * Build the same proposal / network-ask JSON the AI path returns, from resolver args.
+ */
+function respondWithProvisioningArgs(req, res, rawArgs, message, { refining = false } = {}) {
+  const resolvedArgs = mergeIntent(rawArgs, message);
+  const normalizedArgs = normalizeTemplateSelection(resolvedArgs, message);
+  const withNetwork = applyNetworkFromMessage(normalizedArgs, message);
+  let finalArgs = applySmartDefaults(withNetwork, message);
+  const envOptions = listEnvironmentOptions();
+  const substitutions = [];
+
+  if (finalArgs.kind === "stack" && !findStack(finalArgs.stackId) && availableVmTemplates().length) {
+    const before = finalArgs.stackId || "requested stack";
+    finalArgs = fallbackStackToVm(finalArgs, availableVmTemplates());
+    finalArgs = applySmartDefaults(finalArgs, message);
+    const tplName = findVmTemplate(finalArgs.templateId)?.name || finalArgs.templateId;
+    substitutions.push(`No matching stack "${before}" in the catalog — proposing VM "${tplName}" instead.`);
+  } else if (finalArgs.kind === "container" && !findContainerTemplate(finalArgs.templateId) && availableVmTemplates().length) {
+    const before = finalArgs.templateId || "requested container";
+    finalArgs = fallbackStackToVm({ ...finalArgs, kind: "vm" }, availableVmTemplates());
+    finalArgs = applySmartDefaults(finalArgs, message);
+    const tplName = findVmTemplate(finalArgs.templateId)?.name || finalArgs.templateId;
+    substitutions.push(`Container template "${before}" isn't available — proposing VM "${tplName}" instead.`);
+  } else if (finalArgs.kind === "vm" && !findVmTemplate(finalArgs.templateId) && availableVmTemplates().length) {
+    finalArgs = { ...finalArgs, templateId: availableVmTemplates()[0].id };
+  }
+  finalArgs = applyNetworkFromMessage(finalArgs, message);
+
+  if (finalArgs.kind === "vm" && !finalArgs.environment) {
+    if (!envOptions.length) {
+      return res.json({
+        reply: "No networks are labelled yet. Ask an admin to label a network under Mappings, then try again.",
+        job: null,
+        proposal: null,
+        guidedDraft: null,
+      });
+    }
+    const names = envOptions.map((e) => e.label).join(", ");
+    return res.json({
+      reply: `Which network should this VM use? Available: ${names}. Reply with the name (e.g. "${envOptions[0].label}").`,
+      suggestedReplies: envOptions.map((e) => e.label).slice(0, 6),
+      job: null,
+      proposal: null,
+      guidedDraft: {
+        active: true,
+        waiting: "network",
+        kind: "vm",
+        size: finalArgs.size || null,
+        sizeConfirmed: !!finalArgs.size,
+        templateId: finalArgs.templateId || null,
+        packages: Array.isArray(finalArgs.packages) ? finalArgs.packages : [],
+        packagesConfirmed: true,
+        additionalDiskGB: Number(finalArgs.additionalDiskGB) || 0,
+        diskConfirmed: true,
+        username: finalArgs.username || null,
+        usernameConfirmed: !!finalArgs.username,
+        environment: null,
+        ttlDays: finalArgs.ttlDays ?? null,
+        permanent: !!finalArgs.permanent,
+        ttlConfirmed: !!(finalArgs.permanent || finalArgs.ttlDays),
+        purpose: String(message || "").slice(0, 240),
+        defaultUsername: finalArgs.username || "",
+      },
+    });
+  }
+
+  const proposal = buildProposal(finalArgs, message, { substitutions, username: req.user.username });
+  if (!proposal.templateName && !proposal.stackName && proposal.kind === "vm") {
+    return res.json({
+      reply: "No VM templates are configured in the catalog yet. Ask an admin to map templates in Mappings, then try again.",
+      job: null,
+      guidedDraft: null,
+    });
+  }
+  const ttlChips =
+    !proposal.permanent && !(Number(proposal.ttlDays) > 0)
+      ? ["2 days", "1 week", "30 days", "Permanent"]
+      : [];
+  return res.json({
+    reply: proposalReply(proposal, { refined: refining }),
+    proposal,
+    suggestedReplies: ttlChips,
+    job: null,
+    guidedDraft: null,
+  });
+}
+
+function respondGuided(req, res, guided, message, lastProposal) {
+  if (!guided) return null;
+  if (guided.proposeArgs) {
+    const refining = !!lastProposal;
+    const args = refining ? applyPreviousProposal(guided.proposeArgs, lastProposal) : guided.proposeArgs;
+    return respondWithProvisioningArgs(req, res, args, message, { refining });
+  }
+  return res.json({
+    reply: guided.reply || "Could you share a bit more detail?",
+    suggestedReplies: guided.suggestedReplies || [],
+    guidedDraft: guided.guidedDraft || null,
+    job: null,
+    proposal: null,
+  });
+}
+
 async function handleChatPost(req, res) {
-  const { message, history, lastProposal } = req.body;
+  const { message, history, lastProposal, guidedDraft } = req.body || {};
   if (!message || typeof message !== "string") {
     return res.status(400).json({ error: "message is required" });
+  }
+
+  // Continue an in-progress guided (non-AI) clarify flow — same chips + proposal UX.
+  if (guidedDraft?.active) {
+    const guided = runGuidedProvision({
+      message,
+      guidedDraft,
+      user: req.user,
+      force: true,
+    });
+    return respondGuided(req, res, guided, message, lastProposal);
+  }
+
+  const aiReady = isAiConfigured();
+
+  // AI off → guided clarify for provision intents (identical question style).
+  if (!aiReady) {
+    const guided = runGuidedProvision({
+      message,
+      guidedDraft: null,
+      user: req.user,
+      force: looksLikeProvisionIntent(message),
+    });
+    if (guided) return respondGuided(req, res, guided, message, lastProposal);
+    return res.json({
+      reply:
+        "AI assistant isn’t configured right now. Describe what you want to run (e.g. “I want a VM for a web server”) and I’ll ask about size, OS, apps, disk, and user — same as the usual plan flow. Or use the shortcuts for day-2 actions.",
+      suggestedReplies: ["I want a VM for a web server", "Show my resources", "What's expiring?"],
+      job: null,
+      guidedDraft: null,
+    });
   }
 
   let result;
   try {
     result = await chatWithAssist({ message, history: history || [] });
   } catch (err) {
-    return res.status(502).json({ error: `AI assistant request failed: ${formatAiProviderError(err)}` });
+    // AI failed → fall through to the same guided clarify path (not a hard error for provision).
+    const guided = runGuidedProvision({
+      message,
+      guidedDraft: null,
+      user: req.user,
+      force: looksLikeProvisionIntent(message),
+    });
+    if (guided) return respondGuided(req, res, guided, message, lastProposal);
+    return res.status(502).json({
+      error: `AI assistant request failed: ${formatAiProviderError(err)}`,
+    });
   }
 
   if (!result.functionCall) {
     const { reply, suggestedReplies } = extractSuggestedReplies(
       result.text || "I'm not sure how to help with that."
     );
-    return res.json({ reply, suggestedReplies, job: null });
+    return res.json({ reply, suggestedReplies, job: null, guidedDraft: null });
   }
 
   const { name, args = {} } = result.functionCall;
@@ -951,6 +1096,7 @@ async function handleChatPost(req, res) {
               : `I could not find the selected ${sizedArgs.kind === "stack" ? "stack" : "template"} in the catalog.`,
             proposal: buildProposal(sizedArgs, message, { username: req.user.username }),
             job: null,
+            guidedDraft: null,
           });
         }
 
@@ -961,6 +1107,7 @@ async function handleChatPost(req, res) {
             reply: `Your request requires admin approval before provisioning. Track it in Requests with id ${result.request.id}.`,
             job: null,
             proposal: null,
+            guidedDraft: null,
           });
         }
         return res.json({
@@ -971,71 +1118,11 @@ async function handleChatPost(req, res) {
               : `Provisioning a VM (${findVmTemplate(sizedArgs.templateId)?.name || sizedArgs.templateId}) named "${payload.hostname}". Tracking as job ${result.job.id}.`,
           job: result.job,
           proposal: null,
+          guidedDraft: null,
         });
       }
 
-      const envOptions = listEnvironmentOptions();
-      let finalArgs = sizedArgs;
-      const substitutions = [];
-      // Never return a proposal the catalog can't fulfil — pick a real VM/stack instead.
-      if (finalArgs.kind === "stack" && !findStack(finalArgs.stackId) && availableVmTemplates().length) {
-        const before = finalArgs.stackId || "requested stack";
-        finalArgs = fallbackStackToVm(finalArgs, availableVmTemplates());
-        finalArgs = applySmartDefaults(finalArgs, message);
-        const tplName = findVmTemplate(finalArgs.templateId)?.name || finalArgs.templateId;
-        substitutions.push(
-          `No matching stack "${before}" in the catalog — proposing VM "${tplName}" instead.`
-        );
-      } else if (finalArgs.kind === "container" && !findContainerTemplate(finalArgs.templateId) && availableVmTemplates().length) {
-        const before = finalArgs.templateId || "requested container";
-        finalArgs = fallbackStackToVm({ ...finalArgs, kind: "vm" }, availableVmTemplates());
-        finalArgs = applySmartDefaults(finalArgs, message);
-        const tplName = findVmTemplate(finalArgs.templateId)?.name || finalArgs.templateId;
-        substitutions.push(
-          `Container template "${before}" isn't available — proposing VM "${tplName}" instead.`
-        );
-      } else if (finalArgs.kind === "vm" && !findVmTemplate(finalArgs.templateId) && availableVmTemplates().length) {
-        finalArgs = { ...finalArgs, templateId: availableVmTemplates()[0].id };
-      }
-      // Re-apply network after kind may have flipped to VM (e.g. stack→vm).
-      finalArgs = applyNetworkFromMessage(finalArgs, message);
-
-      // Multiple networks and none chosen — ask first; don't return an incomplete proposal.
-      if (finalArgs.kind === "vm" && !finalArgs.environment) {
-        if (!envOptions.length) {
-          return res.json({
-            reply: "No networks are labelled yet. Ask an admin to label a network under Mappings, then try again.",
-            job: null,
-            proposal: null,
-          });
-        }
-        const names = envOptions.map((e) => e.label).join(", ");
-        return res.json({
-          reply: `Which network should this VM use? Available: ${names}. Reply with the name (e.g. "${envOptions[0].label}").`,
-          suggestedReplies: envOptions.map((e) => e.label).slice(0, 6),
-          job: null,
-          proposal: null,
-        });
-      }
-
-      const proposal = buildProposal(finalArgs, message, { substitutions, username: req.user.username });
-      if (!proposal.templateName && !proposal.stackName && proposal.kind === "vm") {
-        return res.json({
-          reply: "No VM templates are configured in the catalog yet. Ask an admin to map templates in Mappings, then try again.",
-          job: null,
-        });
-      }
-      // If lifetime still unknown, offer quick TTL chips alongside the plan.
-      const ttlChips =
-        !proposal.permanent && !(Number(proposal.ttlDays) > 0)
-          ? ["2 days", "1 week", "30 days", "Permanent"]
-          : [];
-      return res.json({
-        reply: proposalReply(proposal, { refined: refining }),
-        proposal,
-        suggestedReplies: ttlChips,
-        job: null,
-      });
+      return respondWithProvisioningArgs(req, res, sizedArgs, message, { refining });
     }
 
     if (name === "manage_resources") {

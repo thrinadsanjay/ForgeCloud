@@ -32,6 +32,10 @@
   ansible.builtin.include_tasks: users.yml
   when: create_users | length > 0
 
+- name: Configure additional data disk (vg_data + LVs)
+  ansible.builtin.include_tasks: data_disk.yml
+  when: data_mounts | length > 0
+
 - name: Configure mounts
   ansible.builtin.include_tasks: mounts.yml
   when: mounts | length > 0

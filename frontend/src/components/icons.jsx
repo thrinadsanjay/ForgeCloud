@@ -199,3 +199,69 @@ export function IconDownload(props) {
     </Svg>
   );
 }
+
+// Scroll / document text — Live logs.
+export function IconLogs(props) {
+  return (
+    <Svg {...props}>
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="8" y1="13" x2="16" y2="13" />
+      <line x1="8" y1="17" x2="16" y2="17" />
+      <line x1="8" y1="9" x2="10" y2="9" />
+    </Svg>
+  );
+}
+
+// External link / globe — Open in web.
+export function IconGlobe(props) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="2" y1="12" x2="22" y2="12" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </Svg>
+  );
+}
+
+// Key/value list — Environment variables.
+export function IconEnv(props) {
+  return (
+    <Svg {...props}>
+      <path d="M4 6h16" />
+      <path d="M4 12h10" />
+      <path d="M4 18h14" />
+      <circle cx="18" cy="12" r="2" />
+    </Svg>
+  );
+}
+
+// Heart pulse — Health.
+export function IconHeart(props) {
+  return (
+    <Svg {...props}>
+      <path d="M19.5 12.5 12 20l-7.5-7.5a4.5 4.5 0 0 1 7.5-5.5 4.5 4.5 0 0 1 7.5 5.5z" />
+    </Svg>
+  );
+}
+
+// Copy — clipboard.
+export function IconCopy(props) {
+  return (
+    <Svg {...props}>
+      <rect width="14" height="14" x="8" y="8" rx="2" />
+      <path d="M4 16V4a2 2 0 0 1 2-2h12" />
+    </Svg>
+  );
+}
+
+// External open.
+export function IconExternal(props) {
+  return (
+    <Svg {...props}>
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+      <polyline points="15 3 21 3 21 9" />
+      <line x1="10" y1="14" x2="21" y2="3" />
+    </Svg>
+  );
+}

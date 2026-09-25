@@ -1,0 +1,5 @@
+# ports: [9090, 3000, 9093]
+# health: http:9090/-/ready
+# url: http://{ip}:9090
+category: Monitoring
+GRAFANA_ADMIN_PASSWORD: changeme

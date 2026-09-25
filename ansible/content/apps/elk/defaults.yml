@@ -1,0 +1,4 @@
+# ports: [5601, 9200]
+# health: http:5601/api/status
+# url: http://{ip}:5601
+category: Logging

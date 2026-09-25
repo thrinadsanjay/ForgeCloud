@@ -1,0 +1,13 @@
+services:
+  code-server:
+    image: codercom/code-server:4.93.1
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      PASSWORD: ${CODE_SERVER_PASSWORD:-forgedev}
+    volumes:
+      - code-data:/home/coder
+
+volumes:
+  code-data:

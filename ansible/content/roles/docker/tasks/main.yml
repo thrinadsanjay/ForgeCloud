@@ -1,0 +1,36 @@
+---
+- name: "{{ role_path | basename }}"
+  ansible.builtin.include_tasks: "{{ ansible_os_family | lower }}.yml"
+  when: ansible_os_family in ["Debian", "RedHat"]
+
+- name: Fail on unsupported OS family
+  ansible.builtin.fail:
+    msg: "Docker blueprint supports Debian and RedHat families only (got {{ ansible_os_family }})"
+  when: ansible_os_family not in ["Debian", "RedHat"]
+
+- name: Enable and start Docker
+  ansible.builtin.service:
+    name: docker
+    state: started
+    enabled: true
+
+- name: Ensure docker group exists
+  ansible.builtin.group:
+    name: docker
+    state: present
+
+- name: Add service user to docker group
+  when: forge_service_user is defined and forge_service_user | length > 0
+  ansible.builtin.user:
+    name: "{{ forge_service_user }}"
+    groups: docker
+    append: true
+
+- name: Verify docker CLI
+  ansible.builtin.command: docker --version
+  register: docker_ver
+  changed_when: false
+
+- name: Show Docker version
+  ansible.builtin.debug:
+    msg: "{{ docker_ver.stdout }} ready"

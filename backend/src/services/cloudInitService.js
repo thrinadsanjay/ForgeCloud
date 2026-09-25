@@ -85,6 +85,12 @@ export function buildUserData({
   lines.push("ssh_pwauth: true");
   lines.push("chpasswd:");
   lines.push("  expire: false");
+  lines.push("runcmd:");
+  lines.push("  - |");
+  lines.push("    mkdir -p /etc/ssh/sshd_config.d");
+  lines.push("    printf '%s\\n' '# Forge' 'PasswordAuthentication yes' 'KbdInteractiveAuthentication yes' 'UsePAM yes' > /etc/ssh/sshd_config.d/00-forge-pwauth.conf");
+  lines.push("    sed -i -E 's/^[[:space:]]*PasswordAuthentication[[:space:]]+no/PasswordAuthentication yes/I' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null || true");
+  lines.push("    systemctl reload sshd 2>/dev/null || systemctl reload ssh 2>/dev/null || true");
 
   const generated = `${lines.join("\n")}\n`;
   const base = (baseYaml || "").trim();
@@ -119,7 +125,8 @@ export function buildBootstrapUserData({
   lines.push("    shell: /bin/bash");
   lines.push("    lock_passwd: false");
   lines.push("    sudo: ALL=(ALL) NOPASSWD:ALL");
-  lines.push("    groups: [sudo, wheel]");
+  // wheel works on RHEL/SUSE; Debian/Ubuntu cloud-init maps or ignores missing groups.
+  lines.push("    groups: [wheel]");
   if (servicePassword) {
     lines.push(`    plain_text_passwd: ${yamlString(servicePassword)}`);
   }
@@ -131,6 +138,13 @@ export function buildBootstrapUserData({
   lines.push("ssh_pwauth: true");
   lines.push("chpasswd:");
   lines.push("  expire: false");
+  // Cloud images may ship PasswordAuthentication no in sshd_config.d; reinforce at first boot.
+  lines.push("runcmd:");
+  lines.push("  - |");
+  lines.push("    mkdir -p /etc/ssh/sshd_config.d");
+  lines.push("    printf '%s\\n' '# Forge bootstrap' 'PasswordAuthentication yes' 'KbdInteractiveAuthentication yes' 'UsePAM yes' > /etc/ssh/sshd_config.d/00-forge-pwauth.conf");
+  lines.push("    sed -i -E 's/^[[:space:]]*PasswordAuthentication[[:space:]]+no/PasswordAuthentication yes/I' /etc/ssh/sshd_config /etc/ssh/sshd_config.d/*.conf 2>/dev/null || true");
+  lines.push("    systemctl reload sshd 2>/dev/null || systemctl reload ssh 2>/dev/null || true");
   lines.push("package_update: false");
   lines.push("package_upgrade: false");
 

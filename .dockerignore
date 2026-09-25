@@ -1,10 +1,10 @@
 # Keep the build context small and dev state out of the image.
 
-# Dependencies / build outputs (reinstalled & rebuilt inside the image)
-**/node_modules
-**/dist
-frontend/dist
+# Host / source tree deps (image packs .build/ from ./build.sh instead)
+frontend/node_modules
 backend/node_modules
+frontend/dist
+backend/dist
 
 # Runtime state from the dev machine
 backend/data
@@ -28,6 +28,7 @@ logs
 start.sh
 stop.sh
 status.sh
+docker-entrypoint.sh
 
 # Editor / OS cruft
 .vscode

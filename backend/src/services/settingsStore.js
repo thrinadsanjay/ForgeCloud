@@ -1,4 +1,8 @@
 import { prisma, fireAndForget } from "../db/client.js";
+import {
+  normalizeSshPrivateKey,
+  normalizeSshPublicKey,
+} from "./sshKeyNormalize.js";
 
 // Field visibility: showWhen = { key, equals? | equalsAny? | isTrue? | isFalse? }
 // boolNegated fields store UI "checked" as the positive product of env !== "false".
@@ -65,20 +69,50 @@ export const SETTING_GROUPS = [
     fields: [
       { key: "ANSIBLE_ENABLED", label: "Enable Ansible guest setup", type: "bool", default: "false" },
       { key: "ANSIBLE_BOOTSTRAP_CLOUDINIT", label: "Bootstrap service account via minimal cloud-init", type: "bool", default: "true",
+        hint: "Required when Ansible is enabled — creates the forge user + SSH key on first boot. Ignored off while Ansible is on.",
         showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
       { key: "ANSIBLE_SERVICE_USER", label: "Service account username", type: "text", placeholder: "forge", default: "forge",
         showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
       { key: "ANSIBLE_SERVICE_PASSWORD", label: "Service account password (optional)", type: "text", secret: true,
         showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
       { key: "ANSIBLE_ADMIN_PUBKEY", label: "Admin / org SSH public key", type: "text",
-        placeholder: "ssh-ed25519 AAAA…",
+        placeholder: "ssh-ed25519 AAAA… comment",
+        hint: "One line: type + key (+ optional comment). Used in guest authorized_keys.",
+        fileAccept: ".pub,.pem,text/plain", fileLabel: "Upload public key",
         showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
       { key: "ANSIBLE_FORGE_PUBLIC_KEY", label: "Forge deploy public key", type: "text",
-        placeholder: "ssh-ed25519 AAAA…",
+        placeholder: "ssh-ed25519 AAAA… forge-deploy",
+        hint: "Must match the private key below. Injected into the guest by cloud-init.",
+        fileAccept: ".pub,.pem,text/plain", fileLabel: "Upload public key",
         showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
-      { key: "ANSIBLE_FORGE_PRIVATE_KEY", label: "Forge deploy private key", type: "text", secret: true,
+      { key: "ANSIBLE_FORGE_PRIVATE_KEY", label: "Forge deploy private key", type: "textarea", secret: true,
+        placeholder: "-----BEGIN OPENSSH PRIVATE KEY-----\n…\n-----END OPENSSH PRIVATE KEY-----",
+        hint: "Paste the full private key including BEGIN/END lines. Pair with the public key above.",
+        fileAccept: ".pem,.key,text/plain", fileLabel: "Upload private key",
         showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
       { key: "ANSIBLE_REMOVE_FORGE_KEY", label: "Remove Forge deploy key after successful setup", type: "bool", default: "true",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_GIT_URL", label: "Custom content git URL", type: "text",
+        placeholder: "https://github.com/org/forge-ansible-content.git",
+        hint: "Optional overlay — does not replace bundled stacks. Sync onboards catalog.yaml as Custom blueprints.",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_GIT_BRANCH", label: "Content git branch", type: "text", default: "main",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_GIT_TOKEN", label: "Content git token (optional)", type: "text", secret: true,
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_MOUNT_PATH", label: "Custom content mount path", type: "text",
+        placeholder: "/data/forge-ansible-custom",
+        hint: "Path inside the Forge container with catalog.yaml + playbooks/roles. Used as overlay when present (preferred over git cache).",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_PIN", label: "Custom content pin", type: "text", default: "bundled",
+        hint: "Git commit of the overlay cache, or bundled when no custom git source.",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_LAST_SYNC_AT", label: "Last content sync", type: "text",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_LAST_SYNC_ERROR", label: "Last content sync error", type: "text",
+        showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
+      { key: "ANSIBLE_CONTENT_LAST_ONBOARD", label: "Last onboard summary", type: "text",
+        hint: "Auto JSON from Sync (onboarded / removed custom blueprints).",
         showWhen: { key: "ANSIBLE_ENABLED", isTrue: true } },
     ],
   },
@@ -374,6 +408,18 @@ function readOverrides() {
   return { ...overrides };
 }
 
+function normalizeAnsibleSshOverrides(target) {
+  if (target.ANSIBLE_FORGE_PRIVATE_KEY != null && String(target.ANSIBLE_FORGE_PRIVATE_KEY).trim()) {
+    target.ANSIBLE_FORGE_PRIVATE_KEY = normalizeSshPrivateKey(target.ANSIBLE_FORGE_PRIVATE_KEY);
+  }
+  if (target.ANSIBLE_FORGE_PUBLIC_KEY != null && String(target.ANSIBLE_FORGE_PUBLIC_KEY).trim()) {
+    target.ANSIBLE_FORGE_PUBLIC_KEY = normalizeSshPublicKey(target.ANSIBLE_FORGE_PUBLIC_KEY);
+  }
+  if (target.ANSIBLE_ADMIN_PUBKEY != null && String(target.ANSIBLE_ADMIN_PUBKEY).trim()) {
+    target.ANSIBLE_ADMIN_PUBKEY = normalizeSshPublicKey(target.ANSIBLE_ADMIN_PUBKEY);
+  }
+}
+
 export function applyToEnv() {
   const keepIfBlank = new Set([
     "PROXMOX_HOST",
@@ -395,6 +441,8 @@ export function applyToEnv() {
     "OIDC_REDIRECT_URI",
     "OIDC_SCOPES",
   ]);
+
+  normalizeAnsibleSshOverrides(overrides);
 
   for (const [key, value] of Object.entries(overrides)) {
     if (!FIELD_BY_KEY.has(key) || value == null) continue;
@@ -471,7 +519,9 @@ export function updateSettings(patch = {}) {
 
     if (field.secret) {
       if (value == null || String(value).trim() === "") continue;
-      overrides[key] = String(value).trim();
+      let next = String(value).trim();
+      if (key === "ANSIBLE_FORGE_PRIVATE_KEY") next = normalizeSshPrivateKey(next);
+      overrides[key] = next;
       continue;
     }
 
@@ -484,7 +534,11 @@ export function updateSettings(patch = {}) {
       continue;
     }
     // Auth method select writes "true"/"false" into PROXMOX_USE_API_TOKEN
-    overrides[key] = value == null ? "" : String(value);
+    let next = value == null ? "" : String(value);
+    if (key === "ANSIBLE_FORGE_PUBLIC_KEY" || key === "ANSIBLE_ADMIN_PUBKEY") {
+      next = normalizeSshPublicKey(next);
+    }
+    overrides[key] = next;
   }
 
   persistSettings();

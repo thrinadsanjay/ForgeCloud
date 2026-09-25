@@ -6,16 +6,18 @@ import {
   getIacTemplate,
 } from "../api/client.js";
 import { useDialog } from "../components/DialogProvider.jsx";
+import { useToast } from "../components/ToastProvider.jsx";
 import { IconDownload } from "../components/icons.jsx";
 import ProvisionForm, {
   DEFAULT_COST_RATES,
   KIND_LABELS,
   FALLBACK_PACKAGE_IDS,
   buildPackageCategories,
-  defaultPackagesFor,
-  pkgName,
 } from "../components/ProvisionForm.jsx";
 import EmptyState from "../components/EmptyState.jsx";
+import ProviderStatusBanner from "../components/ProviderStatusBanner.jsx";
+import useProviderHealth from "../hooks/useProviderHealth.js";
+import { TemplateLogoMark, resolveTemplateLogo } from "../lib/templateLogos.jsx";
 
 const IAC_TOOL_OPTIONS = [
   { id: "terraform", label: "Terraform" },
@@ -24,9 +26,6 @@ const IAC_TOOL_OPTIONS = [
   { id: "curl", label: "REST (cURL)" },
 ];
 
-// Tool picker + download for a template's Infrastructure-as-Code file. The
-// downloaded file targets the Forge API and authenticates with an API token
-// (generated from the account menu).
 function IacExport({ kind, id }) {
   const { alert } = useDialog();
   const [tool, setTool] = useState("terraform");
@@ -52,36 +51,41 @@ function IacExport({ kind, id }) {
     }
   };
 
-  // Stop clicks bubbling to the row (which would open the config modal).
   return (
-    <div className="iac-export-inline" onClick={(e) => e.stopPropagation()}>
-      <span className="iac-export-inline-label">Use with IaC:</span>
-      <select className="control-select iac-export-select" value={tool} onChange={(e) => setTool(e.target.value)} aria-label="IaC tool">
-        {IAC_TOOL_OPTIONS.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
-      </select>
-      <button
-        type="button"
-        className="icon-btn iac-export-download"
-        onClick={download}
-        disabled={busy}
-        title="Download IaC file"
-        aria-label="Download IaC file"
-      >
-        {busy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <IconDownload />}
-      </button>
+    <div className="iac-export-card" onClick={(e) => e.stopPropagation()}>
+      <span className="iac-export-card-label">Use with IaC</span>
+      <div className="iac-export-card-row">
+        <select
+          className="control-select iac-export-select"
+          value={tool}
+          onChange={(e) => setTool(e.target.value)}
+          aria-label="IaC tool"
+        >
+          {IAC_TOOL_OPTIONS.map((t) => (
+            <option key={t.id} value={t.id}>{t.label}</option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className="icon-btn iac-export-download"
+          onClick={download}
+          disabled={busy}
+          title="Download IaC file"
+          aria-label="Download IaC file"
+        >
+          {busy ? <span className="spinner" style={{ width: 14, height: 14 }} /> : <IconDownload />}
+        </button>
+      </div>
     </div>
   );
 }
 
-// Catalog categories used to group the list. A stack is anything whose kind is
-// "stack" OR whose template name contains "stack" (e.g. "LAMP Stack"), so
-// stack-like templates are grouped with real stacks.
 const CATEGORY_META = {
-  stack: { label: "Stacks", icon: "🧩" },
-  vm: { label: "Virtual machines", icon: "🖥" },
-  container: { label: "Containers", icon: "📦" },
+  stack: { label: "Stacks", short: "Stack" },
+  vm: { label: "Templates", short: "Virtual Machine" },
+  container: { label: "Containers", short: "Container" },
 };
-const CATEGORY_ORDER = ["stack", "vm"];
+const CATEGORY_ORDER = ["vm", "stack"];
 
 const FAV_KEY = "forge.provision.favorites";
 const RECENT_KEY = "forge.provision.recent";
@@ -113,6 +117,8 @@ function categoryOf(row) {
 
 export default function Provision({ embedded = false }) {
   const { alert } = useDialog();
+  const { info, warn, error: toastError } = useToast();
+  const proxmox = useProviderHealth("proxmox");
   const [vmTemplates, setVmTemplates] = useState([]);
   const [containerTemplates, setContainerTemplates] = useState([]);
   const [stacks, setStacks] = useState([]);
@@ -120,6 +126,7 @@ export default function Provision({ embedded = false }) {
   const [templateDefaults, setTemplateDefaults] = useState({});
   const [costRates, setCostRates] = useState(DEFAULT_COST_RATES);
   const [packageCategories, setPackageCategories] = useState(() => buildPackageCategories());
+  const [packageLabels, setPackageLabels] = useState({});
   const [lockedPackageIds, setLockedPackageIds] = useState([]);
   const [kindFilter, setKindFilter] = useState("all");
   const [query, setQuery] = useState("");
@@ -140,6 +147,7 @@ export default function Provision({ embedded = false }) {
   };
 
   const openTemplate = (row) => {
+    if (proxmox.blocked) return;
     const key = tplKey(row.kind, row.item.id);
     setRecent((prev) => {
       const next = [key, ...prev.filter((k) => k !== key)];
@@ -148,6 +156,10 @@ export default function Provision({ embedded = false }) {
     });
     setSelected(row);
   };
+
+  useEffect(() => {
+    if (proxmox.blocked && selected) setSelected(null);
+  }, [proxmox.blocked, selected]);
 
   useEffect(() => {
     getVmTemplates().then(setVmTemplates).catch(() => {});
@@ -165,15 +177,22 @@ export default function Provision({ embedded = false }) {
             ? buildPackageCategories(normalized)
             : buildPackageCategories(FALLBACK_PACKAGE_IDS),
         );
+        const labels = {};
+        for (const p of normalized) {
+          if (!p?.id) continue;
+          labels[p.id] = { name: p.name || p.id, description: p.description || "" };
+        }
+        setPackageLabels(labels);
         setLockedPackageIds(normalized.filter((p) => p.isDefault).map((p) => p.id));
       })
       .catch(() => {
         setPackageCategories(buildPackageCategories());
+        setPackageLabels({});
         setLockedPackageIds([]);
       });
   }, []);
 
-  // This page covers VMs & stacks only — containers have their own hosting page.
+  // This page covers VMs & stacks — Kubernetes create lives under Provisioning → Kubernetes.
   const rows = useMemo(() => {
     const vmRows = vmTemplates.map((item) => ({ kind: "vm", item }));
     const stackRows = stacks.map((item) => ({ kind: "stack", item }));
@@ -199,19 +218,6 @@ export default function Provision({ embedded = false }) {
     rows.forEach((row) => { counts[categoryOf(row)] += 1; });
     return counts;
   }, [rows]);
-
-  // Group the filtered rows into category sections, in a stable order.
-  const groupedRows = useMemo(() => {
-    const groups = new Map();
-    for (const row of filteredRows) {
-      const cat = categoryOf(row);
-      if (!groups.has(cat)) groups.set(cat, []);
-      groups.get(cat).push(row);
-    }
-    return CATEGORY_ORDER
-      .filter((cat) => groups.has(cat))
-      .map((cat) => ({ category: cat, rows: groups.get(cat) }));
-  }, [filteredRows]);
 
   useEffect(() => {
     if (!selected) return;
@@ -259,6 +265,7 @@ export default function Provision({ embedded = false }) {
           cpu: form.cpu,
           memoryGB: form.memoryGB,
           additionalDiskGB: form.additionalDiskGB,
+          diskMounts: form.diskMounts,
           ttlDays: form.ttlDays,
           permanent: form.permanent,
           packages: form.packages,
@@ -274,15 +281,21 @@ export default function Provision({ embedded = false }) {
       // notice.
       if (result?.job?.id) {
         setRequestNotice("Provisioning started — follow the live progress in the deployment monitor.");
+        info("Provisioning started", "Follow live progress in the deployment monitor.", {
+          actions: [{ key: "view", label: "Open deployments", href: `/deployments?tab=running&job=${encodeURIComponent(result.job.id)}` }],
+        });
         window.dispatchEvent(new CustomEvent("forge:open-deployment-monitor", { detail: { jobId: result.job.id } }));
       } else if (result?.request?.id) {
         // High-config request paused for approval — pop the monitor so the user
         // sees it on hold until an admin approves it.
         setRequestNotice(`Request ${result.request.id} exceeds the size policy — it's on hold in the deployment monitor awaiting admin approval.`);
+        warn("Awaiting approval", `Request ${result.request.id} exceeds the size policy and is on hold.`);
         window.dispatchEvent(new CustomEvent("forge:open-deployment-monitor", { detail: { requestId: result.request.id } }));
       }
     } catch (e) {
-      alert({ title: "Provisioning failed", message: e.response?.data?.error || e.message, tone: "danger" });
+      const msg = e.response?.data?.error || e.message;
+      toastError("Provisioning failed", msg);
+      alert({ title: "Provisioning failed", message: msg, tone: "danger" });
     } finally {
       setBusy(false);
     }
@@ -299,28 +312,44 @@ export default function Provision({ embedded = false }) {
   }, [rows, recent]);
 
   return (
-    <div className={embedded ? "" : "page"}>
-      <div className="page-head">
-        <div className="eyebrow">Catalog</div>
-        <h1>Virtual machines &amp; stacks</h1>
-        <p>Pick a template to configure and launch — or download an IaC file to provision it from your own tool.</p>
-      </div>
+    <div className={embedded ? "provision-catalog" : "page provision-catalog"}>
+      {!embedded && (
+        <div className="page-head">
+          <div className="eyebrow">Catalog</div>
+          <h1>Virtual machines &amp; stacks</h1>
+          <p>Pick a template to configure and launch — or download an IaC file to provision it from your own tool.</p>
+        </div>
+      )}
 
-      <div className="tpl-toolbar toolbar-panel">
-        <input
-          className="control-input tpl-search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Search by name, id, or description…"
-          aria-label="Search catalog"
-        />
+      <ProviderStatusBanner
+        providerLabel="Proxmox"
+        checking={proxmox.checking}
+        blocked={proxmox.blocked}
+        message={proxmox.message}
+        error={proxmox.error}
+        onRetry={proxmox.refresh}
+      />
+
+      <div className={`tpl-toolbar ${proxmox.blocked ? "is-disabled" : ""}`}>
+        <div className="tpl-search-wrap">
+          <span className="tpl-search-icon" aria-hidden="true">⌕</span>
+          <input
+            className="control-input tpl-search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by name, id, or description…"
+            aria-label="Search catalog"
+          />
+        </div>
         <div className="tpl-filters" role="group" aria-label="Filter by category">
           <button
             type="button"
             className={`tpl-filter ${kindFilter === "all" ? "active" : ""}`}
             aria-pressed={kindFilter === "all"}
             onClick={() => setKindFilter("all")}
-          >All <span className="tpl-filter-n">{rows.length}</span></button>
+          >
+            All <span className="tpl-filter-n">{rows.length}</span>
+          </button>
           {CATEGORY_ORDER.map((cat) => (
             <button
               key={cat}
@@ -328,13 +357,15 @@ export default function Provision({ embedded = false }) {
               className={`tpl-filter ${kindFilter === cat ? "active" : ""}`}
               aria-pressed={kindFilter === cat}
               onClick={() => setKindFilter((cur) => (cur === cat ? "all" : cat))}
-            ><span aria-hidden="true">{CATEGORY_META[cat].icon}</span> {CATEGORY_META[cat].label} <span className="tpl-filter-n">{categoryCounts[cat]}</span></button>
+            >
+              {CATEGORY_META[cat].label} <span className="tpl-filter-n">{categoryCounts[cat]}</span>
+            </button>
           ))}
         </div>
       </div>
 
       {(favoriteRows.length > 0 || recentRows.length > 0) && (
-        <div className="tpl-pins" style={{ marginBottom: 16 }}>
+        <div className="tpl-pins">
           {favoriteRows.length > 0 && (
             <div className="tpl-pin-row">
               <span className="tpl-pin-label">Favorites</span>
@@ -345,6 +376,7 @@ export default function Provision({ embedded = false }) {
                     type="button"
                     className="tpl-pin-chip"
                     onClick={() => openTemplate(row)}
+                    disabled={proxmox.blocked}
                   >
                     ★ {row.item.name}
                   </button>
@@ -362,6 +394,7 @@ export default function Provision({ embedded = false }) {
                     type="button"
                     className="tpl-pin-chip muted"
                     onClick={() => openTemplate(row)}
+                    disabled={proxmox.blocked}
                   >
                     {row.item.name}
                   </button>
@@ -380,7 +413,7 @@ export default function Provision({ embedded = false }) {
           actionLabel="Open Mappings"
           actionHref="/admin?tab=mappings"
         />
-      ) : groupedRows.length === 0 ? (
+      ) : filteredRows.length === 0 ? (
         <EmptyState
           icon="⌕"
           title="No matches"
@@ -389,81 +422,85 @@ export default function Provision({ embedded = false }) {
           onAction={() => { setQuery(""); setKindFilter("all"); }}
         />
       ) : (
-        groupedRows.map(({ category, rows: catRows }) => (
-          <section key={category} className="tpl-section">
-            <div className="tpl-section-head">
-              <span className="tpl-section-icon" aria-hidden="true">{CATEGORY_META[category].icon}</span>
-              <h2 className="tpl-section-title">{CATEGORY_META[category].label}</h2>
-              <span className="tpl-section-count">{catRows.length}</span>
-            </div>
+        <div className={`tpl-grid tpl-grid-v2 ${proxmox.blocked ? "is-disabled" : ""}`}>
+          {filteredRows.map((row) => {
+            const category = categoryOf(row);
+            const isSelected = selected && selected.kind === row.kind && selected.item.id === row.item.id;
+            const key = tplKey(row.kind, row.item.id);
+            const isFav = favorites.includes(key);
+            const logo = resolveTemplateLogo({
+              name: row.item.name,
+              id: row.item.id,
+              kind: category === "stack" ? "stack" : row.kind,
+            });
+            return (
+              <article
+                key={key}
+                className={`tpl-card tpl-card-v2 tpl-tone-${logo.tone} ${isSelected ? "tpl-card-active" : ""} ${proxmox.blocked ? "tpl-card-disabled" : ""}`}
+                style={{ "--tpl-accent": logo.accent }}
+              >
+                <button
+                  type="button"
+                  className={`tpl-fav-btn ${isFav ? "on" : ""}`}
+                  title={isFav ? "Remove from favorites" : "Add to favorites"}
+                  aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
+                  onClick={(e) => toggleFavorite(row, e)}
+                >
+                  {isFav ? "★" : "☆"}
+                </button>
 
-            <div className="tpl-grid">
-              {catRows.map((row) => {
-                const isSelected = selected && selected.kind === row.kind && selected.item.id === row.item.id;
-                const defs = defaultPackagesFor(row.item, templateDefaults);
-                const key = tplKey(row.kind, row.item.id);
-                const isFav = favorites.includes(key);
-                return (
-                  <div
-                    key={key}
-                    className={`tpl-card ${isSelected ? "tpl-card-active" : ""}`}
+                <div className="tpl-card-logo-wrap">
+                  <TemplateLogoMark
+                    name={row.item.name}
+                    id={row.item.id}
+                    kind={category === "stack" ? "stack" : row.kind}
+                  />
+                </div>
+
+                <h3 className="tpl-card-name">{row.item.name}</h3>
+                <div className="tpl-card-kind">
+                  <span className="tpl-card-kind-dot" aria-hidden="true" />
+                  <span>{CATEGORY_META[category]?.short || KIND_LABELS[row.kind]}</span>
+                  {row.item.provider === "internal" && <span className="tpl-card-kind-extra">Internal</span>}
+                </div>
+
+                {!!row.item.description && (
+                  <p className="tpl-card-desc">{row.item.description}</p>
+                )}
+
+                <div className="tpl-card-foot-v2">
+                  <IacExport kind={row.kind} id={row.item.id} />
+                  <button
+                    type="button"
+                    className="btn btn-primary tpl-card-cta"
                     onClick={() => openTemplate(row)}
-                    role="button"
-                    tabIndex={0}
-                    aria-label={`Configure ${row.item.name}`}
-                    onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openTemplate(row); } }}
+                    disabled={proxmox.blocked}
+                    title={proxmox.blocked ? proxmox.message : undefined}
                   >
-                    <div className="tpl-card-head">
-                      <span className="tpl-card-icon" aria-hidden="true">{CATEGORY_META[category].icon}</span>
-                      <div className="tpl-card-titles">
-                        <div className="tpl-card-name">{row.item.name}</div>
-                        <div className="tpl-card-tags">
-                          <span className="badge provision-kind-badge">{KIND_LABELS[row.kind]}</span>
-                          {row.item.provider === "internal" && <span className="provision-inline-kind">Internal workflow</span>}
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        className={`tpl-fav-btn ${isFav ? "on" : ""}`}
-                        title={isFav ? "Remove from favorites" : "Add to favorites"}
-                        aria-label={isFav ? "Remove from favorites" : "Add to favorites"}
-                        onClick={(e) => toggleFavorite(row, e)}
-                      >
-                        {isFav ? "★" : "☆"}
-                      </button>
-                    </div>
-
-                    {!!row.item.description && <p className="tpl-card-desc">{row.item.description}</p>}
-
-                    {defs.length > 0 && (
-                      <div className="tpl-card-defaults">
-                        <span className="provision-row-defaults-label">Includes by default</span>
-                        <div className="tpl-card-chips">
-                          {defs.map((p, i) => (
-                            <span key={`${pkgName(p)}-${i}`} className="provision-inline-kind provision-inline-kind-fixed">{pkgName(p)}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="tpl-card-foot" onClick={(e) => e.stopPropagation()}>
-                      <IacExport kind={row.kind} id={row.item.id} />
-                      <button type="button" className="btn btn-primary btn-sm tpl-card-cta" onClick={() => openTemplate(row)}>
-                        Provision
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-        ))
+                    Provision
+                  </button>
+                </div>
+              </article>
+            );
+          })}
+        </div>
       )}
 
       {selected && (
         <div className="provision-modal-backdrop">
           <div className="provision-modal-shell">
-            <ProvisionForm selected={selected} environments={environments} templateDefaults={templateDefaults} costRates={costRates} packageCategories={packageCategories} lockedPackageIds={lockedPackageIds} busy={busy} onSubmit={submit} onClose={() => setSelected(null)} />
+            <ProvisionForm
+              selected={selected}
+              environments={environments}
+              templateDefaults={templateDefaults}
+              costRates={costRates}
+              packageCategories={packageCategories}
+              packageLabels={packageLabels}
+              lockedPackageIds={lockedPackageIds}
+              busy={busy}
+              onSubmit={submit}
+              onClose={() => setSelected(null)}
+            />
           </div>
         </div>
       )}

@@ -94,3 +94,27 @@ export async function checkTeamQuotas(username, { kind, cpu = 0, memoryGB = 0, u
   }
   return { ok: true };
 }
+
+/** Quota snapshot for the signed-in user (all teams they belong to). */
+export async function getMyQuotas(username) {
+  const names = groupsForUser(username);
+  const teams = [];
+  for (const name of names) {
+    const g = getGroup(name);
+    if (!g) continue;
+    const quotas = normalizeQuotas(g.quotas);
+    const used = await getGroupUsage(name);
+    teams.push({
+      name,
+      quotas,
+      used,
+      remaining: {
+        vms: quotas.maxVms ? Math.max(0, quotas.maxVms - used.vms) : null,
+        cpu: quotas.maxCpu ? Math.max(0, quotas.maxCpu - used.cpu) : null,
+        memoryGB: quotas.maxMemoryGB ? Math.max(0, quotas.maxMemoryGB - used.memoryGB) : null,
+      },
+      limited: !!(quotas.maxVms || quotas.maxCpu || quotas.maxMemoryGB),
+    });
+  }
+  return { teams };
+}

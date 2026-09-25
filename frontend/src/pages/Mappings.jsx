@@ -36,80 +36,234 @@ function CloudInitState({ file, valid }) {
   return <span className="badge badge-neutral" title="Present in /var/lib/vz/snippets">{file}</span>;
 }
 
-function TemplateRow({ row, snippets, onSaved, onError }) {
-  const { confirm } = useDialog();
-  const [editing, setEditing] = useState(false);
-  const [info, setInfo] = useState(false);
+function TemplateEditModal({ row, snippets, onClose, onSaved, onError }) {
   const [busy, setBusy] = useState(false);
-  const [f, setF] = useState({});
-
-  const startEdit = () => {
-    setF({
-      osName: row.osName || "",
-      cloudInitFile: row.cloudInitFile || "",
-      credUser: row.credUser || "",
-      credPassword: "",
-      connectivity: row.connectivity || "ssh",
-      port: row.port || 22,
-      packageManager: row.packageManager || "",
-    });
-    setEditing(true);
-  };
+  const [localError, setLocalError] = useState("");
+  const [f, setF] = useState({
+    osName: row.osName || "",
+    cloudInitFile: row.cloudInitFile || "",
+    credUser: row.credUser || "",
+    credPassword: "",
+    connectivity: row.connectivity || "ssh",
+    port: row.port || 22,
+    packageManager: row.packageManager || "",
+  });
 
   const upd = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const nameOk = String(f.osName || "").trim().length > 0;
 
-  const save = async () => {
+  const save = async (e) => {
+    e.preventDefault();
+    if (!nameOk) {
+      setLocalError("OS name is required.");
+      return;
+    }
     setBusy(true);
+    setLocalError("");
     try {
-      await saveTemplateMapping(row.vmid, f);
-      setEditing(false);
+      await saveTemplateMapping(row.vmid, { ...f, osName: f.osName.trim() });
       onSaved();
-    } catch (e) {
-      onError(e.response?.data?.error || e.message);
+      onClose();
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      setLocalError(msg);
+      onError?.(msg);
     } finally {
       setBusy(false);
     }
   };
+
+  return (
+    <div className="modal-overlay" onClick={(ev) => ev.target === ev.currentTarget && onClose()}>
+      <div className="modal-card map-edit-modal" role="dialog" aria-label={`Edit mapping · ${row.templateName}`}>
+        <div className="modal-header">
+          <div>
+            <h3 style={{ margin: 0 }}>Edit template mapping</h3>
+            <p className="muted map-edit-sub">
+              <strong>{row.templateName}</strong>
+              <span className="mono"> · VMID {row.vmid}</span>
+            </p>
+          </div>
+          <button type="button" className="close-btn" onClick={onClose} aria-label="Close">×</button>
+        </div>
+
+        <form onSubmit={save} className="modal-body map-edit-form" noValidate>
+          <label className="field">
+            <span>OS name <em className="req">*</em></span>
+            <input
+              className="control-input"
+              value={f.osName}
+              onChange={upd("osName")}
+              placeholder="e.g. Ubuntu 22.04"
+              required
+              autoFocus
+              aria-required="true"
+            />
+          </label>
+
+          <label className="field">
+            <span>Cloud-init snippet</span>
+            <select className="control-select" value={f.cloudInitFile} onChange={upd("cloudInitFile")}>
+              <option value="">— none —</option>
+              {!snippets.includes(f.cloudInitFile) && f.cloudInitFile && (
+                <option value={f.cloudInitFile}>{f.cloudInitFile} (missing)</option>
+              )}
+              {snippets.map((s) => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </label>
+
+          <div className="map-edit-grid">
+            <label className="field">
+              <span>User</span>
+              <input className="control-input" value={f.credUser} onChange={upd("credUser")} placeholder="user" autoComplete="off" />
+            </label>
+            <label className="field">
+              <span>Password</span>
+              <input
+                className="control-input"
+                type="password"
+                value={f.credPassword}
+                onChange={upd("credPassword")}
+                placeholder={row.hasPassword ? "•••• (unchanged)" : "password"}
+                autoComplete="new-password"
+              />
+            </label>
+          </div>
+
+          <div className="map-edit-grid map-edit-grid-3">
+            <label className="field">
+              <span>Connectivity</span>
+              <select
+                className="control-select"
+                value={f.connectivity}
+                onChange={(e) => setF((s) => ({
+                  ...s,
+                  connectivity: e.target.value,
+                  port: e.target.value === "winrm" ? 5985 : 22,
+                }))}
+              >
+                <option value="ssh">SSH</option>
+                <option value="winrm">WinRM</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>Port</span>
+              <input className="control-input" type="number" min="1" value={f.port} onChange={upd("port")} />
+            </label>
+            <label className="field">
+              <span>Package manager</span>
+              <input className="control-input" list="pkg-mgrs" value={f.packageManager} onChange={upd("packageManager")} placeholder="apt / yum…" />
+            </label>
+          </div>
+
+          {localError && <p className="login-error" style={{ marginTop: 0 }}>{localError}</p>}
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={busy || !nameOk}>
+              {busy ? "Saving…" : "Save mapping"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function NetworkEditModal({ row, onClose, onSaved, onError }) {
+  const [busy, setBusy] = useState(false);
+  const [localError, setLocalError] = useState("");
+  const [f, setF] = useState({ type: row.type, label: row.label || "" });
+  const upd = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
+  const nameOk = String(f.label || "").trim().length > 0;
+
+  const save = async (e) => {
+    e.preventDefault();
+    if (!nameOk) {
+      setLocalError("Name is required.");
+      return;
+    }
+    setBusy(true);
+    setLocalError("");
+    try {
+      await saveNetworkMapping(row.iface, { ...f, label: f.label.trim() });
+      onSaved();
+      onClose();
+    } catch (err) {
+      const msg = err.response?.data?.error || err.message;
+      setLocalError(msg);
+      onError?.(msg);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="modal-overlay" onClick={(ev) => ev.target === ev.currentTarget && onClose()}>
+      <div className="modal-card map-edit-modal map-edit-modal-sm" role="dialog" aria-label={`Edit network · ${row.iface}`}>
+        <div className="modal-header">
+          <div>
+            <h3 style={{ margin: 0 }}>Edit network mapping</h3>
+            <p className="muted map-edit-sub">
+              <span className="mono">{row.iface}</span>
+              {" · detected "}
+              <strong>{row.detectedType}</strong>
+            </p>
+          </div>
+          <button type="button" className="close-btn" onClick={onClose} aria-label="Close">×</button>
+        </div>
+
+        <form onSubmit={save} className="modal-body map-edit-form" noValidate>
+          <label className="field">
+            <span>Name <em className="req">*</em></span>
+            <input
+              className="control-input"
+              value={f.label}
+              onChange={upd("label")}
+              placeholder="e.g. Production LAN"
+              required
+              autoFocus
+              aria-required="true"
+            />
+          </label>
+
+          <label className="field">
+            <span>Type</span>
+            <select className="control-select" value={f.type} onChange={upd("type")}>
+              <option value="bridge">Virtual bridge</option>
+              <option value="vlan">VLAN</option>
+            </select>
+          </label>
+
+          <p className="muted map-edit-hint">
+            {row.active ? "Active" : "Down"}
+            {row.cidr ? ` · ${row.cidr}` : ""}
+          </p>
+
+          {localError && <p className="login-error" style={{ marginTop: 0 }}>{localError}</p>}
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={busy || !nameOk}>
+              {busy ? "Saving…" : "Save mapping"}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function TemplateRow({ row, snippets, onSaved, onError }) {
+  const { confirm } = useDialog();
+  const [editing, setEditing] = useState(false);
+  const [info, setInfo] = useState(false);
 
   const remove = async () => {
     if (!(await confirm({ title: "Clear mapping", message: `Clear mapping for ${row.templateName} (VMID ${row.vmid})?`, confirmLabel: "Clear", tone: "danger" }))) return;
     try { await deleteTemplateMapping(row.vmid); onSaved(); }
     catch (e) { onError(e.response?.data?.error || e.message); }
   };
-
-  if (editing) {
-    return (
-      <tr className="map-row-editing">
-        <td><strong>{row.templateName}</strong><div className="mono muted">VMID {row.vmid}</div></td>
-        <td><input className="control-input" value={f.osName} onChange={upd("osName")} placeholder="e.g. Ubuntu 22.04" /></td>
-        <td>
-          <select className="control-select" value={f.cloudInitFile} onChange={upd("cloudInitFile")}>
-            <option value="">— none —</option>
-            {!snippets.includes(f.cloudInitFile) && f.cloudInitFile && <option value={f.cloudInitFile}>{f.cloudInitFile} (missing)</option>}
-            {snippets.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </td>
-        <td><input className="control-input" value={f.credUser} onChange={upd("credUser")} placeholder="user" autoComplete="off" /></td>
-        <td><input className="control-input" type="password" value={f.credPassword} onChange={upd("credPassword")} placeholder={row.hasPassword ? "•••• (unchanged)" : "password"} autoComplete="new-password" /></td>
-        <td>
-          <select className="control-select" value={f.connectivity} onChange={(e) => setF((s) => ({ ...s, connectivity: e.target.value, port: e.target.value === "winrm" ? 5985 : 22 }))}>
-            <option value="ssh">SSH</option>
-            <option value="winrm">WinRM</option>
-          </select>
-        </td>
-        <td><input className="control-input map-port" type="number" min="1" value={f.port} onChange={upd("port")} /></td>
-        <td>
-          <input className="control-input" list="pkg-mgrs" value={f.packageManager} onChange={upd("packageManager")} placeholder="apt / yum…" />
-        </td>
-        <td>
-          <div className="icon-row">
-            <IconBtn name="save" title="Save" tone="ok" onClick={busy ? () => {} : save} />
-            <IconBtn name="close" title="Cancel" onClick={() => setEditing(false)} />
-          </div>
-        </td>
-      </tr>
-    );
-  }
 
   return (
     <>
@@ -125,7 +279,7 @@ function TemplateRow({ row, snippets, onSaved, onError }) {
         <td>
           <div className="icon-row">
             <IconBtn name="info" title="Details" onClick={() => setInfo((v) => !v)} />
-            <IconBtn name="edit" title="Edit" onClick={startEdit} />
+            <IconBtn name="edit" title="Edit" onClick={() => setEditing(true)} />
             <IconBtn name="trash" title="Clear mapping" tone="danger" onClick={remove} />
           </div>
         </td>
@@ -141,6 +295,15 @@ function TemplateRow({ row, snippets, onSaved, onError }) {
           </td>
         </tr>
       )}
+      {editing && (
+        <TemplateEditModal
+          row={row}
+          snippets={snippets}
+          onClose={() => setEditing(false)}
+          onSaved={onSaved}
+          onError={onError}
+        />
+      )}
     </>
   );
 }
@@ -148,45 +311,13 @@ function TemplateRow({ row, snippets, onSaved, onError }) {
 function NetworkRow({ row, onSaved, onError }) {
   const [editing, setEditing] = useState(false);
   const [info, setInfo] = useState(false);
-  const [f, setF] = useState({});
 
-  const startEdit = () => { setF({ type: row.type, label: row.label || "" }); setEditing(true); };
-  const upd = (k) => (e) => setF((s) => ({ ...s, [k]: e.target.value }));
-
-  const save = async () => {
-    try { await saveNetworkMapping(row.iface, f); setEditing(false); onSaved(); }
-    catch (e) { onError(e.response?.data?.error || e.message); }
-  };
   const remove = async () => {
     try { await deleteNetworkMapping(row.iface); onSaved(); }
     catch (e) { onError(e.response?.data?.error || e.message); }
   };
 
   const overridden = row.type !== row.detectedType;
-
-  if (editing) {
-    return (
-      <tr className="map-row-editing">
-        <td className="mono"><strong>{row.iface}</strong></td>
-        <td><span className="badge badge-neutral">{row.detectedType}</span></td>
-        <td>
-          <select className="control-select" value={f.type} onChange={upd("type")}>
-            <option value="bridge">Virtual bridge</option>
-            <option value="vlan">VLAN</option>
-          </select>
-        </td>
-        <td><input className="control-input" value={f.label} onChange={upd("label")} placeholder="e.g. Production LAN" /></td>
-        <td>{row.active ? <span className="badge badge-running">active</span> : <span className="badge badge-stopped">down</span>}</td>
-        <td className="mono">{row.cidr || "—"}</td>
-        <td>
-          <div className="icon-row">
-            <IconBtn name="save" title="Save" tone="ok" onClick={save} />
-            <IconBtn name="close" title="Cancel" onClick={() => setEditing(false)} />
-          </div>
-        </td>
-      </tr>
-    );
-  }
 
   return (
     <>
@@ -203,7 +334,7 @@ function NetworkRow({ row, onSaved, onError }) {
         <td>
           <div className="icon-row">
             <IconBtn name="info" title="Details" onClick={() => setInfo((v) => !v)} />
-            <IconBtn name="edit" title="Edit" onClick={startEdit} />
+            <IconBtn name="edit" title="Edit" onClick={() => setEditing(true)} />
             {overridden || row.label ? <IconBtn name="trash" title="Reset to auto-detected" tone="danger" onClick={remove} /> : null}
           </div>
         </td>
@@ -217,6 +348,14 @@ function NetworkRow({ row, onSaved, onError }) {
             {" · "}{row.active ? "active" : "inactive"}
           </td>
         </tr>
+      )}
+      {editing && (
+        <NetworkEditModal
+          row={row}
+          onClose={() => setEditing(false)}
+          onSaved={onSaved}
+          onError={onError}
+        />
       )}
     </>
   );
@@ -351,7 +490,7 @@ export default function Mappings({ embedded = false }) {
           <table className="table map-table table-dense">
             <thead>
               <tr>
-                <th>Interface</th><th>Detected</th><th>Type</th><th>Label</th>
+                <th>Interface</th><th>Detected</th><th>Type</th><th>Name</th>
                 <th>State</th><th>Address</th><th>Actions</th>
               </tr>
             </thead>

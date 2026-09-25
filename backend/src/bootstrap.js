@@ -16,6 +16,8 @@ import { hydrateStepTimings } from "./services/stepTimingsStore.js";
 import { hydrateAiCache } from "./services/aiOps.js";
 import { hydrateCatalog } from "./services/catalogService.js";
 import { hydrateServiceNowTickets } from "./services/servicenowTicketStore.js";
+import { hydrateDockerHosts } from "./services/dockerHostStore.js";
+import { hydrateAppBlueprints, seedAppBlueprintsIfEmpty } from "./services/appCatalogService.js";
 import { seedDefaults } from "./scripts/seed-defaults.js";
 import { importJsonIfPresent } from "./scripts/migrate-json-to-db.js";
 
@@ -27,6 +29,7 @@ export async function bootstrap() {
   syncSchema();
   await importJsonIfPresent();
   await seedDefaults();
+  await seedAppBlueprintsIfEmpty();
   await hydrateSettings();
   applyToEnv(); // before stores that read approval / integration env
   await hydrateUsers();
@@ -45,6 +48,8 @@ export async function bootstrap() {
   await hydrateStepTimings();
   await hydrateAiCache();
   await hydrateCatalog();
+  await hydrateDockerHosts();
+  await hydrateAppBlueprints();
   await hydrateCostRates();
   applyToEnv();
 }

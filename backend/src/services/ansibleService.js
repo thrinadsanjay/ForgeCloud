@@ -4,6 +4,11 @@ import fsPromises from "fs/promises";
 import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
+import {
+  normalizeSshPrivateKey,
+  normalizeSshPublicKey,
+  describePrivateKeyProblem,
+} from "./sshKeyNormalize.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -27,15 +32,21 @@ export function isAnsibleEnabled() {
 }
 
 export function ansibleServiceConfig() {
+  const enabled = isAnsibleEnabled();
+  // When Ansible is on, always bootstrap the service account. A separate off
+  // switch left guests without `forge` and caused Permission denied on SSH.
+  const bootstrapCloudInit = enabled
+    ? true
+    : String(process.env.ANSIBLE_BOOTSTRAP_CLOUDINIT || "true") !== "false";
   return {
-    enabled: isAnsibleEnabled(),
+    enabled,
     serviceUser: process.env.ANSIBLE_SERVICE_USER || "forge",
     servicePassword: process.env.ANSIBLE_SERVICE_PASSWORD || "",
-    adminPubkey: process.env.ANSIBLE_ADMIN_PUBKEY || "",
-    forgePrivateKey: process.env.ANSIBLE_FORGE_PRIVATE_KEY || "",
-    forgePublicKey: process.env.ANSIBLE_FORGE_PUBLIC_KEY || "",
+    adminPubkey: normalizeSshPublicKey(process.env.ANSIBLE_ADMIN_PUBKEY || ""),
+    forgePrivateKey: normalizeSshPrivateKey(process.env.ANSIBLE_FORGE_PRIVATE_KEY || ""),
+    forgePublicKey: normalizeSshPublicKey(process.env.ANSIBLE_FORGE_PUBLIC_KEY || ""),
     removeForgeKey: String(process.env.ANSIBLE_REMOVE_FORGE_KEY || "true") !== "false",
-    bootstrapCloudInit: String(process.env.ANSIBLE_BOOTSTRAP_CLOUDINIT || "true") !== "false",
+    bootstrapCloudInit,
   };
 }
 
@@ -120,7 +131,17 @@ export async function runInitialSetup({
   ];
 
   if (privateKeyPem && String(privateKeyPem).trim()) {
-    await fsPromises.writeFile(keyPath, `${String(privateKeyPem).trim()}\n`, { mode: 0o600 });
+    const problem = describePrivateKeyProblem(privateKeyPem);
+    if (problem) {
+      return {
+        ok: false,
+        code: 2,
+        stdout: "",
+        stderr: problem,
+      };
+    }
+    const normalized = normalizeSshPrivateKey(privateKeyPem);
+    await fsPromises.writeFile(keyPath, normalized.endsWith("\n") ? normalized : `${normalized}\n`, { mode: 0o600 });
     args.push("--private-key", keyPath);
   }
   if (password) {
@@ -215,7 +236,7 @@ export async function runInitialSetupWithFallback({
       vars: {
         ...vars,
         service_account: cfg.serviceUser,
-        remove_forge_key: cfg.removeForgeKey,
+        remove_forge_key: vars.remove_forge_key != null ? vars.remove_forge_key : cfg.removeForgeKey,
         forge_pubkey: cfg.forgePublicKey || "",
       },
       onOutput,

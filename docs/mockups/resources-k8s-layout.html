@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Forge Resources — layout options</title>
+  <style>
+    :root {
+      --bg: #f3f6fb;
+      --surface: #fff;
+      --ink: #0f172a;
+      --muted: #64748b;
+      --line: #e2e8f0;
+      --accent: #E67E22;
+      --ok: #16a34a;
+      --navy: #111827;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, Segoe UI, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      padding: 28px;
+    }
+    h1 { font-size: 22px; margin: 0 0 6px; }
+    .lead { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+    .note {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      color: #9a3412;
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 24px;
+    }
+    .options { display: grid; grid-template-columns: 1fr; gap: 20px; max-width: 880px; }
+    .opt {
+      background: var(--surface);
+      border: 2px solid var(--line);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .opt.rec { border-color: var(--accent); }
+    .opt-head {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+    }
+    .opt-head strong { font-size: 15px; }
+    .badge {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #fff4eb;
+      color: var(--accent);
+      padding: 4px 8px;
+      border-radius: 999px;
+    }
+    .mock { padding: 16px 18px 20px; }
+    .tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+    .tab {
+      padding: 7px 12px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: var(--muted);
+      background: #f8fafc;
+      border: 1px solid var(--line);
+    }
+    .tab.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+    .row {
+      display: grid;
+      grid-template-columns: 28px 1.4fr 0.8fr 0.7fr 0.6fr;
+      gap: 8px;
+      align-items: center;
+      padding: 9px 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      margin-bottom: 6px;
+      font-size: 12.5px;
+      background: #fff;
+    }
+    .ns {
+      background: #f8fafc;
+      font-weight: 650;
+    }
+    .child { margin-left: 22px; opacity: 0.95; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+    .pill {
+      display: inline-block;
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #eef2ff;
+      color: #4338ca;
+    }
+    .pill.vm { background: #eff6ff; color: #1d4ed8; }
+    .pill.ct { background: #f5f3ff; color: #6d28d9; }
+    .pill.pod { background: #ecfdf5; color: #047857; }
+    .empty {
+      border: 1px dashed #fdba74;
+      background: #fffbeb;
+      border-radius: 10px;
+      padding: 18px;
+      font-size: 13px;
+      color: #9a3412;
+    }
+    .empty strong { display: block; margin-bottom: 4px; color: #7c2d12; }
+    .why { margin: 10px 0 0; font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+  </style>
+</head>
+<body>
+  <h1>Resources inventory — layout options</h1>
+  <p class="lead">How namespaces and containers should appear alongside VMs. K3s is not configured yet, so every option includes a graceful empty state.</p>
+  <div class="note">Constraint noted: until K3s API URL/token are set, the Kubernetes section shows “Configure Kubernetes” — VMs/LXC keep working as today.</div>
+
+  <div class="options">
+    <section class="opt rec">
+      <div class="opt-head">
+        <strong>A — Tabs: Compute | Kubernetes</strong>
+        <span class="badge">Recommended</span>
+      </div>
+      <div class="mock">
+        <div class="tabs">
+          <span class="tab on">Compute</span>
+          <span class="tab">Kubernetes</span>
+        </div>
+        <div class="row"><span class="dot"></span><span>web-app-prod</span><span class="pill vm">VM</span><span>running</span><span>4c · 8G</span></div>
+        <div class="row"><span class="dot"></span><span>redis-ct</span><span class="pill ct">LXC</span><span>running</span><span>2c · 2G</span></div>
+        <p class="why">Switch to Kubernetes tab → either namespace tree, or the unconfigured panel below.</p>
+        <div class="empty">
+          <strong>Kubernetes not configured</strong>
+          Set the K3s API URL and token in Settings to list namespaces and containers.
+        </div>
+      </div>
+    </section>
+
+    <section class="opt">
+      <div class="opt-head">
+        <strong>B — Single page, stacked sections</strong>
+      </div>
+      <div class="mock">
+        <div class="row ns"><span></span><span>Compute (Proxmox)</span><span></span><span></span><span></span></div>
+        <div class="row"><span class="dot"></span><span>web-app-prod</span><span class="pill vm">VM</span><span>running</span><span>4c · 8G</span></div>
+        <div class="row ns"><span></span><span>Kubernetes</span><span></span><span></span><span></span></div>
+        <div class="empty">
+          <strong>No cluster connected</strong>
+          Configure K3s to see namespaces here.
+        </div>
+      </div>
+      <p class="why" style="padding:0 18px 16px">Everything on one scroll. Gets long when both fleets are large.</p>
+    </section>
+
+    <section class="opt">
+      <div class="opt-head">
+        <strong>C — Expandable namespace tree (when K3s is live)</strong>
+      </div>
+      <div class="mock">
+        <div class="row ns"><span>▾</span><span>team-platform</span><span class="pill">NS</span><span>Active</span><span>3 pods</span></div>
+        <div class="row child"><span class="dot"></span><span>api-server</span><span class="pill pod">Pod</span><span>Running</span><span>1/1</span></div>
+        <div class="row child"><span class="dot"></span><span>worker</span><span class="pill pod">Pod</span><span>Running</span><span>1/1</span></div>
+        <div class="row ns"><span>▸</span><span>team-data</span><span class="pill">NS</span><span>Active</span><span>1 pod</span></div>
+      </div>
+      <p class="why" style="padding:0 18px 16px">Namespace rows expand to show pods/containers underneath. Pairs with A or B for navigation.</p>
+    </section>
+  </div>
+</body>
+</html>

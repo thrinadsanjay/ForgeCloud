@@ -1,14 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconPower } from "./icons.jsx";
+import { positionNearAnchor } from "./AnchoredPopover.jsx";
 
 // A compact "Power" dropdown for a resource row. `items` is a list of
-// { key, label, icon, danger?, onClick }. The popover is positioned with
-// fixed coordinates from the trigger's bounding box so it isn't clipped by the
-// table card's `overflow: hidden`. The popover is rendered through a portal on
-// document.body because the table card uses `backdrop-filter`, which would
-// otherwise become the containing block for our fixed-positioned popover and
-// throw off the viewport coordinates.
+// { key, label, icon, danger?, onClick }. Portal + fixed coords so table
+// cards with overflow/backdrop-filter don't clip the menu.
 export default function PowerMenu({ items }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
@@ -19,7 +16,6 @@ export default function PowerMenu({ items }) {
     if (!open) return;
     const close = () => setOpen(false);
     const onKey = (e) => { if (e.key === "Escape") setOpen(false); };
-    // Any scroll or resize invalidates the anchored position — just close.
     window.addEventListener("scroll", close, true);
     window.addEventListener("resize", close);
     document.addEventListener("keydown", onKey);
@@ -32,8 +28,12 @@ export default function PowerMenu({ items }) {
 
   const toggle = () => {
     if (open) { setOpen(false); return; }
-    const rect = btnRef.current.getBoundingClientRect();
-    setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    const next = positionNearAnchor(btnRef.current, {
+      estimatedHeight: 8 + items.length * 40,
+      estimatedWidth: 200,
+      align: "end",
+    });
+    setPos({ top: next.top, right: next.right });
     setOpen(true);
   };
 

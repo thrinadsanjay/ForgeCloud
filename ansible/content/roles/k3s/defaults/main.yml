@@ -1,0 +1,4 @@
+---
+k3s_version: ""
+k3s_install_helm: true
+k3s_write_kubeconfig_mode: "644"

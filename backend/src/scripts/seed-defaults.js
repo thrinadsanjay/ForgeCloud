@@ -135,6 +135,45 @@ function displayNameForPackage(id) {
   return PACKAGE_DISPLAY_NAMES[id] || id;
 }
 
+const PACKAGE_DESCRIPTIONS = {
+  "dotnet-sdk": "Microsoft .NET SDK for building apps and services.",
+  go: "Go language toolchain (compiler, tools, and modules).",
+  java: "Java Development Kit for building JVM applications.",
+  nodejs: "JavaScript runtime for servers and tooling.",
+  openjdk: "OpenJDK runtime and development tools.",
+  php: "PHP language runtime for web applications.",
+  python: "Python interpreter and standard library.",
+  aqt: "Qt installer tooling for cross-platform builds.",
+  maven: "Apache Maven build and dependency management.",
+  yarn: "Fast, reliable JavaScript package manager.",
+  docker: "Container engine for building and running images.",
+  "docker-compose": "Multi-container Compose orchestration.",
+  helm: "Kubernetes package manager for charts.",
+  kubectl: "Kubernetes command-line control plane client.",
+  mongodb: "Document database for flexible JSON-like data.",
+  mysql: "Popular relational database server.",
+  postgres: "Advanced open-source relational database.",
+  redis: "In-memory data store used as cache and broker.",
+  rabbitmq: "Message broker for reliable async queues.",
+  nginx: "High-performance web server and reverse proxy.",
+  ansible: "Agentless automation and configuration management.",
+  terraform: "Infrastructure as code for cloud and on-prem.",
+  awscli: "Official Amazon Web Services command-line interface.",
+  grafana: "Metrics dashboards and observability UI.",
+  prometheus: "Metrics collection and time-series monitoring.",
+  curl: "Transfer data with URLs — HTTP debugging staple.",
+  git: "Distributed version control.",
+  htop: "Interactive process viewer for Linux.",
+  jq: "Command-line JSON processor.",
+  tmux: "Terminal multiplexer for persistent sessions.",
+  vim: "Modal text editor for the terminal.",
+  postman: "API client tooling for request testing.",
+};
+
+function descriptionForPackage(id) {
+  return PACKAGE_DESCRIPTIONS[id] || null;
+}
+
 const TEMPLATE_DEFAULTS = {
   MEAN: [
     { letter: "M", name: "MongoDB" },
@@ -194,6 +233,7 @@ export async function seedDefaults() {
         id,
         name: displayNameForPackage(id),
         category: categoryForPackage(id),
+        description: descriptionForPackage(id),
         hostnameCode: PACKAGE_HOSTNAME_CODES[id] || null,
         enabled: true,
         sortOrder: i,
@@ -201,13 +241,20 @@ export async function seedDefaults() {
     });
     console.log(`[seed] ${PACKAGE_CATALOG.length} packages`);
   } else {
-    // Backfill category when missing; always refresh known hostname codes.
+    // Backfill category / description when missing; always refresh known hostname codes.
     for (const id of PACKAGE_CATALOG) {
       const cat = categoryForPackage(id);
+      const desc = descriptionForPackage(id);
       await prisma.package.updateMany({
         where: { id, OR: [{ category: null }, { category: "" }] },
         data: { category: cat },
       });
+      if (desc) {
+        await prisma.package.updateMany({
+          where: { id, OR: [{ description: null }, { description: "" }] },
+          data: { description: desc },
+        });
+      }
     }
   }
 

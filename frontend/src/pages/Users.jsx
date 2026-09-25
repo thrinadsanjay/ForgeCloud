@@ -5,32 +5,23 @@ import {
 import { useDialog } from "../components/DialogProvider.jsx";
 import EmptyState from "../components/EmptyState.jsx";
 import AdminPageHeader from "../components/AdminPageHeader.jsx";
+import AnchoredPopover from "../components/AnchoredPopover.jsx";
 import { ALL_ROLES, ROLE_LABELS, roleLabel } from "../lib/roles.js";
 
 function OverflowMenu({ open, onClose, onDelete, anchorRef }) {
-  const menuRef = useRef(null);
-  useEffect(() => {
-    if (!open) return undefined;
-    const onDoc = (e) => {
-      if (menuRef.current?.contains(e.target) || anchorRef.current?.contains(e.target)) return;
-      onClose();
-    };
-    const onKey = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("pointerdown", onDoc);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("pointerdown", onDoc);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open, onClose, anchorRef]);
-
-  if (!open) return null;
   return (
-    <div className="grp-menu" ref={menuRef} role="menu">
+    <AnchoredPopover
+      open={open}
+      onClose={onClose}
+      anchorRef={anchorRef}
+      className="grp-menu"
+      estimatedHeight={52}
+      estimatedWidth={160}
+    >
       <button type="button" role="menuitem" className="grp-menu-danger" onClick={onDelete}>
         Delete user
       </button>
-    </div>
+    </AnchoredPopover>
   );
 }
 

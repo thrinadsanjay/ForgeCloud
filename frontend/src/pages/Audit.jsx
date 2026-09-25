@@ -1,6 +1,7 @@
-import { Fragment, useEffect, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { getAudit } from "../api/client.js";
 import EmptyState from "../components/EmptyState.jsx";
+import AdminPageHeader from "../components/AdminPageHeader.jsx";
 
 function fmtAbsolute(iso) {
   const d = new Date(iso);
@@ -99,22 +100,64 @@ export default function Audit() {
   const pageStart = (safePage - 1) * pageSize;
   const pageItems = filtered.slice(pageStart, pageStart + pageSize);
 
+  const stats = useMemo(() => {
+    const ok = entries.filter((e) => e.status === "success").length;
+    const fail = entries.filter((e) => e.status === "failed").length;
+    const latest = entries[0]?.timestamp;
+    return { ok, fail, latest };
+  }, [entries]);
+
   return (
-    <div className="page">
-      <div className="page-head">
-        <div className="eyebrow">Compliance</div>
-        <h1>Audit log</h1>
-        <p>Every provisioning, lifecycle, and access event, newest first.</p>
-      </div>
+    <div className="page adm-board">
+      <AdminPageHeader
+        title="Audit log"
+        description="Every provisioning, lifecycle, and access event — newest first."
+      />
 
       {error && <div className="login-error">{error}</div>}
 
-      <div className="toolbar toolbar-panel">
+      <div className="adm-stat-grid">
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-brand" aria-hidden="true">≡</span>
+          <div>
+            <div className="adm-stat-label">Events</div>
+            <div className="adm-stat-value">{entries.length}</div>
+            <div className="adm-stat-hint">{filtered.length} matching</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-ok" aria-hidden="true">✓</span>
+          <div>
+            <div className="adm-stat-label">Success</div>
+            <div className="adm-stat-value">{stats.ok}</div>
+            <div className="adm-stat-hint">Loaded window</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-danger" aria-hidden="true">!</span>
+          <div>
+            <div className="adm-stat-label">Failed</div>
+            <div className="adm-stat-value">{stats.fail}</div>
+            <div className="adm-stat-hint">Needs attention</div>
+          </div>
+        </div>
+        <div className="adm-stat-card">
+          <span className="adm-stat-icon is-blue" aria-hidden="true">◷</span>
+          <div>
+            <div className="adm-stat-label">Latest</div>
+            <div className="adm-stat-value adm-stat-sm">{stats.latest ? fmtRelative(stats.latest) : "—"}</div>
+            <div className="adm-stat-hint">{stats.latest ? fmtAbsolute(stats.latest) : "No events yet"}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="adm-board-toolbar">
         <input
-          className="control-input"
+          className="control-input adm-board-search"
           placeholder="Filter by user, action, or target…"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
+          aria-label="Filter audit events"
         />
         <select className="control-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="all">All results</option>
@@ -127,7 +170,6 @@ export default function Audit() {
             <option key={action} value={action}>{ACTION_LABELS[action] || action}</option>
           ))}
         </select>
-        <span className="muted" style={{ marginLeft: "auto", fontSize: 13 }}>{filtered.length} events</span>
         <button
           type="button"
           className="btn btn-ghost btn-sm"
@@ -175,77 +217,83 @@ export default function Audit() {
         </button>
       </div>
 
-      <div className="card" style={{ overflow: "hidden" }}>
-        {filtered.length === 0 ? (
-          <EmptyState
-            icon="📋"
-            title="No matching events"
-            description={entries.length === 0
-              ? "Audit events appear as users sign in and provision resources."
-              : "Try clearing the search or result filters."}
-            actionLabel={entries.length ? "Clear filters" : undefined}
-            onAction={entries.length ? () => { setFilter(""); setStatusFilter("all"); setActionFilter("all"); } : undefined}
-          />
-        ) : (
-          <table className="table table-dense audit-table">
-            <thead>
-              <tr>
-                <th>When</th>
-                <th>User</th>
-                <th>Action</th>
-                <th>Target</th>
-                <th>Result</th>
-                <th aria-label="Detail" />
-              </tr>
-            </thead>
-            <tbody>
-              {pageItems.map((e) => {
-                const family = actionFamily(e.action);
-                const detail = detailPreview(e.detail);
-                const open = expanded === e.id;
-                return (
-                  <Fragment key={e.id}>
-                    <tr className={open ? "audit-row-open" : undefined}>
-                      <td className="mono" title={fmtAbsolute(e.timestamp)}>{fmtRelative(e.timestamp)}</td>
-                      <td>{e.actor?.username || "system"}</td>
-                      <td>
-                        <div className="audit-action">
-                          <span className={`audit-family audit-family-${family.key}`}>{family.label}</span>
-                          <span>{ACTION_LABELS[e.action] || e.action}</span>
-                        </div>
-                      </td>
-                      <td className="mono audit-target">{e.target || "—"}</td>
-                      <td>
-                        <span className={`badge ${e.status === "success" ? "badge-running" : "badge-failed"}`}>{e.status}</span>
-                      </td>
-                      <td>
-                        {detail ? (
-                          <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            aria-expanded={open}
-                            onClick={() => setExpanded(open ? null : e.id)}
-                          >
-                            {open ? "Hide" : "Detail"}
-                          </button>
-                        ) : (
-                          <span className="muted">—</span>
-                        )}
-                      </td>
-                    </tr>
-                    {open && detail && (
-                      <tr className="audit-detail-row">
-                        <td colSpan={6}>
-                          <pre className="audit-detail-pre">{detail}</pre>
+      <div className="adm-table-wrap">
+        <div className="adm-table-head">
+          <h3 className="adm-table-title">Events</h3>
+          <span className="muted adm-table-count">{filtered.length} shown</span>
+        </div>
+        <div className="adm-scroll">
+          {filtered.length === 0 ? (
+            <EmptyState
+              icon="📋"
+              title="No matching events"
+              description={entries.length === 0
+                ? "Audit events appear as users sign in and provision resources."
+                : "Try clearing the search or result filters."}
+              actionLabel={entries.length ? "Clear filters" : undefined}
+              onAction={entries.length ? () => { setFilter(""); setStatusFilter("all"); setActionFilter("all"); } : undefined}
+            />
+          ) : (
+            <table className="table table-dense audit-table">
+              <thead>
+                <tr>
+                  <th>When</th>
+                  <th>User</th>
+                  <th>Action</th>
+                  <th>Target</th>
+                  <th>Result</th>
+                  <th aria-label="Detail" />
+                </tr>
+              </thead>
+              <tbody>
+                {pageItems.map((e) => {
+                  const family = actionFamily(e.action);
+                  const detail = detailPreview(e.detail);
+                  const open = expanded === e.id;
+                  return (
+                    <Fragment key={e.id}>
+                      <tr className={open ? "audit-row-open" : undefined}>
+                        <td className="mono" title={fmtAbsolute(e.timestamp)}>{fmtRelative(e.timestamp)}</td>
+                        <td>{e.actor?.username || "system"}</td>
+                        <td>
+                          <div className="audit-action">
+                            <span className={`audit-family audit-family-${family.key}`}>{family.label}</span>
+                            <span>{ACTION_LABELS[e.action] || e.action}</span>
+                          </div>
+                        </td>
+                        <td className="mono audit-target">{e.target || "—"}</td>
+                        <td>
+                          <span className={`badge ${e.status === "success" ? "badge-running" : "badge-failed"}`}>{e.status}</span>
+                        </td>
+                        <td>
+                          {detail ? (
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-sm"
+                              aria-expanded={open}
+                              onClick={() => setExpanded(open ? null : e.id)}
+                            >
+                              {open ? "Hide" : "Detail"}
+                            </button>
+                          ) : (
+                            <span className="muted">—</span>
+                          )}
                         </td>
                       </tr>
-                    )}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
+                      {open && detail && (
+                        <tr className="audit-detail-row">
+                          <td colSpan={6}>
+                            <pre className="audit-detail-pre">{detail}</pre>
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
 
       {filtered.length > 0 && (

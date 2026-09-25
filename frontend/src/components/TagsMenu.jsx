@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { IconTag } from "./icons.jsx";
 import { setResourceTags, autoTagResource } from "../api/client.js";
+import { positionNearAnchor } from "./AnchoredPopover.jsx";
 
 // user-*/group-* tags gate visibility and can't be removed from the UI.
 const isProtected = (t) => t.startsWith("user-") || t.startsWith("group-");
@@ -34,8 +35,12 @@ export default function TagsMenu({ resource, onChanged }) {
 
   const toggle = () => {
     if (open) { setOpen(false); return; }
-    const rect = btnRef.current.getBoundingClientRect();
-    setPos({ top: rect.bottom + 6, right: window.innerWidth - rect.right });
+    const next = positionNearAnchor(btnRef.current, {
+      estimatedHeight: 280,
+      estimatedWidth: 270,
+      align: "end",
+    });
+    setPos({ top: next.top, right: next.right });
     setOpen(true);
   };
 

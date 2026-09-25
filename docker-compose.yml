@@ -1,6 +1,14 @@
 # Forge — container deployment.
 #
-#   docker compose up -d --build
+# Build (no host npm; all Node work in containers):
+#   ./build.sh
+#   docker compose up -d
+#
+# Or in one step:
+#   ./build.sh --up
+#
+# Debian 13 / Proxmox: AppArmor docker-default blocks Node during `docker build`.
+# build.sh runs npm/vite/prisma via `docker run --security-opt apparmor=unconfined`.
 #
 # Runtime data lives in PostgreSQL (forge-db volume). Configuration is done
 # at runtime via env vars below and/or the in-app Settings page.
@@ -10,6 +18,8 @@ services:
     image: postgres:16-alpine
     container_name: forge-db
     restart: unless-stopped
+    security_opt:
+      - apparmor=unconfined
     environment:
       POSTGRES_DB: proxmox_ssp
       POSTGRES_USER: ssp
@@ -27,6 +37,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    security_opt:
+      - apparmor=unconfined
     image: forge:latest
     container_name: forge
     restart: unless-stopped

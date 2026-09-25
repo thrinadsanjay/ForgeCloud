@@ -84,6 +84,7 @@ export function listCatalogPackages() {
     id: p.id,
     name: p.name,
     category: p.category || "Uncategorized",
+    description: p.description || null,
     installPkg: p.installPkg || p.id,
     hostnameCode: p.hostnameCode || null,
     isDefault: !!p.isDefault,
@@ -115,6 +116,51 @@ export function resolveApplicationAppToken(roleId, selectedPackageIds = []) {
     if (code) return code;
   }
   return role.id || roleId || "";
+}
+
+/**
+ * Resolve {app} for hostname suggestion from wizard selections:
+ * 1) Application-role package (hostnameCode) when exactly one role option is picked
+ * 2) Single blueprint / stack id when exactly one is selected
+ * 3) Single extra package with hostnameCode
+ * 4) Application role id
+ * 5) First blueprint id, else first package hostnameCode/id
+ */
+export function resolveHostnameAppToken({
+  roleId = "",
+  rolePackages = [],
+  packages = [],
+  apps = [],
+} = {}) {
+  const roleToken = roleId ? resolveApplicationAppToken(roleId, rolePackages) : "";
+  const role = getApplicationRole(roleId);
+  const roleOpts = new Set(role?.options || []);
+  const rolePicked = (Array.isArray(rolePackages) ? rolePackages : [])
+    .map(String)
+    .filter((id) => roleOpts.has(id));
+
+  // Prefer a concrete package code from the application role (page 1).
+  if (rolePicked.length === 1) {
+    const code = (packageById(rolePicked[0])?.hostnameCode || "").trim();
+    if (code) return code;
+  }
+
+  const blueprintIds = (Array.isArray(apps) ? apps : []).map(String).filter(Boolean);
+  if (blueprintIds.length === 1) return slugPart(blueprintIds[0], blueprintIds[0]);
+
+  const pkgIds = (Array.isArray(packages) ? packages : [])
+    .map(String)
+    .filter((id) => id && !roleOpts.has(id));
+  const coded = pkgIds
+    .map((id) => ({ id, code: (packageById(id)?.hostnameCode || "").trim() }))
+    .filter((x) => x.code);
+  if (coded.length === 1) return coded[0].code;
+
+  if (roleToken) return roleToken;
+  if (blueprintIds.length) return slugPart(blueprintIds[0], blueprintIds[0]);
+  if (coded.length) return coded[0].code;
+  if (pkgIds.length) return slugPart(pkgIds[0], pkgIds[0]);
+  return "";
 }
 
 export function getDefaultPackages() {
@@ -279,6 +325,134 @@ export function withTemplateDefaults(list) {
 
 // --- Admin CRUD ---
 
+function badRequest(message) {
+  return Object.assign(new Error(message), { status: 400 });
+}
+
+/** Validate hostnameCode uniqueness across packages (excluding packageId). */
+async function assertUniqueHostnameCode(code, packageId) {
+  if (!code) return;
+  const clash = await prisma.package.findFirst({
+    where: {
+      hostnameCode: code,
+      NOT: { id: packageId },
+    },
+    select: { id: true, name: true },
+  });
+  if (clash) {
+    throw badRequest(
+      `Hostname code “${code}” is already used by package “${clash.id}”. Each code must be unique.`,
+    );
+  }
+}
+
+/**
+ * Validate application role options against the package catalog.
+ * @param {{ options: string[], defaultOptionId: string|null, enabled: boolean, selection: string }} role
+ */
+async function assertValidRolePackages(role) {
+  const options = [...new Set((role.options || []).map((x) => String(x).trim()).filter(Boolean))];
+  if (role.enabled && options.length === 0) {
+    throw badRequest("Enabled roles need at least one package option.");
+  }
+  if (!options.length) return options;
+
+  const rows = await prisma.package.findMany({
+    where: { id: { in: options } },
+    select: { id: true, enabled: true },
+  });
+  const found = new Map(rows.map((r) => [r.id, r]));
+  const unknown = options.filter((id) => !found.has(id));
+  if (unknown.length) {
+    throw badRequest(`Unknown package id(s): ${unknown.join(", ")}. Add them under Packages first.`);
+  }
+  const disabled = options.filter((id) => found.get(id) && !found.get(id).enabled);
+  if (disabled.length) {
+    throw badRequest(`Disabled package id(s) cannot be role options: ${disabled.join(", ")}.`);
+  }
+  if (role.defaultOptionId && !options.includes(role.defaultOptionId)) {
+    throw badRequest(`Default option “${role.defaultOptionId}” must be one of the role options.`);
+  }
+  if (role.selection === "single" && role.defaultOptionId && options.length === 0) {
+    throw badRequest("Single-select roles need options before setting a default.");
+  }
+  return options;
+}
+
+/** Catalog health checks for admin UI (non-blocking warnings). */
+export async function validateCatalog() {
+  const [pkgs, roles] = await Promise.all([
+    prisma.package.findMany({ select: { id: true, name: true, enabled: true, hostnameCode: true } }),
+    prisma.applicationRole.findMany(),
+  ]);
+  const issues = [];
+  const byCode = new Map();
+  for (const p of pkgs) {
+    const code = (p.hostnameCode || "").trim().toLowerCase();
+    if (!code) continue;
+    if (!byCode.has(code)) byCode.set(code, []);
+    byCode.get(code).push(p.id);
+  }
+  for (const [code, ids] of byCode) {
+    if (ids.length > 1) {
+      issues.push({
+        severity: "error",
+        code: "duplicate_hostname_code",
+        message: `Hostname code “${code}” is shared by: ${ids.join(", ")}`,
+        packageIds: ids,
+      });
+    }
+  }
+
+  const pkgMap = new Map(pkgs.map((p) => [p.id, p]));
+  for (const role of roles) {
+    const opts = Array.isArray(role.options) ? role.options : [];
+    const options = opts.map((x) => String(x)).filter(Boolean);
+    if (role.enabled && options.length === 0) {
+      issues.push({
+        severity: "error",
+        code: "empty_role_options",
+        message: `Role “${role.id}” is enabled but has no package options`,
+        roleId: role.id,
+      });
+    }
+    const unknown = options.filter((id) => !pkgMap.has(id));
+    if (unknown.length) {
+      issues.push({
+        severity: "error",
+        code: "unknown_role_packages",
+        message: `Role “${role.id}” references unknown packages: ${unknown.join(", ")}`,
+        roleId: role.id,
+        packageIds: unknown,
+      });
+    }
+    const disabled = options.filter((id) => pkgMap.get(id) && !pkgMap.get(id).enabled);
+    if (disabled.length) {
+      issues.push({
+        severity: "warn",
+        code: "disabled_role_packages",
+        message: `Role “${role.id}” references disabled packages: ${disabled.join(", ")}`,
+        roleId: role.id,
+        packageIds: disabled,
+      });
+    }
+    if (role.defaultOptionId && options.length && !options.includes(role.defaultOptionId)) {
+      issues.push({
+        severity: "error",
+        code: "invalid_default_option",
+        message: `Role “${role.id}” default “${role.defaultOptionId}” is not in its options`,
+        roleId: role.id,
+      });
+    }
+  }
+
+  return {
+    ok: !issues.some((i) => i.severity === "error"),
+    issueCount: issues.length,
+    issues,
+  };
+}
+
 export async function adminListPackages() {
   return prisma.package.findMany({ orderBy: { sortOrder: "asc" } });
 }
@@ -288,6 +462,7 @@ export async function adminUpsertPackage(data) {
     id: String(data.id || "").trim(),
     name: String(data.name || data.id || "").trim(),
     category: data.category != null ? String(data.category).trim() || null : undefined,
+    description: data.description != null ? (String(data.description).trim() || null) : undefined,
     installPkg: data.installPkg != null ? (String(data.installPkg).trim() || null) : undefined,
     installCmd: data.installCmd != null ? (String(data.installCmd).trim() || null) : undefined,
     hostnameCode: data.hostnameCode != null ? (String(data.hostnameCode).trim().toLowerCase() || null) : undefined,
@@ -295,11 +470,18 @@ export async function adminUpsertPackage(data) {
     enabled: data.enabled != null ? !!data.enabled : undefined,
     sortOrder: data.sortOrder != null ? Number(data.sortOrder) : undefined,
   };
-  if (!payload.id) throw Object.assign(new Error("Package id is required"), { status: 400 });
+  if (!payload.id) throw badRequest("Package id is required");
+  if (!/^[a-z0-9][a-z0-9._-]{0,63}$/i.test(payload.id)) {
+    throw badRequest("Package id must be alphanumeric (plus . _ -), max 64 chars.");
+  }
+  if (payload.hostnameCode != null) {
+    await assertUniqueHostnameCode(payload.hostnameCode, payload.id);
+  }
   const create = {
     id: payload.id,
     name: payload.name || payload.id,
     category: payload.category ?? "Uncategorized",
+    description: payload.description ?? null,
     installPkg: payload.installPkg ?? null,
     installCmd: payload.installCmd ?? null,
     hostnameCode: payload.hostnameCode ?? null,
@@ -322,7 +504,17 @@ export async function adminUpsertPackage(data) {
 }
 
 export async function adminDeletePackage(id) {
-  await prisma.package.delete({ where: { id } });
+  const pkgId = String(id);
+  const roles = await prisma.applicationRole.findMany({ select: { id: true, options: true } });
+  const usedBy = roles
+    .filter((r) => Array.isArray(r.options) && r.options.map(String).includes(pkgId))
+    .map((r) => r.id);
+  if (usedBy.length) {
+    throw badRequest(
+      `Cannot remove “${pkgId}” — it is used by App role(s): ${usedBy.join(", ")}. Remove it from those roles first.`,
+    );
+  }
+  await prisma.package.delete({ where: { id: pkgId } });
   await hydrateCatalog();
 }
 
@@ -333,22 +525,33 @@ export async function adminListApplicationRoles() {
 
 export async function adminUpsertApplicationRole(data) {
   const id = String(data.id || "").trim().toLowerCase();
-  if (!id) throw Object.assign(new Error("Role id is required"), { status: 400 });
+  if (!id) throw badRequest("Role id is required");
+  if (!/^[a-z][a-z0-9_-]{0,31}$/.test(id)) {
+    throw badRequest("Role id must start with a letter and use a-z, 0-9, _ or - (max 32).");
+  }
   const selection = String(data.selection || "multi").toLowerCase();
   if (!["single", "multi", "bundle", "suggest"].includes(selection)) {
-    throw Object.assign(new Error("selection must be single, multi, bundle, or suggest"), { status: 400 });
+    throw badRequest("selection must be single, multi, bundle, or suggest");
   }
-  const options = Array.isArray(data.options)
+  const rawOptions = Array.isArray(data.options)
     ? data.options.map((x) => String(x).trim()).filter(Boolean)
     : String(data.options || "").split(/[,;\s]+/).map((s) => s.trim()).filter(Boolean);
+  const enabled = data.enabled !== false;
+  const defaultOptionId = data.defaultOptionId ? String(data.defaultOptionId).trim() : null;
+  const options = await assertValidRolePackages({
+    options: rawOptions,
+    defaultOptionId,
+    enabled,
+    selection,
+  });
   const payload = {
     id,
     label: String(data.label || id).trim(),
     selection,
     allowMultiOverride: !!data.allowMultiOverride,
-    defaultOptionId: data.defaultOptionId ? String(data.defaultOptionId).trim() : null,
+    defaultOptionId,
     options,
-    enabled: data.enabled !== false,
+    enabled,
     sortOrder: Number.isFinite(Number(data.sortOrder)) ? Number(data.sortOrder) : 0,
   };
   const row = await prisma.applicationRole.upsert({
@@ -357,12 +560,14 @@ export async function adminUpsertApplicationRole(data) {
     update: payload,
   });
   await hydrateCatalog();
+  await syncHostnameApplicationsFromRoles();
   return normalizeRoleRow(row);
 }
 
 export async function adminDeleteApplicationRole(id) {
   await prisma.applicationRole.delete({ where: { id: String(id) } });
   await hydrateCatalog();
+  await syncHostnameApplicationsFromRoles();
 }
 
 export async function adminListBaselines() {
@@ -523,14 +728,16 @@ export function getHostnameFormat() {
 }
 
 export function getHostnameFormatInfo() {
+  const roleApps = listApplicationRoles().map((r) => r.id);
   return {
     format: getHostnameFormat(),
     defaultFormat: DEFAULT_HOSTNAME_FORMAT,
     applications: getHostnameApplications(),
     defaultApplications: [...DEFAULT_HOSTNAME_APPLICATIONS],
+    roleApplications: roleApps,
     tokens: [
       { token: "{os}", meaning: "OS / template slug (e.g. ubuntu)" },
-      { token: "{app}", meaning: "Application role (web, db, docker, …)" },
+      { token: "{app}", meaning: "Application role (web, db, docker, …) — synced from App roles when roles change" },
       { token: "{kind}", meaning: "vm, ct, or stack" },
       { token: "{user}", meaning: "Requester username" },
       { token: "{env}", meaning: "Short environment code (≤3 chars: production→prd, staging→stg, …)" },
@@ -543,6 +750,25 @@ export function getHostnameFormatInfo() {
       { token: "{nnn}", meaning: "Sequential, 3-digit padded" },
     ],
   };
+}
+
+/** Keep hostname {app} options aligned with enabled Application roles. */
+export async function syncHostnameApplicationsFromRoles() {
+  const roles = await prisma.applicationRole.findMany({
+    where: { enabled: true },
+    orderBy: { sortOrder: "asc" },
+    select: { id: true },
+  });
+  const ids = roles.map((r) => String(r.id).trim().toLowerCase()).filter(Boolean);
+  if (!ids.length) return getHostnameFormatInfo();
+  const value = ids.join(",");
+  await prisma.setting.upsert({
+    where: { key: HOSTNAME_APPS_KEY },
+    create: { key: HOSTNAME_APPS_KEY, value },
+    update: { value },
+  });
+  hostnameApplications = [...ids];
+  return getHostnameFormatInfo();
 }
 
 export async function setHostnameFormat(format, { applications } = {}) {

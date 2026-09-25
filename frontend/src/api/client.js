@@ -56,6 +56,23 @@ export const getVmTemplates = () => api.get("/catalog/vm-templates").then((r) =>
 export const getContainerTemplates = () => api.get("/catalog/container-templates").then((r) => r.data);
 export const getStacks = () => api.get("/catalog/stacks").then((r) => r.data);
 export const getPackages = () => api.get("/catalog/packages").then((r) => r.data);
+export const getApps = () => api.get("/catalog/apps").then((r) => r.data);
+export const previewApps = (apps) => api.post("/catalog/apps/preview", { apps }).then((r) => r.data);
+export const syncAnsibleContent = () => api.post("/settings/ansible-content/sync").then((r) => r.data);
+export const getAnsibleContentStatus = () => api.get("/settings/ansible-content").then((r) => r.data);
+export const downloadAnsibleContentTemplate = async () => {
+  const r = await api.get("/settings/ansible-content/template", { responseType: "blob" });
+  const blob = r.data;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "forge-ansible-content-template.tar.gz";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  return true;
+};
 export const getApplicationRoles = () => api.get("/catalog/application-roles").then((r) => r.data);
 export const getInstanceSizes = () => api.get("/catalog/instance-sizes").then((r) => r.data);
 export const getBaselines = () => api.get("/catalog/baselines").then((r) => r.data);
@@ -82,6 +99,15 @@ export const rollbackJob = (id, reason) =>
   api.post(`/jobs/${id}/rollback`, reason ? { reason } : {}).then((r) => r.data);
 export const retryJob = (id, reason) =>
   api.post(`/jobs/${id}/retry`, reason ? { reason } : {}).then((r) => r.data);
+export const retryJobApps = (jobId, apps) =>
+  api.post(`/jobs/${jobId}/retry-apps`, apps?.length ? { apps } : {}).then((r) => r.data);
+
+// --- Quotas ---
+export const getMyQuotas = () => api.get("/quotas/me").then((r) => r.data);
+export const getMyUsage = () => api.get("/usage/me").then((r) => r.data);
+export const getAdminUsage = () => api.get("/usage/admin").then((r) => r.data);
+export const getTeamUsage = (name) =>
+  api.get(`/usage/teams/${encodeURIComponent(name)}`).then((r) => r.data);
 
 // --- Container hosting (K3s / Kubernetes) ---
 export const getK8sContext = () => api.get("/k3s/context").then((r) => r.data);
@@ -95,8 +121,46 @@ export const getK8sDeployments = (ns) =>
   api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments`).then((r) => r.data);
 export const createK8sDeployment = (ns, p) =>
   api.post(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments`, p).then((r) => r.data);
-export const deleteK8sDeployment = (ns, name) =>
-  api.delete(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(name)}`).then((r) => r.data);
+export const getK8sDeployment = (ns, name) =>
+  api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(name)}`).then((r) => r.data);
+export const getK8sDeploymentStack = (ns, name) =>
+  api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(name)}/stack`).then((r) => r.data);
+export const updateK8sDeployment = (ns, name, p) =>
+  api.patch(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(name)}`, p).then((r) => r.data);
+export const deleteK8sDeployment = (ns, name, { force = false } = {}) =>
+  api.delete(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(name)}`, {
+    params: { force: force ? "true" : "false" },
+  }).then((r) => r.data);
+export const deleteK8sPod = (ns, pod, { force = false } = {}) =>
+  api.delete(`/k3s/namespaces/${encodeURIComponent(ns)}/pods/${encodeURIComponent(pod)}`, {
+    params: { force: force ? "true" : "false" },
+  }).then((r) => r.data);
+export const getK8sServices = (ns) =>
+  api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/services`).then((r) => r.data);
+export const deleteK8sService = (ns, name) =>
+  api.delete(`/k3s/namespaces/${encodeURIComponent(ns)}/services/${encodeURIComponent(name)}`).then((r) => r.data);
+export const getK8sIngresses = (ns) =>
+  api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/ingresses`).then((r) => r.data);
+export const deleteK8sIngress = (ns, name) =>
+  api.delete(`/k3s/namespaces/${encodeURIComponent(ns)}/ingresses/${encodeURIComponent(name)}`).then((r) => r.data);
+export const getK8sPvcs = (ns) =>
+  api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/pvcs`).then((r) => r.data);
+export const deleteK8sPvc = (ns, name) =>
+  api.delete(`/k3s/namespaces/${encodeURIComponent(ns)}/pvcs/${encodeURIComponent(name)}`).then((r) => r.data);
+export const applyK8sYaml = (ns, yaml) =>
+  api.post(`/k3s/namespaces/${encodeURIComponent(ns)}/apply`, { yaml }).then((r) => r.data);
+export const scaleK8sDeployment = (ns, name, replicas) =>
+  api.post(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(name)}/scale`, { replicas }).then((r) => r.data);
+export const restartK8sDeployment = (ns, name) =>
+  api.post(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(name)}/restart`).then((r) => r.data);
+export const getK8sPodLogs = (ns, pod, { tail, container } = {}) =>
+  api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/pods/${encodeURIComponent(pod)}/logs`, {
+    params: { tail, container },
+    responseType: "text",
+    transformResponse: [(d) => d],
+  }).then((r) => r.data);
+export const execK8sPod = (ns, pod, { command, container } = {}) =>
+  api.post(`/k3s/namespaces/${encodeURIComponent(ns)}/pods/${encodeURIComponent(pod)}/exec`, { command, container }).then((r) => r.data);
 
 // --- Chat ---
 export const sendChatMessage = (p) => api.post("/chat", p).then((r) => r.data);
@@ -216,9 +280,15 @@ export const getExpiringResources = (withinDays = 7) =>
   api.get("/notifications/expiring", { params: { withinDays } }).then((r) => r.data);
 
 // --- Notifications (bell) ---
-export const getNotifications = () => api.get("/notifications/inbox").then((r) => r.data);
+export const getNotifications = (params = {}) =>
+  api.get("/notifications/inbox", { params }).then((r) => r.data);
 export const markNotificationRead = (id) => api.post(`/notifications/${id}/read`).then((r) => r.data);
-export const markAllNotificationsRead = () => api.post("/notifications/read-all").then((r) => r.data);
+export const markNotificationsReadMany = (ids) =>
+  api.post("/notifications/read-many", { ids }).then((r) => r.data);
+export const markAllNotificationsRead = ({ category = "all" } = {}) =>
+  api.post("/notifications/read-all", { category }).then((r) => r.data);
+export const dismissNotification = (id) =>
+  api.delete(`/notifications/${encodeURIComponent(id)}`).then((r) => r.data);
 
 // --- Snapshots & backups ---
 export const getSnapshots = (type, vmid) =>
@@ -258,12 +328,66 @@ export const deleteNetworkMapping = (iface) =>
 // --- Admin: system settings (.env config) ---
 export const getSettings = () => api.get("/settings").then((r) => r.data);
 export const updateSettings = (values) => api.put("/settings", { values }).then((r) => r.data);
-export const testProxmoxConnection = () => api.post("/settings/proxmox/test").then((r) => r.data);
-export const testK3sConnection = () => api.post("/settings/k3s/test").then((r) => r.data);
-export const testServiceNowConnection = () => api.post("/settings/servicenow/test").then((r) => r.data);
-export const testN8nWebhook = () => api.post("/settings/n8n/test").then((r) => r.data);
-export const testIpamConnection = () => api.post("/settings/ipam/test").then((r) => r.data);
-export const testAiConnection = () => api.post("/settings/ai/test").then((r) => r.data);
+export const testProxmoxConnection = (opts = {}) =>
+  api.post("/settings/proxmox/test", opts, {
+    params: opts.light ? { light: "1" } : {},
+    timeout: 8000,
+  }).then((r) => r.data);
+export const testK3sConnection = () => api.post("/settings/k3s/test", {}, { timeout: 8000 }).then((r) => r.data);
+
+/** User-facing reachability probes (any authenticated user). */
+export const getProxmoxStatus = () =>
+  api.get("/infra/status/proxmox", { timeout: 10000 }).then((r) => r.data);
+export const getK3sStatus = () =>
+  api.get("/infra/status/k3s", { timeout: 10000 }).then((r) => r.data);
+export const getDockerStatus = () =>
+  api.get("/infra/status/docker", { timeout: 20000 }).then((r) => r.data);
+export const testServiceNowConnection = () => api.post("/settings/servicenow/test", {}, { timeout: 8000 }).then((r) => r.data);
+export const testN8nWebhook = () => api.post("/settings/n8n/test", {}, { timeout: 8000 }).then((r) => r.data);
+export const testIpamConnection = () => api.post("/settings/ipam/test", {}, { timeout: 8000 }).then((r) => r.data);
+export const testAiConnection = () => api.post("/settings/ai/test", {}, { timeout: 12000 }).then((r) => r.data);
+
+// --- Docker Compose (remote Engines) ---
+export const listDockerHostsAdmin = () => api.get("/admin/docker-hosts").then((r) => r.data);
+export const createDockerHostAdmin = (p) => api.post("/admin/docker-hosts", p).then((r) => r.data);
+export const updateDockerHostAdmin = (id, p) => api.patch(`/admin/docker-hosts/${id}`, p).then((r) => r.data);
+export const deleteDockerHostAdmin = (id) => api.delete(`/admin/docker-hosts/${id}`).then((r) => r.data);
+export const testDockerHostFormAdmin = (p) =>
+  api.post("/admin/docker-hosts/test", p, { timeout: 12000 }).then((r) => r.data);
+export const testDockerHostAdmin = (id) =>
+  api.post(`/admin/docker-hosts/${id}/test`, {}, { timeout: 12000 }).then((r) => r.data);
+export const listDockerHosts = () => api.get("/docker/hosts").then((r) => r.data);
+export const deployCompose = (p) => api.post("/docker/compose/deploy", p).then((r) => r.data);
+export const listDockerProjects = () => api.get("/docker/projects").then((r) => r.data);
+export const downDockerProject = (hostId, project) =>
+  api.post(`/docker/projects/${encodeURIComponent(hostId)}/${encodeURIComponent(project)}/down`).then((r) => r.data);
+export const restartDockerProject = (hostId, project) =>
+  api.post(`/docker/projects/${encodeURIComponent(hostId)}/${encodeURIComponent(project)}/restart`).then((r) => r.data);
+export const startDockerContainer = (hostId, id) =>
+  api.post(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}/start`).then((r) => r.data);
+export const stopDockerContainer = (hostId, id) =>
+  api.post(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}/stop`).then((r) => r.data);
+export const restartDockerContainer = (hostId, id) =>
+  api.post(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}/restart`).then((r) => r.data);
+export const deleteDockerContainer = (hostId, id) =>
+  api.delete(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}`).then((r) => r.data);
+export const inspectDockerContainer = (hostId, id) =>
+  api.get(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}/inspect`).then((r) => r.data);
+export const updateDockerContainerEnv = (hostId, id, env) =>
+  api.put(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}/env`, { env }).then((r) => r.data);
+export const getDockerContainerLogs = (hostId, id, { tail } = {}) =>
+  api.get(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}/logs`, {
+    params: { tail },
+    responseType: "text",
+    transformResponse: [(d) => d],
+  }).then((r) => r.data);
+export const getDockerContainerHealth = (hostId, id) =>
+  api.get(`/docker/containers/${encodeURIComponent(hostId)}/${encodeURIComponent(id)}/health`).then((r) => r.data);
+
+export const getK8sDeploymentEnv = (ns, dep) =>
+  api.get(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(dep)}/env`).then((r) => r.data);
+export const updateK8sDeploymentEnv = (ns, dep, { container, env } = {}) =>
+  api.put(`/k3s/namespaces/${encodeURIComponent(ns)}/deployments/${encodeURIComponent(dep)}/env`, { container, env }).then((r) => r.data);
 
 // --- Admin: users & audit ---
 export const getUsers = () => api.get("/users").then((r) => r.data);
@@ -287,10 +411,15 @@ export const removeGroupMember = (name, username) =>
 export const adminListPackages = () => api.get("/admin/packages").then((r) => r.data);
 export const adminUpsertPackage = (data) => api.post("/admin/packages", data).then((r) => r.data);
 export const adminDeletePackage = (id) => api.delete(`/admin/packages/${encodeURIComponent(id)}`).then((r) => r.data);
+export const adminGetCatalogValidation = () => api.get("/admin/catalog/validation").then((r) => r.data);
 export const adminListApplicationRoles = () => api.get("/admin/application-roles").then((r) => r.data);
 export const adminUpsertApplicationRole = (data) => api.post("/admin/application-roles", data).then((r) => r.data);
 export const adminDeleteApplicationRole = (id) =>
   api.delete(`/admin/application-roles/${encodeURIComponent(id)}`).then((r) => r.data);
+export const adminListAppBlueprints = () => api.get("/admin/app-blueprints").then((r) => r.data);
+export const adminUpsertAppBlueprint = (data) => api.post("/admin/app-blueprints", data).then((r) => r.data);
+export const adminDeleteAppBlueprint = (id) =>
+  api.delete(`/admin/app-blueprints/${encodeURIComponent(id)}`).then((r) => r.data);
 export const adminListBaselines = () => api.get("/admin/baselines").then((r) => r.data);
 export const adminUpsertBaseline = (data) => api.post("/admin/baselines", data).then((r) => r.data);
 export const adminDeleteBaseline = (id) => api.delete(`/admin/baselines/${encodeURIComponent(id)}`).then((r) => r.data);
@@ -308,6 +437,7 @@ export const adminSetHostnameFormat = (formatOrBody, applications) => {
   return api.put("/admin/hostname-format", body).then((r) => r.data);
 };
 export const adminPreviewHostnameFormat = (body) => api.post("/admin/hostname-format/preview", body).then((r) => r.data);
+export const adminSyncHostnameFromRoles = () => api.post("/admin/hostname-format/sync-roles").then((r) => r.data);
 export const getHostnameFormat = () => api.get("/catalog/hostname-format").then((r) => r.data);
 export const suggestHostname = (body) => api.post("/catalog/hostname-suggest", body).then((r) => r.data);
 export const getChatAnalytics = () => api.get("/admin/chat-analytics").then((r) => r.data);

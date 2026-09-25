@@ -5,6 +5,27 @@ import { getMyPreferences, updateMyPreferences } from "../api/client.js";
 import ApiTokensPanel from "./ApiTokensPanel.jsx";
 import NotificationBell from "./NotificationBell.jsx";
 import Logo from "./Logo.jsx";
+import Toggle from "./Toggle.jsx";
+
+/** Admin: platform ops IA. End user: self-service IA. Distinct products, not toggles. */
+const ADMIN_LINKS = [
+  { to: "/", label: "Dashboard", end: true },
+  { to: "/provision", label: "Provisioning" },
+  { to: "/resources", label: "Resources" },
+  { to: "/usage", label: "Usage" },
+  { to: "/deployments?tab=all", label: "Deployments", match: "/deployments" },
+  { to: "/admin", label: "Administration", match: "/admin" },
+  { to: "/audit", label: "Audit" },
+];
+
+const USER_LINKS = [
+  { to: "/", label: "Dashboard", end: true },
+  { to: "/provision", label: "Provision" },
+  { to: "/resources", label: "My Resources" },
+  { to: "/usage", label: "My usage" },
+  { to: "/deployments?tab=all", label: "Deployments", match: "/deployments" },
+  { to: "/support", label: "Support" },
+];
 
 const THEMES = [
   { id: "light", label: "Light" },
@@ -88,20 +109,7 @@ export default function TopNav() {
     await savePreferences({ showBackground: nextValue });
   };
 
-  const links = [
-    { to: "/", label: "Dashboard", end: true },
-    { to: "/provision", label: "Provisioning" },
-    { to: "/resources", label: "Resources" },
-    {
-      to: "/deployments?tab=all",
-      label: "Deployments",
-      match: "/deployments",
-    },
-  ];
-  if (isAdmin) {
-    links.push({ to: "/admin", label: "Admin" });
-    links.push({ to: "/audit", label: "Audit" });
-  }
+  const links = isAdmin ? ADMIN_LINKS : USER_LINKS;
 
   return (
     <nav className="topnav">
@@ -186,14 +194,16 @@ export default function TopNav() {
                     </select>
                   </label>
 
-                  <label className="pref-toggle-row">
+                  <div className="pref-toggle-row">
                     <span>Decorative background</span>
-                    <input
-                      type="checkbox"
+                    <Toggle
+                      variant="capsule"
+                      size="sm"
                       checked={showBackground}
-                      onChange={(e) => handleBackgroundToggle(e.target.checked)}
+                      onChange={handleBackgroundToggle}
+                      title="Decorative background"
                     />
-                  </label>
+                  </div>
                 </>
               )}
             </div>

@@ -120,6 +120,7 @@ model Package {
   id           String  @id
   name         String
   category     String?
+  description  String?  // short blurb for catalog cards / provision pickers
   installPkg   String?  // OS package name for apt/yum; defaults to id when null
   installCmd   String?
   hostnameCode String?  // short {app} token when this is the sole role pick (e.g. psql)
@@ -282,4 +283,43 @@ model ServiceNowTicket {
   @@index([jobId])
   @@index([ritmNumber])
   @@index([requestNumber])
+}
+
+/// Application blueprints — multi-step installs (Ansible / Compose) with ready URLs.
+model AppBlueprint {
+  id              String   @id
+  name            String
+  description     String   @default("")
+  enabled         Boolean  @default(true)
+  strategy        String   // ansible | compose | ansible+compose
+  dependsOn       Json     @default("[]")
+  ansiblePlaybook String   @default("")
+  composePath     String   @default("")
+  ports           Json     @default("[]")
+  healthcheck     Json     @default("{}")
+  urlTemplate     String   @default("")
+  defaultVars     Json     @default("{}")
+  sortOrder       Int      @default(0)
+  /// bundled = Forge predefined; custom = onboarded from git/mount overlay
+  source          String   @default("bundled")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([source])
+}
+
+/// Remote Docker Engine endpoints for Compose deploy (TLS required).
+model DockerHost {
+  id            String   @id
+  name          String
+  endpoint      String
+  tlsCa         String   @default("")
+  tlsCert       String   @default("")
+  tlsKey        String   @default("")
+  skipTlsVerify Boolean  @default(false)
+  teamTags      Json     @default("[]")
+  appTags       Json     @default("[]")
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

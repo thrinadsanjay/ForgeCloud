@@ -1,26 +1,11 @@
 # syntax=docker/dockerfile:1
 
-# Forge — single-image build.
+# Forge runtime image — packs artifacts from ./build.sh (container npm builds).
 #
-#   docker compose up -d --build
+#   ./build.sh && docker compose up -d
 #
-# Requires PostgreSQL (see docker-compose.yml `db` service).
-
-FROM node:20-alpine AS frontend-build
-WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
-COPY frontend/ ./
-RUN npm run build
-
-FROM node:20-alpine AS backend-deps
-WORKDIR /app/backend
-COPY backend/package.json backend/package-lock.json ./
-# Fail fast if host files arrived empty (seen on Windows Docker Desktop file-sync races).
-RUN test -s package.json && test -s package-lock.json
-RUN npm ci
-COPY backend/prisma ./prisma
-RUN npx prisma generate
+# Do not run `docker compose build` alone on AppArmor-broken hosts; use build.sh
+# so npm/vite/prisma run under apparmor=unconfined.
 
 FROM node:20-alpine AS runtime
 ENV NODE_ENV=production \
@@ -30,15 +15,22 @@ WORKDIR /app
 
 USER root
 RUN apk add --no-cache ansible openssh-client sshpass python3 py3-yaml py3-passlib \
-  && mkdir -p /app/ansible
+    docker-cli docker-cli-compose git openssl curl \
+  && mkdir -p /app/ansible \
+  && KARCH="$(uname -m)"; \
+     case "$KARCH" in x86_64) KARCH=amd64 ;; aarch64) KARCH=arm64 ;; armv7l) KARCH=arm ;; *) KARCH=amd64 ;; esac; \
+     KVER="$(curl -fsSL https://dl.k8s.io/release/stable.txt)" && \
+     curl -fsSLo /usr/local/bin/kubectl "https://dl.k8s.io/release/${KVER}/bin/linux/${KARCH}/kubectl" && \
+     chmod +x /usr/local/bin/kubectl && kubectl version --client --output=yaml >/dev/null
 
-COPY --from=backend-deps /app/backend/node_modules ./backend/node_modules
-COPY backend/package.json backend/package-lock.json ./backend/
+# Prebuilt by ./build.sh (npm ci + prisma generate in a privileged-apparmor container)
+COPY .build/backend/node_modules ./backend/node_modules
+COPY .build/backend/package.json .build/backend/package-lock.json ./backend/
 RUN test -s ./backend/package.json && test -s ./backend/package-lock.json
 COPY backend/prisma ./backend/prisma
 COPY backend/src ./backend/src
 COPY ansible ./ansible
-COPY --from=frontend-build /app/frontend/dist ./frontend/dist
+COPY .build/frontend/dist ./frontend/dist
 
 RUN chown -R node:node /app
 USER node

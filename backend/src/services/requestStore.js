@@ -161,6 +161,8 @@ function syncRequestStatus(request) {
   let next;
   if (job.status === "ready") next = "completed";
   else if (job.status === "failed") next = "failed";
+  else if (job.status === "rolled_back") next = "rolled_back";
+  else if (job.status === "cancelled" || job.status === "canceled") next = "cancelled";
   else next = "provisioning";
 
   if (next !== request.status) {
@@ -190,10 +192,11 @@ export async function submitProvisionRequest({ kind, payload, requestedBy, sourc
       : "";
     notifyReviewers({
       type: "approval",
+      level: "warn",
       title: `Approval needed — ${targetOf(request)}`,
       message: `${requestedBy} requested to ${verb} ${targetOf(request)}${daysNote}. Review and approve or reject.`,
       link: `/deployments?tab=hold&request=${request.id}`,
-      meta: { requestId: request.id, kind },
+      meta: { requestId: request.id, kind, level: "warn" },
     });
   }
   return { request: enrichRequest(syncRequestStatus(request)), job };
@@ -401,7 +404,7 @@ export function markRequestCancelled(id, { actor, reason } = {}) {
 }
 
 const TERMINAL_REQUEST_STATUSES = new Set([
-  "completed", "failed", "rejected", "cancelled",
+  "completed", "failed", "rejected", "cancelled", "rolled_back",
 ]);
 
 export function isTerminalRequest(req) {

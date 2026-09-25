@@ -8,10 +8,18 @@ repositories: []
 mounts: []
 # mounts item shape:
 #   { path, src, fstype, opts? }
+
+# Additional data disk (Proxmox scsi attach). Empty data_mounts = leave disk raw.
+data_vg_name: vg_data
+data_mounts: []
+# data_mounts item shape:
+#   { path, size_gb, lv }  e.g. { path: /data/logs, size_gb: 10, lv: lv_data_logs }
+
 create_users: []
 # create_users item shape:
 #   { name, password?, groups?, sudo?, shell?, pubkey? }
 ssh_pwauth: true
+# Always keep password SSH enabled for portal users (sshd.yml forces this).
 remove_forge_key: false
 forge_pubkey: ""
 service_account: forge

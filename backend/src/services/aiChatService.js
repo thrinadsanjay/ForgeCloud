@@ -74,6 +74,14 @@ export function getAiConfig() {
   };
 }
 
+/** True when the active AI provider has enough config to attempt a call. */
+export function isAiConfigured(cfg = getAiConfig()) {
+  if (cfg.provider === "ollama") {
+    return !!(cfg.baseUrl && cfg.model);
+  }
+  return !!(cfg.apiKey && cfg.apiKey !== "CHANGE_ME" && cfg.model);
+}
+
 function requireKey(cfg) {
   if (cfg.provider === "ollama") return;
   if (!cfg.apiKey || cfg.apiKey === "CHANGE_ME") {

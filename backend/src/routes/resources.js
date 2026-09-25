@@ -106,25 +106,27 @@ function expiryFields(vmid) {
 // --- Dashboard metrics ---
 router.get("/dashboard", async (req, res) => {
   try {
-    const [allVms, allContainers] = await Promise.all([
-      pve.listAllVms({}),
-      pve.listAllContainers({}),
+    // Soft-fail when Proxmox is down — empty inventory after the HTTP timeout,
+    // never leave the portal waiting on a TCP hang.
+    const [vmResult, ctResult] = await Promise.all([
+      pve.listAllVms({}).then((v) => ({ ok: true, list: v })).catch((e) => ({ ok: false, list: [], error: e.message })),
+      pve.listAllContainers({}).then((v) => ({ ok: true, list: v })).catch((e) => ({ ok: false, list: [], error: e.message })),
     ]);
 
-    const vms = filterByVisibility(allVms, req.user);
-    const containers = filterByVisibility(allContainers, req.user);
+    const vms = filterByVisibility(vmResult.list, req.user);
+    const lxc = filterByVisibility(ctResult.list, req.user);
 
     const runningVms = vms.filter((v) => v.status === "running").length;
-    const runningCts = containers.filter((c) => c.status === "running").length;
+    const runningLxc = lxc.filter((c) => c.status === "running").length;
+    const stoppedVms = vms.length - runningVms;
+    const stoppedLxc = lxc.length - runningLxc;
 
-    // Node-level metrics require Sys.Audit on Proxmox and are only meaningful
-    // for admins. If the API user lacks the permission, this resolves to null
-    // and the dashboard simply omits the node health section.
     let node = null;
-    if (req.user.role === "admin") {
+    if (req.user.role === "admin" && (vmResult.ok || ctResult.ok)) {
       const nodeStatus = await pve.getNodeStatus({}).catch(() => null);
       if (nodeStatus) {
         node = {
+          name: nodeStatus.node || process.env.PROXMOX_NODE || null,
           cpu: nodeStatus.cpu,
           memoryUsed: nodeStatus.memory?.used,
           memoryTotal: nodeStatus.memory?.total,
@@ -137,12 +139,18 @@ router.get("/dashboard", async (req, res) => {
     res.json({
       scope: req.user.role === "admin" ? "all" : "owned",
       counts: {
+        // Legacy flat fields (kept for older clients)
         vms: vms.length,
-        containers: containers.length,
-        running: runningVms + runningCts,
-        stopped: (vms.length - runningVms) + (containers.length - runningCts),
+        containers: lxc.length,
+        running: runningVms + runningLxc,
+        stopped: stoppedVms + stoppedLxc,
+        // Explicit Proxmox breakdown
+        vm: { total: vms.length, running: runningVms, stopped: stoppedVms },
+        lxc: { total: lxc.length, running: runningLxc, stopped: stoppedLxc },
       },
       node,
+      proxmoxOk: vmResult.ok || ctResult.ok,
+      proxmoxError: vmResult.ok || ctResult.ok ? null : (vmResult.error || ctResult.error || null),
     });
   } catch (err) {
     res.status(502).json({ error: err.message });
@@ -152,10 +160,12 @@ router.get("/dashboard", async (req, res) => {
 // --- Inventory ---
 router.get("/resources", async (req, res) => {
   try {
-    const [allVms, allContainers] = await Promise.all([
-      pve.listAllVms({}),
-      pve.listAllContainers({}),
+    const [vmResult, ctResult] = await Promise.all([
+      pve.listAllVms({}).then((v) => v).catch(() => []),
+      pve.listAllContainers({}).then((v) => v).catch(() => []),
     ]);
+    const allVms = vmResult;
+    const allContainers = ctResult;
     const norm = (item, type) => ({
       vmid: item.vmid,
       name: item.name,

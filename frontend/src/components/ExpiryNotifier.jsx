@@ -1,12 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { getExpiringResources } from "../api/client.js";
 import ExtendExpiryModal from "./ExtendExpiryModal.jsx";
+import { useToast } from "./ToastProvider.jsx";
 
-// How far ahead we warn, and how often we re-check while the app is open.
 const WARN_WITHIN_DAYS = 7;
-const POLL_MS = 30 * 60 * 1000; // re-check every 30 minutes
+const POLL_MS = 30 * 60 * 1000;
 
-// Local calendar day, used to throttle a resource's reminder to once per day.
 function today() {
   const d = new Date();
   return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
@@ -26,9 +25,7 @@ function wasDismissedToday(vmid) {
 function markDismissedToday(vmid) {
   try {
     localStorage.setItem(dismissKey(vmid), today());
-  } catch {
-    /* ignore storage errors */
-  }
+  } catch { /* ignore */ }
 }
 
 function describe(r) {
@@ -38,21 +35,59 @@ function describe(r) {
   return `will be powered off in ${r.daysLeft} days unless renewed.`;
 }
 
-// Watches the caller's resources and raises a daily toast for any that will be
-// decommissioned within a week, offering a Renew action. Once dismissed, a
-// resource's toast stays hidden until the next calendar day.
+/**
+ * Daily sticky toasts for resources expiring within a week (or already expired).
+ */
 export default function ExpiryNotifier() {
-  const [items, setItems] = useState([]);       // expiring resources currently shown
+  const { toast, dismiss } = useToast();
   const [renewTarget, setRenewTarget] = useState(null);
+  const shown = useRef(new Set());
   const cancelled = useRef(false);
 
   const refresh = async () => {
     try {
       const rows = await getExpiringResources(WARN_WITHIN_DAYS);
       if (cancelled.current) return;
-      setItems(rows.filter((r) => !wasDismissedToday(r.vmid)));
+      const visible = rows.filter((r) => !wasDismissedToday(r.vmid));
+      const visibleIds = new Set(visible.map((r) => r.vmid));
+
+      for (const id of [...shown.current]) {
+        if (!visibleIds.has(id)) {
+          dismiss(`expiry-${id}`);
+          shown.current.delete(id);
+        }
+      }
+
+      for (const r of visible) {
+        const id = `expiry-${r.vmid}`;
+        shown.current.add(r.vmid);
+        toast({
+          id,
+          tone: r.expired ? "error" : "warn",
+          icon: "⏳",
+          ttlMs: 0,
+          title: `${r.type === "container" ? "Container" : "VM"} ${r.name} ${r.expired ? "expired" : "expiring soon"}`,
+          message: `${r.name} (VMID ${r.vmid}) ${describe(r)}`,
+          actions: [
+            {
+              key: "renew",
+              label: "Renew",
+              dismiss: false,
+              onClick: () => setRenewTarget(r),
+            },
+            {
+              key: "later",
+              label: "Remind me tomorrow",
+              onClick: () => {
+                markDismissedToday(r.vmid);
+                shown.current.delete(r.vmid);
+              },
+            },
+          ],
+        });
+      }
     } catch {
-      /* transient — keep the current list and try again next tick */
+      /* transient */
     }
   };
 
@@ -61,49 +96,20 @@ export default function ExpiryNotifier() {
     refresh();
     const t = setInterval(refresh, POLL_MS);
     return () => { cancelled.current = true; clearInterval(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const dismiss = (vmid) => {
-    markDismissedToday(vmid);
-    setItems((list) => list.filter((r) => r.vmid !== vmid));
-  };
-
-  if (items.length === 0 && !renewTarget) return null;
-
-  return (
-    <>
-      <div className="toast-stack" role="region" aria-label="Expiry reminders">
-        {items.map((r) => (
-          <div key={r.vmid} className={`toast ${r.expired ? "toast-error" : "toast-warn"}`} role="alert">
-            <div className="toast-icon" aria-hidden="true">⏳</div>
-            <div className="toast-body">
-              <div className="toast-title">
-                {r.type === "container" ? "Container" : "VM"} {r.name} {r.expired ? "expired" : "expiring soon"}
-              </div>
-              <div className="toast-msg">
-                <strong>{r.name}</strong> (VMID {r.vmid}) {describe(r)}
-              </div>
-              <div className="toast-actions">
-                <button className="toast-link" onClick={() => setRenewTarget(r)}>Renew</button>
-                <button className="toast-link" onClick={() => dismiss(r.vmid)}>Remind me tomorrow</button>
-              </div>
-            </div>
-            <button className="toast-close" onClick={() => dismiss(r.vmid)} aria-label="Dismiss">×</button>
-          </div>
-        ))}
-      </div>
-
-      {renewTarget && (
-        <ExtendExpiryModal
-          resource={renewTarget}
-          onClose={() => setRenewTarget(null)}
-          onSaved={() => {
-            // Renewed — clear this reminder and re-check the window.
-            setItems((list) => list.filter((r) => r.vmid !== renewTarget.vmid));
-            setTimeout(refresh, 600);
-          }}
-        />
-      )}
-    </>
-  );
+  return renewTarget ? (
+    <ExtendExpiryModal
+      resource={renewTarget}
+      onClose={() => setRenewTarget(null)}
+      onSaved={() => {
+        const vmid = renewTarget.vmid;
+        dismiss(`expiry-${vmid}`);
+        shown.current.delete(vmid);
+        setRenewTarget(null);
+        setTimeout(refresh, 600);
+      }}
+    />
+  ) : null;
 }

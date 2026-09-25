@@ -1,0 +1,22 @@
+# Forge custom content catalog — auto-onboarded when this pack is synced/mounted.
+blueprints:
+  - id: example-stack
+    name: Example Stack
+    description: Sample role + playbook. Rename id/paths before production use.
+    enabled: true
+    strategy: ansible
+    ansiblePlaybook: playbooks/example-stack.yml
+    composePath: ""
+    dependsOn: []
+    ports: [8080]
+    healthcheck:
+      type: tcp
+      port: 8080
+      timeoutSec: 90
+    urlTemplate: "http://{ip}:8080"
+    defaultVars:
+      category: Custom
+      components:
+        - Example service
+      eta: 5–8 min
+    sortOrder: 500

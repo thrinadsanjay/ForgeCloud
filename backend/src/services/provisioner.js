@@ -12,6 +12,10 @@ import { hostnameSetupCommand, userSetupCommands, packageInstallCommand, aiTroub
 import { executeStep, isSystemConfigured } from "./internalProvisioningApis.js";
 import { findContainerTemplate, findStack, findInternalTemplate, packageById, resolveInstallPkg, getDefaultPackages } from "./catalogService.js";
 import { createStepTracker, VM_STEP_KEYS, vmStepIndex } from "./deploymentSteps.js";
+import { getDockerHostSecrets } from "./dockerHostStore.js";
+import { composeUp } from "./dockerService.js";
+import { installAppsOnGuest } from "./appInstallService.js";
+import { resolveAppDependencies, getAppBlueprint } from "./appCatalogService.js";
 import {
   buildUserData,
   buildBootstrapUserData,
@@ -26,6 +30,7 @@ import {
   ansibleServiceConfig,
   runInitialSetupWithFallback,
 } from "./ansibleService.js";
+import { normalizeDiskMounts, toAnsibleDataMounts } from "./diskMounts.js";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -138,7 +143,10 @@ async function provisionContainer({ templateId, hostname, cpu, memoryGB, package
 export async function runVmJob(jobId, payload) {
   const {
     templateId, hostname, cpu, memoryGB, additionalDiskGB = 0,
+    diskMounts: diskMountsPayload = [],
     packages = [], username, sudoAccess = false, environment,
+    apps = [], resolvedApps: resolvedAppsPayload,
+    customCompose = null,
   } = payload;
   const resume = payload._resume && Number.isFinite(Number(payload._resume.vmid))
     ? {
@@ -276,9 +284,9 @@ export async function runVmJob(jobId, payload) {
     const snippetStore = process.env.SNIPPET_STORAGE || "local";
     const snippetsOk = await pve.storageSupportsSnippets(snippetStore).catch(() => false);
 
-    // Always bootstrap the Ansible service account via Proxmox native cloud-init
-    // fields when enabled — does NOT need snippet storage. Mapping root passwords
-    // often fail on RHEL (PasswordAuthentication no); ansadmin+key is the reliable path.
+    // Always bootstrap the Ansible service account when Ansible is enabled.
+    // Prefer a full #cloud-config snippet (reliable on RHEL); fall back to
+    // Proxmox native ciuser/sshkeys. Mapping root passwords often fail on RHEL.
     let ansibleCiApplied = false;
     if (ansibleOn && ansibleCfg.bootstrapCloudInit) {
       const pubKeys = [ansibleCfg.forgePublicKey, ansibleCfg.adminPubkey].filter((k) => String(k || "").trim());
@@ -289,13 +297,35 @@ export async function runVmJob(jobId, payload) {
         );
       }
       try {
-        await pve.setAnsibleBootstrapCi({
-          vmid: newVmid,
-          hostname,
-          serviceUser: ansibleCfg.serviceUser,
-          servicePassword: ansibleCfg.servicePassword,
-          sshPublicKeys: pubKeys,
-        });
+        if (snippetsOk) {
+          const userData = buildBootstrapUserData({
+            hostname,
+            serviceUser: ansibleCfg.serviceUser,
+            servicePassword: ansibleCfg.servicePassword,
+            forgePublicKey: ansibleCfg.forgePublicKey,
+            adminPublicKey: ansibleCfg.adminPubkey,
+          });
+          snippetName = snippetFilename(newVmid);
+          await pve.uploadSnippet({ filename: snippetName, content: userData });
+          await pve.setCicustom({ vmid: newVmid, file: snippetName });
+          // Native fields as backup (DHCP / ciuser) without wiping our snippet.
+          await pve.setAnsibleBootstrapCi({
+            vmid: newVmid,
+            hostname,
+            serviceUser: ansibleCfg.serviceUser,
+            servicePassword: ansibleCfg.servicePassword,
+            sshPublicKeys: pubKeys,
+            clearCicustom: false,
+          });
+        } else {
+          await pve.setAnsibleBootstrapCi({
+            vmid: newVmid,
+            hostname,
+            serviceUser: ansibleCfg.serviceUser,
+            servicePassword: ansibleCfg.servicePassword,
+            sshPublicKeys: pubKeys,
+          });
+        }
         ansibleCiApplied = true;
         cloudInitApplied = true;
       } catch (err) {
@@ -307,9 +337,10 @@ export async function runVmJob(jobId, payload) {
     }
 
     // Richer #cloud-config via snippets (packages, custom users) when storage allows it.
+    // Skip when Ansible already owns first-boot via bootstrap snippet above.
     const wantSnippet = !ansibleOn && (cloudInit.length > 0 || username || cloudInitFile);
 
-    snippetName = snippetFilename(newVmid);
+    if (!snippetName) snippetName = snippetFilename(newVmid);
     if (wantSnippet && snippetsOk) {
       let baseYaml = "";
       if (cloudInitFile) {
@@ -409,11 +440,29 @@ export async function runVmJob(jobId, payload) {
 
     // --- Ansible initial setup (preferred when enabled) ---
     if (ansibleOn && shouldRun("initial_setup")) {
+      // Mark active immediately — otherwise the monitor sits on a grey "Initial setup"
+      // while we wait for cloud-init / forge SSH (often several minutes).
+      tracker.start("initial_setup", {
+        active: "Waiting for cloud-init and the forge service account…",
+      });
+      updateJob(jobId, {
+        status: "configuring",
+        message: "Waiting for forge SSH after first boot…",
+      });
+
       // Wait until the bootstrap user accepts the Forge deploy key (cloud-init may still be running).
       if (ansibleCfg.bootstrapCloudInit && ansibleCfg.forgePrivateKey) {
         const deadline = Date.now() + 300_000;
         let ready = false;
+        let attempt = 0;
         while (Date.now() < deadline) {
+          attempt += 1;
+          tracker.start("initial_setup", {
+            active: `Waiting for forge@${ip} (cloud-init / SSH key)… attempt ${attempt}`,
+          });
+          updateJob(jobId, {
+            message: `Waiting for forge@${ip} with deploy key (attempt ${attempt})…`,
+          });
           try {
             const probe = await runSsh({
               host: ip,
@@ -436,15 +485,24 @@ export async function runVmJob(jobId, payload) {
           console.warn(
             `[provision] timed out waiting for ${ansibleCfg.serviceUser}@${ip} with Forge key — trying Ansible anyway`,
           );
+          tracker.start("initial_setup", {
+            active: "Forge SSH not ready yet — running Ansible with fallback credentials…",
+          });
         }
       } else if (ansibleCfg.bootstrapCloudInit && rootPass) {
+        tracker.start("initial_setup", {
+          active: "Waiting for cloud-init to finish…",
+        });
         await runSsh({
           ...sshOpts,
           command: "cloud-init status --wait 2>/dev/null || true",
           timeoutMs: 300000,
         }).catch(() => {});
       }
-      tracker.start("initial_setup");
+
+      tracker.start("initial_setup", {
+        active: "Running first-boot initialization and creating your account…",
+      });
       const pkgNames = [
         ...defaultCatalog.map((p) => resolveInstallPkg(p.id)),
         ...optionalIds.map((id) => resolveInstallPkg(id)),
@@ -457,7 +515,20 @@ export async function runVmJob(jobId, payload) {
           sudo: !!sudoAccess,
         });
       }
+      let resolvedAppsEarly = [];
+      try {
+        resolvedAppsEarly = Array.isArray(resolvedAppsPayload) && resolvedAppsPayload.length
+          ? resolvedAppsPayload
+          : (Array.isArray(apps) && apps.length ? resolveAppDependencies(apps) : []);
+      } catch {
+        resolvedAppsEarly = [];
+      }
+      // Keep forge deploy key until blueprints finish installing.
+      const deferForgeKeyRemoval = resolvedAppsEarly.length > 0
+        || !!(customCompose?.yaml && String(customCompose.yaml).trim());
+
       const ansibleLogs = [];
+      const diskMounts = normalizeDiskMounts(diskMountsPayload, Number(additionalDiskGB) || 0);
       const ansibleResult = await runInitialSetupWithFallback({
         host: ip,
         port: sshPort,
@@ -470,8 +541,11 @@ export async function runVmJob(jobId, payload) {
           create_users: createUsers,
           repositories: [],
           mounts: [],
+          data_vg_name: "vg_data",
+          data_mounts: toAnsibleDataMounts(diskMounts),
           ssh_pwauth: true,
           update_package_cache: true,
+          remove_forge_key: deferForgeKeyRemoval ? false : ansibleCfg.removeForgeKey,
         },
         onOutput: (line) => {
           ansibleLogs.push(line);
@@ -495,15 +569,22 @@ export async function runVmJob(jobId, payload) {
         });
         return;
       }
-      // Forge deploy key may be removed by the role; prefer mapping or the created user for follow-up SSH.
-      if (ansibleResult.attempt === "forge-service-key") {
-        if (rootUser && rootPass) {
-          /* keep mapping sshOpts */
-        } else if (username && generatedPassword) {
-          sshOpts.username = username;
-          sshOpts.password = generatedPassword;
-        }
+
+      // Follow-up SSH for packages/apps: prefer portal user, then mapping, then forge key.
+      if (username && generatedPassword) {
+        sshOpts.username = username;
+        sshOpts.password = generatedPassword;
+        delete sshOpts.privateKey;
+      } else if (rootUser && rootPass) {
+        sshOpts.username = rootUser;
+        sshOpts.password = rootPass;
+        if (ansibleCfg.forgePrivateKey) sshOpts.privateKey = ansibleCfg.forgePrivateKey;
+      } else if (ansibleCfg.forgePrivateKey) {
+        sshOpts.username = ansibleCfg.serviceUser;
+        sshOpts.password = ansibleCfg.servicePassword || undefined;
+        sshOpts.privateKey = ansibleCfg.forgePrivateKey;
       }
+
       tracker.done("initial_setup", {
         done: `Ansible initial_setup OK via ${ansibleResult.attempt || "ssh"} · hostname "${hostname}"${username ? ` · user "${username}"` : ""}`,
       });
@@ -517,12 +598,15 @@ export async function runVmJob(jobId, payload) {
           ? `Packages via Ansible — ${pkgNames.join(", ")}${skippedNote}`
           : "No packages requested",
       });
-      if (optionalIds.length) {
-        tracker.done("requested_packages", {
-          done: `Optional packages via Ansible${skippedNote || ""}`,
-        });
-      } else {
-        tracker.skip("requested_packages", { done: "No optional packages selected" });
+      // Leave requested_packages open for blueprint install when apps were selected.
+      if (!resolvedAppsEarly.length) {
+        if (optionalIds.length) {
+          tracker.done("requested_packages", {
+            done: `Optional packages via Ansible${skippedNote || ""}`,
+          });
+        } else {
+          tracker.skip("requested_packages", { done: "No optional packages or blueprints selected" });
+        }
       }
       // Skip legacy SSH package/cloud-init wait path below.
     } else if (!ansibleOn) {
@@ -625,9 +709,92 @@ export async function runVmJob(jobId, payload) {
     }
     } // end legacy (!ansibleOn) path
 
-    // --- Validate: confirm each package is present ---
+    // --- Application blueprints (Ansible / Compose on guest) ---
+    // Must finish before Validation so the UI step order matches reality.
     let validations = [];
     let pkgsOk = true;
+    let appEndpoints = [];
+    let appSecrets = {};
+    try {
+      const resolvedApps = Array.isArray(resolvedAppsPayload) && resolvedAppsPayload.length
+        ? resolvedAppsPayload
+        : (Array.isArray(apps) && apps.length ? resolveAppDependencies(apps) : []);
+      const hasCustomCompose = !!(customCompose?.yaml && String(customCompose.yaml).trim());
+      if ((resolvedApps.length || hasCustomCompose) && ip) {
+        const appNames = [
+          ...resolvedApps.map((id) => getAppBlueprint(id)?.name || id),
+          ...(hasCustomCompose ? [customCompose.name || "Custom compose"] : []),
+        ];
+        tracker.start("requested_packages", {
+          active: `Installing blueprints: ${appNames.join(", ")}…`,
+        });
+        updateJob(jobId, { status: "configuring", message: `Installing apps: ${appNames.join(", ")}…` });
+
+        // Blueprints always use Ansible settings service account (e.g. forge), never the portal form user.
+        const appSsh = { ...sshOpts };
+        if (ansibleCfg.forgePrivateKey) {
+          appSsh.username = ansibleCfg.serviceUser;
+          appSsh.privateKey = ansibleCfg.forgePrivateKey;
+          if (ansibleCfg.servicePassword) appSsh.password = ansibleCfg.servicePassword;
+          else delete appSsh.password;
+        } else if (ansibleCfg.serviceUser && ansibleCfg.servicePassword) {
+          appSsh.username = ansibleCfg.serviceUser;
+          appSsh.password = ansibleCfg.servicePassword;
+          delete appSsh.privateKey;
+        } else {
+          throw new Error(
+            "No Ansible SSH credentials for blueprints. Set the service user and Forge deploy key under Admin → Automation → Ansible.",
+          );
+        }
+
+        const installed = await installAppsOnGuest({
+          resolvedAppIds: resolvedApps,
+          ip,
+          sshOpts: appSsh,
+          customCompose: hasCustomCompose ? customCompose : null,
+          onOutput: (line) => {
+            assertJobNotCancelled(jobId);
+            updateJob(jobId, { message: String(line).slice(0, 180) });
+          },
+        });
+        appEndpoints = installed.endpoints || [];
+        appSecrets = installed.secrets || {};
+        allStepResults.push(...(installed.steps || []));
+        tracker.done("requested_packages", {
+          done: `Blueprints installed — ${appNames.join(", ")}`,
+        });
+
+        // Optional: remove forge deploy key now that blueprints are done.
+        if (ansibleCfg.removeForgeKey && ansibleCfg.forgePublicKey && ansibleCfg.forgePrivateKey) {
+          await runSsh({
+            host: ip,
+            port: sshPort,
+            username: ansibleCfg.serviceUser,
+            privateKey: ansibleCfg.forgePrivateKey,
+            command: `set -e; f=/home/${ansibleCfg.serviceUser}/.ssh/authorized_keys; [ -f "$f" ] && grep -vF ${JSON.stringify(ansibleCfg.forgePublicKey.trim())} "$f" > "$f.tmp" && mv "$f.tmp" "$f" || true`,
+            timeoutMs: 30_000,
+          }).catch(() => {});
+        }
+      }
+    } catch (appErr) {
+      const failedApps = Array.isArray(apps) ? apps : [];
+      tracker.fail(appErr.message, appErr.message);
+      updateJob(jobId, {
+        status: "failed",
+        message: "Application install failed",
+        error: appErr.message,
+        errorUserMessage: appErr.message,
+        result: {
+          ...(peekJob(jobId)?.result || {}),
+          failedApps,
+          apps: Array.isArray(apps) ? apps : [],
+          canRetryApps: true,
+        },
+      });
+      return;
+    }
+
+    // --- Validate: after packages and blueprints ---
     if (shouldRun("validate")) {
     tracker.start("validate");
     validations = [];
@@ -661,16 +828,22 @@ export async function runVmJob(jobId, payload) {
       }
     }
     pkgsOk = validations.every((v) => v.present);
+    const appStepsOk = (allStepResults || [])
+      .filter((r) => String(r.name || "").startsWith("app:"))
+      .every((r) => r.ok !== false);
     tracker.done("validate", {
       done: allPackageIds.length
-        ? `Validated ${validations.filter((v) => v.present).length}/${validations.length} package(s)`
-        : "Server validated end-to-end",
+        ? `Validated ${validations.filter((v) => v.present).length}/${validations.length} package(s)${appStepsOk ? "" : " · some blueprint steps reported issues"}`
+        : (appEndpoints.length
+          ? `Server validated · ${appEndpoints.length} app endpoint(s) ready`
+          : "Server validated end-to-end"),
     });
     }
 
     // --- Summarize ---
     if (shouldRun("summarize")) {
-    tracker.start("summarize");
+    tracker.start("summarize", { active: "Wrapping up and preparing your summary…" });
+    updateJob(jobId, { message: "Preparing deployment summary…" });
     const allOk = allStepResults.every((r) => r.ok) && pkgsOk;
     tracker.done("summarize", { done: allOk ? "All done — your server is ready 🎉" : "Done — with a few warnings (see summary)" });
 
@@ -686,6 +859,10 @@ export async function runVmJob(jobId, payload) {
         defaultPackages: defaultCatalog.map((p) => p.name),
         packagesViaCloudInit: cloudInitApplied ? summarizeCloudInitPackages(cloudInit) : null,
         validations, steps: allStepResults, allOk,
+        endpoints: appEndpoints,
+        appSecrets,
+        apps: Array.isArray(apps) ? apps : [],
+        resolvedApps: Array.isArray(resolvedAppsPayload) ? resolvedAppsPayload : [],
       },
     });
     } // end shouldRun(summarize)
@@ -900,6 +1077,46 @@ export async function runStackJob(jobId, { stackId, hostnamePrefix, cpu, memoryG
       errorDetail: err.detail || err.message || null,
       proxmoxUpid: err.upid || null,
       resources,
+    });
+  }
+}
+
+export async function runComposeJob(jobId, payload) {
+  const { hostId, project, source } = payload || {};
+  try {
+    updateJob(jobId, { status: "provisioning", message: "Preparing Compose workspace…" });
+    const host = getDockerHostSecrets(hostId);
+    if (!host) throw new Error("Docker host not found");
+
+    updateJob(jobId, { status: "provisioning", message: `Deploying "${project}" to ${host.name}…` });
+    await composeUp({
+      host,
+      project,
+      source,
+      onLine: (line) => {
+        assertJobNotCancelled(jobId);
+        updateJob(jobId, { message: String(line).slice(0, 200) });
+      },
+    });
+
+    assertJobNotCancelled(jobId);
+    updateJob(jobId, {
+      status: "ready",
+      message: `Compose project "${project}" is up on ${host.name}.`,
+      resources: [{
+        type: "compose",
+        hostId: host.id,
+        hostName: host.name,
+        project,
+        sshReady: true,
+      }],
+    });
+  } catch (err) {
+    if (err.cancelled) return;
+    updateJob(jobId, {
+      status: "failed",
+      message: "Compose deploy failed",
+      error: err.message,
     });
   }
 }

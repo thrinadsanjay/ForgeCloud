@@ -56,6 +56,41 @@ export function isOidcConfigured() {
   return Boolean(c.issuer && c.clientId && c.clientSecret && c.redirectUri);
 }
 
+/** Infer IdP brand from issuer URL for login UI (single configured OIDC app). */
+export function detectOidcProvider(issuer = "") {
+  const u = String(issuer || "").toLowerCase();
+  if (/login\.microsoftonline\.com|sts\.windows\.net|microsoftonline/.test(u)) {
+    return { id: "azure", name: "Azure AD" };
+  }
+  if (/accounts\.google\.com|googleapis\.com\/o\/oauth2/.test(u)) {
+    return { id: "google", name: "Google Workspace" };
+  }
+  if (/gitlab/.test(u)) return { id: "gitlab", name: "GitLab" };
+  if (/okta\.com/.test(u)) return { id: "okta", name: "Okta" };
+  if (/auth0\.com/.test(u)) return { id: "auth0", name: "Auth0" };
+  if (/keycloak|\/realms\//.test(u)) return { id: "keycloak", name: "Keycloak" };
+  if (/pingone\.com|pingidentity|pingfederate/.test(u)) {
+    return { id: "ping", name: "Ping Identity" };
+  }
+  if (/jumpcloud/.test(u)) return { id: "jumpcloud", name: "JumpCloud" };
+  if (/onelogin\.com/.test(u)) return { id: "onelogin", name: "OneLogin" };
+  if (/cognito-idp|amazoncognito/.test(u)) return { id: "cognito", name: "Amazon Cognito" };
+  return { id: "oidc", name: "OpenID Connect" };
+}
+
+/** Public SSO status for the login page — only configured providers. */
+export function getOidcPublicStatus() {
+  if (!isOidcConfigured()) {
+    return { enabled: false, providers: [] };
+  }
+  const { issuer } = oidcConfig();
+  const detected = detectOidcProvider(issuer);
+  return {
+    enabled: true,
+    providers: [{ id: detected.id, name: detected.name }],
+  };
+}
+
 /** @deprecated use isOidcConfigured */
 export const isEntraConfigured = isOidcConfigured;
 

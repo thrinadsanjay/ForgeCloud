@@ -1,0 +1,140 @@
+---
+# Create vg_data on the unused data disk, carve LVs, format, and mount.
+# Skipped when data_mounts is empty (raw unused disk is allowed).
+
+- name: Ensure LVM and filesystem tools are installed
+  ansible.builtin.package:
+    name:
+      - lvm2
+      - xfsprogs
+      - e2fsprogs
+    state: present
+
+- name: Check whether volume group already exists
+  ansible.builtin.command: vgs --noheadings -o vg_name "{{ data_vg_name }}"
+  register: vg_exists
+  changed_when: false
+  failed_when: false
+
+- name: Discover candidate data disks (unused whole disks)
+  ansible.builtin.shell: |
+    set -euo pipefail
+    root_src=$(findmnt -n -o SOURCE / 2>/dev/null || true)
+    root_disk=""
+    if [ -n "$root_src" ]; then
+      root_disk=$(lsblk -no PKNAME "$root_src" 2>/dev/null || true)
+      if [ -z "$root_disk" ]; then
+        base=$(basename "$root_src")
+        root_disk=$(echo "$base" | sed -E 's/p?[0-9]+$//')
+      fi
+    fi
+    for name in $(lsblk -dn -o NAME,TYPE | awk '$2=="disk"{print $1}'); do
+      if [ -n "$root_disk" ] && [ "$name" = "$root_disk" ]; then
+        continue
+      fi
+      busy=$(lsblk -n -o NAME,FSTYPE,MOUNTPOINT "/dev/$name" | awk 'NR>1 && ($2!="" || $3!="") {print; exit}')
+      if [ -n "$busy" ]; then
+        continue
+      fi
+      if pvs --noheadings -o pv_name 2>/dev/null | grep -qE "/dev/${name}$|/dev/${name}p?[0-9]+$"; then
+        continue
+      fi
+      echo "/dev/$name"
+      exit 0
+    done
+    exit 1
+  args:
+    executable: /bin/bash
+  register: data_disk_discover
+  changed_when: false
+  failed_when: false
+  when: vg_exists.rc != 0
+
+- name: Fail when no unused data disk is found
+  ansible.builtin.fail:
+    msg: >-
+      Additional disk mount points were requested but no unused whole disk was found
+      and volume group {{ data_vg_name }} does not exist yet.
+  when: vg_exists.rc != 0 and (data_disk_discover.rc | default(1) != 0 or (data_disk_discover.stdout | default('') | trim | length) == 0)
+
+- name: Create physical volume on data disk
+  ansible.builtin.command: pvcreate -ff -y "{{ data_disk_discover.stdout | trim }}"
+  register: pv_create
+  changed_when: pv_create.rc == 0
+  failed_when: pv_create.rc != 0 and ('already' not in (pv_create.stderr | default('') | lower))
+  when: vg_exists.rc != 0
+
+- name: Create volume group {{ data_vg_name }}
+  ansible.builtin.command: vgcreate "{{ data_vg_name }}" "{{ data_disk_discover.stdout | trim }}"
+  register: vg_create
+  changed_when: vg_create.rc == 0
+  failed_when: vg_create.rc != 0 and ('already' not in (vg_create.stderr | default('') | lower))
+  when: vg_exists.rc != 0
+
+- name: Detect mkfs.xfs availability
+  ansible.builtin.command: command -v mkfs.xfs
+  register: has_mkfs_xfs
+  changed_when: false
+  failed_when: false
+
+- name: Set filesystem type (xfs preferred for large data volumes)
+  ansible.builtin.set_fact:
+    forge_data_fstype: "{{ 'xfs' if has_mkfs_xfs.rc == 0 else 'ext4' }}"
+
+- name: Create logical volumes
+  ansible.builtin.command: lvcreate -L {{ item.size_gb }}G -n {{ item.lv }} {{ data_vg_name }}
+  loop: "{{ data_mounts }}"
+  loop_control:
+    label: "{{ item.lv }} {{ item.size_gb }}G → {{ item.path }}"
+  register: lv_create
+  changed_when: lv_create.rc == 0
+  failed_when: lv_create.rc != 0 and ('already' not in (lv_create.stderr | default('') | lower))
+
+- name: Probe existing filesystem on LVs
+  ansible.builtin.command: blkid -o value -s TYPE /dev/{{ data_vg_name }}/{{ item.lv }}
+  loop: "{{ data_mounts }}"
+  loop_control:
+    label: "{{ item.lv }}"
+  register: lv_fs_probe
+  changed_when: false
+  failed_when: false
+
+- name: Format logical volumes (xfs)
+  ansible.builtin.command: mkfs.xfs -f /dev/{{ data_vg_name }}/{{ item.item.lv }}
+  loop: "{{ lv_fs_probe.results }}"
+  loop_control:
+    label: "{{ item.item.lv }}"
+  when:
+    - forge_data_fstype == 'xfs'
+    - (item.stdout | default('') | trim | length) == 0
+  changed_when: true
+
+- name: Format logical volumes (ext4)
+  ansible.builtin.command: mkfs.ext4 -F /dev/{{ data_vg_name }}/{{ item.item.lv }}
+  loop: "{{ lv_fs_probe.results }}"
+  loop_control:
+    label: "{{ item.item.lv }}"
+  when:
+    - forge_data_fstype == 'ext4'
+    - (item.stdout | default('') | trim | length) == 0
+  changed_when: true
+
+- name: Ensure mount directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "0755"
+  loop: "{{ data_mounts }}"
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Mount data volumes and persist in fstab
+  ansible.builtin.mount:
+    path: "{{ item.path }}"
+    src: "/dev/{{ data_vg_name }}/{{ item.lv }}"
+    fstype: "{{ forge_data_fstype }}"
+    opts: defaults
+    state: mounted
+  loop: "{{ data_mounts }}"
+  loop_control:
+    label: "{{ item.path }}"

@@ -1,0 +1,7 @@
+---
+- name: Developer essentials blueprint
+  hosts: guests
+  become: true
+  gather_facts: true
+  roles:
+    - role: developer_essentials

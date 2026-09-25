@@ -15,11 +15,11 @@ import {
   listInstanceSizes,
   getHostnameFormatInfo,
   formatHostname,
-  resolveApplicationAppToken,
+  resolveHostnameAppToken,
   findVmTemplate,
 } from "../services/catalogService.js";
 import { getJob, listJobs, peekJob } from "../services/jobStore.js";
-import { cancelDeploymentJob, rollbackFailedJob, retryFailedJob } from "../services/jobCancelService.js";
+import { cancelDeploymentJob, rollbackFailedJob, retryFailedJob, retryFailedApps } from "../services/jobCancelService.js";
 import { logAudit } from "../services/auditService.js";
 import { requireAuth } from "../middleware/auth.js";
 import { canReviewDeployments, canSeeAllDeployments } from "../constants/roles.js";
@@ -35,8 +35,10 @@ import {
   markRequestCancelled,
 } from "../services/requestStore.js";
 import { computeRequestImpact } from "../services/capacityService.js";
-import { checkTeamQuotas } from "../services/quotaService.js";
+import { checkTeamQuotas, getMyQuotas } from "../services/quotaService.js";
 import { generateIac, IAC_TOOLS, isIacTool } from "../services/iacTemplates.js";
+import { listAppBlueprints, previewAppPlan, resolveAppDependencies } from "../services/appCatalogService.js";
+import { normalizeDiskMounts } from "../services/diskMounts.js";
 
 // Lifetime (in days) the requester asked for on the provisioning form. Coerce
 // to a sane whole number; fall back to the system default when missing/invalid.
@@ -102,6 +104,14 @@ router.get("/catalog/vm-templates", (req, res) => res.json(withTemplateDefaults(
 router.get("/catalog/container-templates", (req, res) => res.json(withTemplateDefaults(listContainerTemplates())));
 router.get("/catalog/stacks", (req, res) => res.json(withTemplateDefaults(listStackTemplates())));
 router.get("/catalog/packages", (req, res) => res.json(listCatalogPackages()));
+router.get("/catalog/apps", (req, res) => res.json(listAppBlueprints({ enabledOnly: true })));
+router.post("/catalog/apps/preview", (req, res) => {
+  try {
+    res.json({ plan: previewAppPlan(req.body?.apps || []) });
+  } catch (e) {
+    res.status(400).json({ error: e.message });
+  }
+});
 router.get("/catalog/application-roles", (req, res) => res.json(listApplicationRoles()));
 router.get("/catalog/instance-sizes", (req, res) => res.json(listInstanceSizes()));
 router.get("/catalog/baselines", (req, res) => res.json(listBaselines()));
@@ -118,6 +128,7 @@ router.post("/catalog/hostname-suggest", async (req, res) => {
     application,
     packages: selectedPackages,
     rolePackages,
+    apps: selectedApps,
     environment,
     os,
   } = req.body || {};
@@ -141,9 +152,12 @@ router.post("/catalog/hostname-suggest", async (req, res) => {
   const rolePkgIds = Array.isArray(rolePackages)
     ? rolePackages
     : (Array.isArray(selectedPackages) ? selectedPackages : []);
-  const resolvedApp = roleId
-    ? resolveApplicationAppToken(roleId, rolePkgIds)
-    : (app || application || "");
+  const resolvedApp = resolveHostnameAppToken({
+    roleId,
+    rolePackages: rolePkgIds,
+    packages: Array.isArray(selectedPackages) ? selectedPackages : rolePkgIds,
+    apps: Array.isArray(selectedApps) ? selectedApps : [],
+  }) || app || application || "";
 
   const hostname = formatHostname({
     kind: kind === "container" ? "ct" : kind || "vm",
@@ -205,7 +219,7 @@ router.get("/catalog/environments", (req, res) => {
 
 // --- Provisioning ---
 router.post("/provision/vm", async (req, res) => {
-  const { templateId, hostname, cpu, memoryGB, additionalDiskGB, ttlDays, permanent, packages, packageSelection, username, sudoAccess, environment, application } = req.body;
+  const { templateId, hostname, cpu, memoryGB, additionalDiskGB, diskMounts, ttlDays, permanent, packages, packageSelection, username, sudoAccess, environment, application, apps, customCompose } = req.body;
   if (!templateId || !hostname || !cpu || !memoryGB) {
     return res.status(400).json({ error: "templateId, hostname, cpu, memoryGB are required" });
   }
@@ -217,11 +231,33 @@ router.post("/provision/vm", async (req, res) => {
   }
   // The OS disk is sized by the template; an optional additional data disk is attached.
   const extraDisk = Number(additionalDiskGB) > 0 ? Math.round(Number(additionalDiskGB)) : 0;
+  let normalizedMounts = [];
+  try {
+    normalizedMounts = extraDisk > 0 ? normalizeDiskMounts(diskMounts, extraDisk) : [];
+  } catch (e) {
+    return res.status(e.status || 400).json({ error: e.message });
+  }
+  let resolvedApps = [];
+  try {
+    resolvedApps = Array.isArray(apps) && apps.length ? resolveAppDependencies(apps) : [];
+  } catch (e) {
+    return res.status(400).json({ error: e.message });
+  }
   const payload = {
     templateId, hostname, cpu, memoryGB, additionalDiskGB: extraDisk, diskGB: extraDisk,
+    diskMounts: normalizedMounts,
     ttlDays: normalizeTtlDays(ttlDays), permanent: !!permanent, packages, packageSelection,
     username: String(username).trim(), sudoAccess: !!sudoAccess, environment,
     application: application ? String(application).trim().toLowerCase() : undefined,
+    apps: Array.isArray(apps) ? apps : [],
+    resolvedApps,
+    customCompose: customCompose && typeof customCompose === "object" && String(customCompose.yaml || "").trim()
+      ? {
+        yaml: String(customCompose.yaml),
+        project: String(customCompose.project || "custom").slice(0, 40),
+        name: String(customCompose.name || "Custom compose").slice(0, 80),
+      }
+      : null,
   };
   if (!(await gateTeamQuota(req, res, { kind: "vm", payload }))) return;
   const result = await submitProvisionRequest({ kind: "vm", payload, requestedBy: req.user.username, source: "portal" });
@@ -234,6 +270,7 @@ router.post("/provision/vm", async (req, res) => {
       cpu,
       memoryGB,
       additionalDiskGB: extraDisk,
+      diskMounts: normalizedMounts,
       packages,
       packageSelection,
       requestId: result.request.id,
@@ -312,13 +349,20 @@ router.post("/provision/container", async (req, res) => {
 });
 
 router.post("/provision/stack", async (req, res) => {
-  const { stackId, hostnamePrefix, cpu, memoryGB, additionalDiskGB, ttlDays, permanent, packages, packageSelection, application } = req.body;
+  const { stackId, hostnamePrefix, cpu, memoryGB, additionalDiskGB, diskMounts, ttlDays, permanent, packages, packageSelection, application } = req.body;
   if (!stackId || !hostnamePrefix || !cpu || !memoryGB) {
     return res.status(400).json({ error: "stackId, hostnamePrefix, cpu, memoryGB are required" });
   }
   const extraDisk = Number(additionalDiskGB) > 0 ? Math.round(Number(additionalDiskGB)) : 0;
+  let normalizedMounts = [];
+  try {
+    normalizedMounts = extraDisk > 0 ? normalizeDiskMounts(diskMounts, extraDisk) : [];
+  } catch (e) {
+    return res.status(e.status || 400).json({ error: e.message });
+  }
   const payload = {
     stackId, hostnamePrefix, cpu, memoryGB, additionalDiskGB: extraDisk, diskGB: extraDisk,
+    diskMounts: normalizedMounts,
     ttlDays: normalizeTtlDays(ttlDays), permanent: !!permanent, packages, packageSelection,
     application: application ? String(application).trim().toLowerCase() : undefined,
   };
@@ -330,6 +374,7 @@ router.post("/provision/stack", async (req, res) => {
     target: hostnamePrefix,
     detail: {
       stackId,
+      diskMounts: normalizedMounts,
       packages,
       packageSelection,
       requestId: result.request.id,
@@ -635,6 +680,44 @@ router.post("/jobs/:id/retry", async (req, res) => {
   } catch (err) {
     const code = err.status === 400 ? 400 : 502;
     res.status(code).json({ error: err.message });
+  }
+});
+
+/**
+ * Re-run failed application blueprints on an existing guest (VM still up).
+ * Body: { apps?: string[] } — defaults to job.result.failedApps or payload.apps.
+ */
+router.post("/jobs/:id/retry-apps", async (req, res) => {
+  const job = peekJob(req.params.id);
+  if (!job) return res.status(404).json({ error: "Job not found" });
+  const isOwner = job.payload?.requestedBy === req.user.username;
+  if (!isOwner && !canReviewDeployments(req.user.role)) {
+    return res.status(403).json({ error: "Not authorized to retry apps on this deployment" });
+  }
+  try {
+    const result = await retryFailedApps(req.params.id, {
+      actor: req.user.username,
+      appIds: Array.isArray(req.body?.apps) ? req.body.apps : undefined,
+    });
+    logAudit({
+      actor: req.user,
+      action: "job.retry_apps",
+      target: `Job ${req.params.id}`,
+      detail: { apps: result?.apps || [] },
+    });
+    res.status(202).json(result);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+/** Team quota usage for the signed-in user (for the provision form). */
+router.get("/quotas/me", async (req, res) => {
+  try {
+    const data = await getMyQuotas(req.user.username);
+    res.json(data);
+  } catch (err) {
+    res.status(502).json({ error: err.message });
   }
 });
 

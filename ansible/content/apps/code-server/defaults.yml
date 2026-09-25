@@ -1,0 +1,5 @@
+# ports: [8080]
+# health: tcp:8080
+# url: http://{ip}:8080
+category: Containers
+CODE_SERVER_PASSWORD: forgedev

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { getSnapshots, createSnapshot, rollbackSnapshot, deleteSnapshot } from "../api/client.js";
 import { useDialog } from "./DialogProvider.jsx";
+import Toggle from "./Toggle.jsx";
 
 function fmtTime(ms) {
   if (!ms) return "—";
@@ -100,11 +101,11 @@ export default function SnapshotModal({ resource, onClose, onChanged }) {
                   <label>Include memory (RAM) state</label>
                   <p className="set-help">Captures the running VM's RAM so a restore resumes live.</p>
                 </div>
-                <button type="button" role="switch" aria-checked={form.includeRam}
-                  className={`switch ${form.includeRam ? "on" : ""}`}
-                  onClick={() => setForm((f) => ({ ...f, includeRam: !f.includeRam }))}>
-                  <span className="switch-knob" />
-                </button>
+                <Toggle
+                  variant="glow"
+                  checked={form.includeRam}
+                  onChange={(v) => setForm((f) => ({ ...f, includeRam: v }))}
+                />
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "flex-end" }}>
